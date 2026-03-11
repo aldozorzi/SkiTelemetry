@@ -73,7 +73,7 @@ namespace SkiTelemetry_Analyst
 
         private void OnTelemetryReceived(object? sender, SkiDataPoint rawPoint)
         {
-            var valueToDisplay = _dataProcessor.Process(rawPoint);
+            _dataProcessor.Process(rawPoint);
             // [RIGHT SENSOR] Forcing per test
             var rightDataPoint = new SkiDataPoint
             {

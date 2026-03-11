@@ -29,7 +29,7 @@
             _turnDetector.OnTurnCompleted += OnTurnCompleted;
         }
 
-        public double? Process(SkiDataPoint point)
+        public void Process(SkiDataPoint point)
         {
             ApplySmoothing(point);
             
@@ -47,7 +47,7 @@
             }
 
             // 2. Controllo: se manca uno dei due, esci con null (SENZA RESETTARE)
-            if (_leftDataPoint == null || _rightDataPoint == null) return null;
+            if (_leftDataPoint == null || _rightDataPoint == null) return;
 
             _turnDetector.RequestedMetrics.Clear();
 
@@ -55,47 +55,8 @@
             _turnDetector.RequestedMetrics.Add(ActiveMode);
             _turnDetector.AddPoints(_leftDataPoint, _rightDataPoint);
 
-            double? valueToReport = null;
-            
-
-            // 3. Esecuzione
-            /*switch (ActiveMode)
-            {
-                case MonitorMode.EdgeAngle:
-                    valueToReport = _turnDetector.GetTurnAngle(_leftDataPoint, _rightDataPoint);
-                    break;
-
-                case MonitorMode.EdgeSimilarity:
-                    valueToReport = _turnDetector.GetTurnSimilarity(_leftDataPoint, _rightDataPoint);
-                    break;
-
-                case MonitorMode.GForce:
-                    valueToReport = _turnDetector.GetTurnGForce(_leftDataPoint, _rightDataPoint);
-                    break;
-                case MonitorMode.TurnRadius:
-                    valueToReport = _turnDetector.GetTurnRadius(_leftDataPoint, _rightDataPoint);
-                    break;
-                case MonitorMode.EarlyEdging:
-                    valueToReport = _turnDetector.GetTurnEarlyEdging(_leftDataPoint, _rightDataPoint);
-                    break;
-                case MonitorMode.ProgressiveEdgeBuild:
-                    valueToReport = _turnDetector.GetTurnProgressiveEdgeBuild(_leftDataPoint, _rightDataPoint);
-                    break;
-                case MonitorMode.TurnShape:
-                    valueToReport = _turnDetector.GetTurnShape();
-                    break;
-                case MonitorMode.CarvingIndex:
-                    valueToReport = _turnDetector.GetCarvingIndex(_leftDataPoint, _rightDataPoint);
-                    break;
-                case MonitorMode.DebugData:
-                    valueToReport = 1;
-                    break;
-            }*/
-
             _leftDataPoint = null;
             _rightDataPoint = null;
-
-            return valueToReport;
         }
 
         private void OnTurnCompleted(object? sender, SkiTurn turn)
