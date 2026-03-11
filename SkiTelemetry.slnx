@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="./SkiTelemetry_LogConverter/SkiTelemetry_LogConverter.csproj" Id="c2eb69d1-1727-44ab-8547-f67d57bafdb8" />
+  <Project Path="./SkiTelemetry_Analyst/SkiTelemetry_Analyst.csproj" />
+</Solution>

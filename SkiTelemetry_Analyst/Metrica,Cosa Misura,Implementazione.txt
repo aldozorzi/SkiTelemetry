@@ -1,0 +1,7 @@
+Metrica,Cosa Misura,Implementazione (Logica Software)
+Angle vs G-Force,Timing della curva. Verifica se il picco di pressione coincide con il picco di inclinazione.,Calcolo del Δt tra max(Roll) e max(G-Force) all'interno della stessa finestra di curva.
+Smoothness Index,"Fluidità e attrito. Rileva quanto lo sci ""sbatte"" o quanto l'atleta è contratto.","Analisi della varianza (o deviazione standard) del Giroscopio e Accelerometro. Più è alta, meno lo sci scorre."
+Edge Engagement,Esplosività. Quanto velocemente l'atleta passa da sci piatti alla presa di spigolo.,"Derivata del Roll (dtdϕ​) nella fase iniziale della curva. Misura i gradi al secondo di ""ribaltamento""."
+Line Choice,"Traiettoria (Derapata vs Binario). Capisce se l'atleta sta ""chiudendo"" il raggio o perdendo velocità.",Confronto tra Raggio calcolato (R=ω2ac​​) e G-Force. Se il raggio è stretto ma la G è bassa = Derapata.
+Load Distribution,Bilanciamento esterno/interno. Percentuale di carico sullo sci a valle.,Rapporto tra le G-Force dei due sensori: Gext​/(Gext​+Gint​). Ideale agonistico: > 80%.
+Race Efficiency (REI),Efficienza pura. Rapporto tra fase di scorrimento (piatto) e rapidità di risoluzione.,(Tflat​⋅EdgeRate)/Tedge​. Premia chi fa correre lo sci e risolve la curva in un fazzoletto di tempo.

@@ -1,0 +1,134 @@
+﻿namespace SkiTelemetry_Analyst
+{
+    [System.Runtime.Versioning.SupportedOSPlatform("ios15.0")]
+    [System.Runtime.Versioning.SupportedOSPlatform("maccatalyst15.0")]
+    [System.Runtime.Versioning.SupportedOSPlatform("android21.0")]
+    [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
+    public class SkiDataProcessor
+    {
+        public event EventHandler<SkiTurn>? OnNewTurn;
+
+        private double _lastLeftRoll = 0;
+        private double _lastRightRoll = 0;
+        private const double Alpha = 0.2;
+
+        private readonly TurnDetector _turnDetector = new();
+        private SkiDataPoint? _rightDataPoint;
+        private SkiDataPoint? _leftDataPoint;
+
+        //RADOMIZZAZIONE TEST [RIGHT SENSOR]
+        private double _staticRollOffset = new Random().NextDouble() * 12.0 + 2.0;
+        private double _staticAccMultiplier = 0.8 + (new Random().NextDouble() * 0.15);
+
+        public MonitorMode ActiveMode { get; set; } = MonitorMode.EdgeAngle;
+
+        private readonly TelemetryLogger _logger = new();
+
+        public SkiDataProcessor()
+        {
+            _turnDetector.OnTurnCompleted += OnTurnCompleted;
+        }
+
+        public double? Process(SkiDataPoint point)
+        {
+            ApplySmoothing(point);
+            
+            // System.Diagnostics.Debug.WriteLine(point.ToString());
+
+            if (point.Side == SensorSide.Left)
+            {
+                _leftDataPoint = point;
+                if (_logger.isLogging) _logger.LogData(_leftDataPoint);
+            }
+            else if (point.Side == SensorSide.Right)
+            {
+                _rightDataPoint = point;
+                if (_logger.isLogging) _logger.LogData(_rightDataPoint);
+            }
+
+            // 2. Controllo: se manca uno dei due, esci con null (SENZA RESETTARE)
+            if (_leftDataPoint == null || _rightDataPoint == null) return null;
+
+            _turnDetector.RequestedMetrics.Clear();
+
+            // Aggiungiamo la metrica attualmente selezionata nella UI
+            _turnDetector.RequestedMetrics.Add(ActiveMode);
+            _turnDetector.AddPoints(_leftDataPoint, _rightDataPoint);
+
+            double? valueToReport = null;
+            
+
+            // 3. Esecuzione
+            /*switch (ActiveMode)
+            {
+                case MonitorMode.EdgeAngle:
+                    valueToReport = _turnDetector.GetTurnAngle(_leftDataPoint, _rightDataPoint);
+                    break;
+
+                case MonitorMode.EdgeSimilarity:
+                    valueToReport = _turnDetector.GetTurnSimilarity(_leftDataPoint, _rightDataPoint);
+                    break;
+
+                case MonitorMode.GForce:
+                    valueToReport = _turnDetector.GetTurnGForce(_leftDataPoint, _rightDataPoint);
+                    break;
+                case MonitorMode.TurnRadius:
+                    valueToReport = _turnDetector.GetTurnRadius(_leftDataPoint, _rightDataPoint);
+                    break;
+                case MonitorMode.EarlyEdging:
+                    valueToReport = _turnDetector.GetTurnEarlyEdging(_leftDataPoint, _rightDataPoint);
+                    break;
+                case MonitorMode.ProgressiveEdgeBuild:
+                    valueToReport = _turnDetector.GetTurnProgressiveEdgeBuild(_leftDataPoint, _rightDataPoint);
+                    break;
+                case MonitorMode.TurnShape:
+                    valueToReport = _turnDetector.GetTurnShape();
+                    break;
+                case MonitorMode.CarvingIndex:
+                    valueToReport = _turnDetector.GetCarvingIndex(_leftDataPoint, _rightDataPoint);
+                    break;
+                case MonitorMode.DebugData:
+                    valueToReport = 1;
+                    break;
+            }*/
+
+            _leftDataPoint = null;
+            _rightDataPoint = null;
+
+            return valueToReport;
+        }
+
+        private void OnTurnCompleted(object? sender, SkiTurn turn)
+        {
+            OnNewTurn?.Invoke(this, turn);
+        }
+
+        public void StartLogging(){ 
+            _logger.StartLogging(); 
+        }
+        public void StopLogging(){ 
+            _logger.StopLogging(); 
+        } 
+
+        private void ApplySmoothing(SkiDataPoint point)
+        {
+            double currentRaw = point.rawRoll;
+            if (point.Side == SensorSide.Left)
+            {
+                _lastLeftRoll = (Alpha * currentRaw) + ((1 - Alpha) * _lastLeftRoll);
+                point.Roll = _lastLeftRoll;
+            }
+            else
+            {
+                _lastRightRoll = (Alpha * currentRaw) + ((1 - Alpha) * _lastRightRoll);
+                point.Roll = _lastRightRoll;
+            }
+        }
+
+
+        public void StopAll()
+        {
+            if(_logger.isLogging) _logger.StopLogging();
+        }
+    }
+}
