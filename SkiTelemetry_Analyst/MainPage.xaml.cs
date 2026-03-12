@@ -170,7 +170,7 @@ namespace SkiTelemetry_Analyst
                 BtnScan.IsVisible = false;
                 DataContainer.IsVisible = true;
                 StatusLabel.Text = "Stato: Sessione Attiva";
-                if (ModePicker.SelectedIndex == -1) ModePicker.SelectedIndex = 0;
+                if (ModePicker.SelectedIndex == -1) ModePicker.SelectedIndex = 5;
                 _dataProcessor.StartLogging();
             });
         }

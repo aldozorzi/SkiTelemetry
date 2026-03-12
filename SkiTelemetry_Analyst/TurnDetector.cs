@@ -22,7 +22,7 @@
         private double _maxRollInCurrentTurn = 0;
         private bool _isCurrentlyTurning = false;
         private bool _wasTurningBefore = false;
-        private bool _isCoolingDown = false;
+        private bool _isPeakReached = false;
 
 
         // EDGE SIMILARITY
@@ -60,6 +60,11 @@
         private double _accumulatedCarvingDeviation = 0;
         private int _carvingSampleCount = 0;
         private double _targetCarvingRatio = 1.35; // Inizializziamo con il valore teorico basato sulla fisica
+
+        // TURN SHAPE
+        private double _maxRollForShape = 0;
+        private int _apexSampleIndex = 0;
+        private int _currentTurnSampleCount = 0;
 
         // Soglie personalizzabili
         private const double StartThreshold = 10; // Gradi minimi per considerare l'inizio di un turn
@@ -166,12 +171,11 @@
                 turn.Shape = _turnShape;
                 turn.ProgressiveEdgeBuild = _turnProgressiveEdgeBuild;
                 turn.CarvingIndex = _turnCarvingIndex;
-                System.Diagnostics.Debug.WriteLine($"[DETECTOR] Sending Turn: {turn}");
+                // System.Diagnostics.Debug.WriteLine($"[DETECTOR] Sending Turn: {turn}");
                 ResetMetrics(); // Pulizia immediata dopo il calcolo finale
                 OnTurnCompleted?.Invoke(this, turn);
             }
         }
-
         public double? GetTurnAngle(SkiDataPoint left, SkiDataPoint right)
         {
            if (!_isCurrentlyTurning &&  _wasTurningBefore)
@@ -354,7 +358,7 @@
                         {
                             _totalSamples++;
                             
-                            if(absRoll > _prevRollInTurn)
+                            if(absRoll > _prevRollInTurn && !_isPeakReached)
                             {
                                 _positiveSamples++;
                                // System.Diagnostics.Debug.WriteLine($"[DETECTOR] Positive {absRoll} > {_prevRollInTurn}");
@@ -391,8 +395,69 @@
         }
         public double? GetTurnShape(SkiDataPoint left, SkiDataPoint right)
         {
+            double absRoll = Math.Max(Math.Abs(left.Roll), Math.Abs(right.Roll));
+            double? buildScore = 0;
+            if (_isCurrentlyTurning)
+            {
+                buildScore = GetTurnProgressiveEdgeBuild(left, right) ?? 0;
+                _currentTurnSampleCount++;
+                if (absRoll > _maxRollForShape)
+                {
+                    _maxRollForShape = absRoll;
+                    _apexSampleIndex = _currentTurnSampleCount;
+                }
+            }else if(_wasTurningBefore)
+            {
+                if (_currentTurnSampleCount == 0) return null;
 
-            return null;
+                // 1. Calcoliamo la posizione dell'apice in percentuale (0-100)
+                double apexPercent = (_apexSampleIndex / (double)_currentTurnSampleCount) * 100.0;
+
+                // 2. Recuperiamo il Progressive Build (che è già 0-100)
+                // Se non richiesto esplicitamente, lo calcoliamo al volo come dipendenza
+                buildScore = GetTurnProgressiveEdgeBuild(left,right) ?? 0;
+                if (!buildScore.HasValue)
+                {
+                    return null;
+                }
+                else
+                {
+                    double finalScore = 0;
+
+                    // --- LOGICA MATRICE DI VALUTAZIONE ---
+
+                    if (apexPercent >= 30 && apexPercent <= 45) // Fascia NIKE (Potenziale Top)
+                    {
+                        if (buildScore >= 75)
+                            finalScore = MapValue(buildScore, 75, 100, 85, 100); // NIKE PURA
+                        else if (buildScore >= 60)
+                            finalScore = MapValue(buildScore, 60, 75, 50, 75);  // QUASI BUONA
+                        else
+                            finalScore = MapValue(buildScore, 0, 60, 10, 40);   // Z - STRAPPATA (L'apice precoce conferma lo strappo)
+                    }
+                    else if (apexPercent > 45 && apexPercent <= 65) // Fascia C (Scolastica)
+                    {
+                        if (buildScore >= 70)
+                            finalScore = MapValue(buildScore, 70, 100, 70, 85); // C PERFETTA
+                        else
+                            finalScore = MapValue(buildScore, 0, 70, 30, 60);   // C INCERTA
+                    }
+                    else if (apexPercent > 65) // Fascia RITARDATA (Seduta)
+                    {
+                        // Qui il build score conta meno: se l'apice è così tardi, la curva è subita
+                        finalScore = MapValue(apexPercent, 65, 100, 40, 0);
+                    }
+                    else // Apex < 30% (Urto o instabilità iniziale)
+                    {
+                        finalScore = MapValue(apexPercent, 0, 30, 0, 30);
+                    }
+                    System.Diagnostics.Debug.WriteLine($"[DETECTOR] TURN SHAPE: {finalScore:F1}% - Apex:{apexPercent}% - buildScore:{buildScore}%");
+                    return Math.Round(finalScore);
+                }
+
+                
+            }
+                return null;
         }
         public double? GetTurnCarvingIndex(SkiDataPoint left, SkiDataPoint right)
         {
@@ -433,7 +498,7 @@
         }
         private void UpdateTurnState(double absRoll, uint ts)
         {
-            if (!_isCurrentlyTurning && !_isCoolingDown)
+            if (!_isCurrentlyTurning )
             {
                 // Posso iniziare solo se sono sopra la soglia E non sono in fase di rientro
                 if (absRoll > StartThreshold)
@@ -444,7 +509,7 @@
                     // System.Diagnostics.Debug.WriteLine($"[DEBUG][{ts}ms] CURVA INIZIATA");
                 }
             }
-            else if (_isCurrentlyTurning && !_isCoolingDown)
+            else if (_isCurrentlyTurning)
             {
                 // Aggiorna picco
                 if (absRoll > _maxRollInCurrentTurn) _maxRollInCurrentTurn = absRoll;
@@ -452,30 +517,33 @@
                 // Condizioni di chiusura
                 bool dropFromPeak = absRoll < (_maxRollInCurrentTurn - GapToConfirmPeak);
                 bool dropBelowExit = absRoll < ExitThreshold;
-
-                if (dropFromPeak || dropBelowExit)
+                if (dropFromPeak)
+                {
+                    _isPeakReached = true;
+                }
+                if (dropBelowExit)
                 {
                     _isCurrentlyTurning = false;
-                    _isCoolingDown = dropFromPeak; // Entriamo in protezione se stiamo scendendo dal picco, o usciamo dalla protezione se siamo soto soglia.
                     //System.Diagnostics.Debug.WriteLine($"[DEBUG][{ts}ms] CURVA TERMINATA, Inizio cool-down");
                 }
             }
-            else if (_isCoolingDown)
-            {
-                // Restiamo in cool-down finché non torniamo sotto la soglia di uscita o di sicurezza
-                // Questo impedisce di riaprire una curva a 17° mentre si sta ancora uscendo
-                if (absRoll < ExitThreshold)
-                {
-                    _isCoolingDown = false;
-                    //System.Diagnostics.Debug.WriteLine($"[DEBUG][{ts}ms] Cool-down terminato, sistema pronto");
-                }
-            }
+            
         }
 
+
+        private double MapValue(double? val, double inMin, double inMax, double outMin, double outMax)
+        {
+            double value = (val.HasValue ? (double)val : 0);
+            if (value <= inMin) return outMin;
+            if (value >= inMax) return outMax;
+            
+            return (value - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+        }
         private void ResetMetrics()
         {
             // EDGE ANGLE
             _maxRollInCurrentTurn = 0;
+            _isPeakReached = false;
 
             // EDGE SIMILARITY
             _accumulatedDiff = 0;
@@ -503,7 +571,12 @@
             _accumulatedCarvingDeviation = 0;
             _carvingSampleCount = 0;
 
-            // proprietà della curva
+            // TURN SHAPE
+            _maxRollForShape = 0;
+            _apexSampleIndex = 0;
+            _currentTurnSampleCount = 0;
+
+            // proprietà della curva (da inserire nell'oggetto SkiTurn)
             _turnEdgeAngle = 0;
             _turnEdgeSimilarity  = 0;
             _turnEarlyEdging  = 0;
