@@ -20,7 +20,7 @@
             <VerticalStackLayout x:Name="ActiveView" Spacing="20" IsVisible="False">
 
                 <VerticalStackLayout Spacing="15" Padding="20" VerticalOptions="Center">
-                    <Label x:Name="StatusLabel" Text="Stato: Collegamento sensori in corso..." HorizontalOptions="Center" />
+                    <Label x:Name="StatusLabel" Text="Stato: pronto per la sessione" HorizontalOptions="Center" />
                     <Button x:Name="BtnScan"
                             
                             Text="AVVIA SESSIONE"

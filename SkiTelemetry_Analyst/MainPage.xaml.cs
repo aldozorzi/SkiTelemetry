@@ -1,4 +1,4 @@
-﻿
+﻿using SkiTelemetry_Core;
 namespace SkiTelemetry_Analyst
 {
     [System.Runtime.Versioning.SupportedOSPlatform("ios15.0")]
@@ -35,7 +35,7 @@ namespace SkiTelemetry_Analyst
                 // Both sensors are paired: show the session UI
                 ConfigView.IsVisible = false;
                 ActiveView.IsVisible = true;
-                OnScanClicked(new object(),new EventArgs()); // [DEBUG] ?
+                //OnScanClicked(new object(),new EventArgs()); // [DEBUG] ?
             }
             else
             {
@@ -78,6 +78,7 @@ namespace SkiTelemetry_Analyst
             var rightDataPoint = new SkiDataPoint
             {
                 Side = SensorSide.Right,
+                Timestamp = rawPoint.Timestamp+1,
                 AccX = rawPoint.AccX,
                 AccY = rawPoint.AccY,
                 AccZ = rawPoint.AccZ,
@@ -171,7 +172,11 @@ namespace SkiTelemetry_Analyst
                 DataContainer.IsVisible = true;
                 StatusLabel.Text = "Stato: Sessione Attiva";
                 if (ModePicker.SelectedIndex == -1) ModePicker.SelectedIndex = 5;
-                _dataProcessor.StartLogging();
+                bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
+                if (isSettingsLoggingEnabled)
+                {
+                    _dataProcessor.StartLogging();
+                }
             });
         }
         private async void OnStopClicked(object? sender, EventArgs e)
@@ -188,20 +193,19 @@ namespace SkiTelemetry_Analyst
             _dataProcessor.StopAll();
 
             // 3. Reset dello stato
-            StatusLabel.Text = "Stato: Sessione terminata";
+            StatusLabel.Text = "Disconnessione in corso...";
 
-            
-
-            await Task.Run(async () => {
-                try
-                {
-                    await _bleService.DisconnectDevices();
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Errore silenziato in distacco: {ex.Message}");
-                }
-            });
+            try
+            {
+                // Usiamo await direttamente sul servizio
+                await _bleService.DisconnectDevices();
+                StatusLabel.Text = "Sessione terminata";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore in distacco: {ex.Message}");
+                StatusLabel.Text = "Errore durante il distacco";
+            }
 
             System.Diagnostics.Debug.WriteLine("Sessione fermata dall'utente.");
         }
@@ -266,7 +270,7 @@ namespace SkiTelemetry_Analyst
         private async void OnSettingsClicked(object? sender, EventArgs e)
         {
             // nameof(SettingsPage) estrae la stringa "SettingsPage" in modo sicuro
-            await Shell.Current.GoToAsync(nameof(SettingsPage));
+            await Shell.Current.GoToAsync($"{nameof(SettingsPage)}?IsBusy={_isSessionActive}");
         }
 
         protected override void OnAppearing()

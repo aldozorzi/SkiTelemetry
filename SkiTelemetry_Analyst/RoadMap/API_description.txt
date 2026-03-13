@@ -1,0 +1,7 @@
+﻿Endpoint,Metodo,Descrizione
+/api/auth/register,POST,Creazione nuovo account (Atleta o Allenatore).
+/api/auth/login,POST,Validazione credenziali e rilascio Token JWT.
+/api/runs/upload,POST,Ricezione del file .bin e salvataggio nel DB (o Blob Storage).
+/api/runs/my,GET,Elenco delle run dell'utente loggato.
+/api/runs/coach/athletes,GET,Elenco degli atleti seguiti (solo per account Allenatore).
+/api/runs/{id},GET,"Dettaglio telemetria (con controllo: ""Sei l'atleta o il suo allenatore?"")."

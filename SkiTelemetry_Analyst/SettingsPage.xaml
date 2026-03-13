@@ -5,6 +5,33 @@
              Title="Impostazioni">
 
     <VerticalStackLayout Padding="30" Spacing="25">
+        <Label Text="GESTIONE DATI" 
+       FontSize="20" 
+       FontAttributes="Bold" 
+       HorizontalOptions="Center" />
+
+        <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="15"/>
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Spacing="15">
+                <HorizontalStackLayout Spacing="20" VerticalOptions="Center">
+                    <Label Text="Attiva Logging" 
+                   VerticalOptions="Center" 
+                   FontAttributes="Bold" 
+                   FontSize="16" 
+                           TextColor="#666666"/>
+                    <Switch x:Name="SwitchLogging" 
+                    Toggled="OnLoggingToggled" 
+                    VerticalOptions="Center" />
+                </HorizontalStackLayout>
+
+                <Label x:Name ="lblLogging" Text="Se attivo, l'app salverà i dati grezzi dei sensori durante la sessione."
+               FontSize="13" 
+               TextColor="#666666" />
+            </VerticalStackLayout>
+        </Border>
 
         <Label Text="GESTIONE SENSORI" 
                FontSize="20" 

@@ -1,0 +1,60 @@
+﻿@page "/runs"
+@using SkiTelemetry_Web.Services
+@using SkiTelemetry_Core
+@inject RunService RunService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Lista Run</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Elenco Sessioni</h1>
+        <button class="btn btn-outline-primary" @onclick="Refresh">
+            <span class="bi bi-arrow-clockwise"></span>
+        </button>
+    </div>
+
+    @if (runs == null)
+    {
+        <p><em>Caricamento...</em></p>
+    }
+    else
+    {
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>File</th>
+                    <th>Atleta</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var run in runs)
+                {
+                    <tr>
+                        <td>@run.UploadDate.ToShortDateString()</td>
+                        <td>@run.FileName</td>
+                        <td>@run.Athlete.FirstName @run.Athlete.LastName</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" @onclick="() => GoToDetail(run.Id)">
+                                Analizza
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private List<SkiRun>? runs;
+
+    protected override async Task OnInitializedAsync() => await Refresh();
+
+    private async Task Refresh() => runs = await RunService.GetAllRunsAsync();
+
+    private void GoToDetail(int id) => Nav.NavigateTo($"/runs/detail/{id}");
+}

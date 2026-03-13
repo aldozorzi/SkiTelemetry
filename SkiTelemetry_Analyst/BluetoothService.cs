@@ -1,8 +1,10 @@
 ﻿
 using Plugin.BLE;
+using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
 using Plugin.BLE.Abstractions.EventArgs;
 using Plugin.BLE.Abstractions.Extensions;
+using SkiTelemetry_Core;
 using System.Diagnostics;
 
 namespace SkiTelemetry_Analyst
@@ -273,8 +275,11 @@ namespace SkiTelemetry_Analyst
 
         public async Task DisconnectDevices()
         {
+            // 1. Stacchiamo subito l'evento per liberare la UI
+            DataReceived = null;
+
+            // 2. Creiamo una copia della lista per evitare conflitti di iterazione
             var devices = ConnectedSensors.Values.ToList();
-            ConnectedSensors.Clear(); // Puliamo subito il dizionario interno
 
             foreach (var device in devices)
             {
@@ -282,12 +287,20 @@ namespace SkiTelemetry_Analyst
                 {
                     if (device != null)
                     {
-                        // Timeout forzato: se non si scollega in 2 secondi, passa oltre
-                        await Task.WhenAny(_adapter.DisconnectDeviceAsync(device), Task.Delay(2000));
+                        Debug.WriteLine($"[BLE] Richiesta disconnessione adattatore...");
+
+                        // Usiamo il comando base dell'adattatore. 
+                        // NON cerchiamo servizi, NON fermiamo notifiche.
+                        await _adapter.DisconnectDeviceAsync(device);
                     }
                 }
-                catch { /* Ignora: il sensore potrebbe essere già spento */ }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[BLE] Errore: {ex.Message}");
+                }
             }
+
+            ConnectedSensors.Clear();
         }
     }
 }

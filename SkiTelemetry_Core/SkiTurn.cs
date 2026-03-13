@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SkiTelemetry_Analyst
+﻿namespace SkiTelemetry_Core
 {
     public class SkiTurn
     {

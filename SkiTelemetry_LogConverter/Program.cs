@@ -36,14 +36,14 @@ try
             float gx = reader.ReadSingle();
             float gy = reader.ReadSingle();
             float gz = reader.ReadSingle();
-            float roll = reader.ReadSingle();
+            //float roll = reader.ReadSingle();
 
             // Formattiamo i float con la virgola o il punto in base alla cultura 
             // ma forziamo l'invariante per non avere problemi con i software di analisi
             IFormatProvider provider = CultureInfo.InvariantCulture;
 
             writer.WriteLine($"{ts};{side};{ax.ToString(provider)};{ay.ToString(provider)};{az.ToString(provider)};" +
-                             $"{gx.ToString(provider)};{gy.ToString(provider)};{gz.ToString(provider)};{roll.ToString(provider)}");
+                             $"{gx.ToString(provider)};{gy.ToString(provider)};{gz.ToString(provider)};");
 
             recordCount++;
         }

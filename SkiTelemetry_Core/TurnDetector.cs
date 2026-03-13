@@ -1,4 +1,4 @@
-﻿namespace SkiTelemetry_Analyst
+﻿namespace SkiTelemetry_Core
 {
     public class TurnDetector
     {
@@ -75,6 +75,7 @@
 
         public void AddPoints(SkiDataPoint left, SkiDataPoint right)
         {
+            //System.Diagnostics.Debug.WriteLine($"[DETECTOR] receiving Points: [{left}] - [{right}]");
             double leftRoll = left.Roll;
             double rightRoll = right.Roll;
             double absRoll = Math.Max(Math.Abs(leftRoll), Math.Abs(rightRoll));
@@ -151,17 +152,19 @@
             if (_isCurrentlyTurning && !_wasTurningBefore)
             {
                 // inizio curva
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Inizio curva");
             }
             
             
             if(_isCurrentlyTurning)
             {
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Prosecuzione curva");
                 // prosecuzione curva
             }
             else if (!_isCurrentlyTurning && _wasTurningBefore)
             {
                 // fine curva
-                
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Fine curva");
                 var turn = new SkiTurn();
                 turn.EdgeAngle = _turnEdgeAngle;
                 turn.EdgeSimilarity = _turnEdgeSimilarity;
@@ -498,6 +501,7 @@
         }
         private void UpdateTurnState(double absRoll, uint ts)
         {
+            //System.Diagnostics.Debug.WriteLine($"[DETECTOR] UpdateTurnState absRoll:{absRoll}");
             if (!_isCurrentlyTurning )
             {
                 // Posso iniziare solo se sono sopra la soglia E non sono in fase di rientro
@@ -506,7 +510,7 @@
                     _isCurrentlyTurning = true;
                     _maxRollInCurrentTurn = absRoll;
                     _turnStartTime = ts;
-                    // System.Diagnostics.Debug.WriteLine($"[DEBUG][{ts}ms] CURVA INIZIATA");
+                    //System.Diagnostics.Debug.WriteLine($"[DETECTOR][{ts}ms] CURVA INIZIATA");
                 }
             }
             else if (_isCurrentlyTurning)
