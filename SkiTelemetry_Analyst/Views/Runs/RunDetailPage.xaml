@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SkiTelemetry_Analyst.Views.Runs.RunDetailPage"
+             Title=""
+             BackgroundColor="#000000">
+
+    <Grid RowDefinitions="Auto, Auto, *" Padding="20">
+
+        <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,0,0,20">
+            <Label x:Name="LblRunName" 
+                   FontSize="24" 
+                   FontAttributes="Bold" 
+                   TextColor="DeepSkyBlue" 
+                   Text="CARICAMENTO..." />
+            <Label x:Name="LblDate" 
+                   FontSize="14" 
+                   TextColor="Gray" />
+        </VerticalStackLayout>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*, *, *" ColumnSpacing="10" Margin="0,0,0,20">
+            <Border Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
+                <VerticalStackLayout HorizontalOptions="Center">
+                    <Label Text="AVG ANGLE" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
+                    <Label x:Name="LblAvgAngle" FontSize="18" FontAttributes="Bold" TextColor="Cyan" Text="0°" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Grid.Column="1" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
+                <VerticalStackLayout HorizontalOptions="Center">
+                    <Label Text="MAX G" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
+                    <Label x:Name="LblMaxG" FontSize="18" FontAttributes="Bold" TextColor="Salmon" Text="0.0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Grid.Column="2" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
+                <VerticalStackLayout HorizontalOptions="Center">
+                    <Label Text="CURVE" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
+                    <Label x:Name="LblTurnCount" FontSize="18" FontAttributes="Bold" TextColor="Orange" Text="0" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <CollectionView Grid.Row="2" x:Name="TurnsCollection" SelectionMode="None" Margin="0">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+            </CollectionView.ItemsLayout>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Padding="15" Margin="5,5" Stroke="#333" BackgroundColor="#121212" StrokeShape="RoundRectangle 10">
+                        <VerticalStackLayout Spacing="12">
+
+                            <Grid ColumnDefinitions="*, Auto">
+                                <Label Text="{Binding EdgeAngle, StringFormat='MAX ROLL: {0:F1}°'}" 
+                                       FontAttributes="Bold" 
+                                       TextColor="Cyan" 
+                                       FontSize="16" />
+                                <Label Grid.Column="1" 
+                                       Text="{Binding Shape, StringFormat='SHAPE: {0:F0}%'}" 
+                                       TextColor="White" 
+                                       FontSize="12" 
+                                       VerticalOptions="Center" />
+                            </Grid>
+
+                            <ProgressBar Progress="{Binding EdgeAngle, Converter={StaticResource AngleToPercentConverter}}" 
+                                         ProgressColor="Cyan" 
+                                         ScaleY="1.5" />
+
+                            <Grid ColumnDefinitions="*, *, *, *" RowDefinitions="Auto, Auto" RowSpacing="2">
+                                <Label Grid.Row="0" Grid.Column="0" Text="RADIUS" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="0" Text="{Binding Radius, StringFormat='{0:F1}'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+
+                                <Label Grid.Row="0" Grid.Column="1" Text="G-FORCE" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="1" Text="{Binding GForce, StringFormat='{0:F1}'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+
+                                <Label Grid.Row="0" Grid.Column="2" Text="BUILD" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="2" Text="{Binding ProgressiveEdgeBuild, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+
+                                <Label Grid.Row="0" Grid.Column="3" Text="CARVING" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="3" Text="{Binding CarvingIndex, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+                            </Grid>
+
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="50" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Label Text="Nessuna curva rilevata." TextColor="Gray" HorizontalTextAlignment="Center" />
+                    <Label Text="Verifica che i dati binari siano corretti." FontSize="12" TextColor="#444" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+        </CollectionView>
+    </Grid>
+</ContentPage>

@@ -17,8 +17,6 @@ namespace SkiTelemetry_Analyst
         private SkiDataPoint? _rightDataPoint;
         private SkiDataPoint? _leftDataPoint;
 
-        public MonitorMode ActiveMode { get; set; } = MonitorMode.EdgeAngle;
-
         private readonly TelemetryLogger _logger = new();
 
         public SkiDataProcessor()
@@ -46,14 +44,25 @@ namespace SkiTelemetry_Analyst
             // 2. Controllo: se manca uno dei due, esci con null (SENZA RESETTARE)
             if (_leftDataPoint == null || _rightDataPoint == null) return;
 
-            _turnDetector.RequestedMetrics.Clear();
+            
 
             // Aggiungiamo la metrica attualmente selezionata nella UI
-            _turnDetector.RequestedMetrics.Add(ActiveMode);
+           
             _turnDetector.AddPoints(_leftDataPoint, _rightDataPoint);
 
             _leftDataPoint = null;
             _rightDataPoint = null;
+        }
+
+        public void setMetrics(HashSet<MonitorMode> metrics)
+        {
+
+            _turnDetector.RequestedMetrics.Clear();
+            foreach (MonitorMode metric in metrics )
+            {
+
+                _turnDetector.RequestedMetrics.Add(metric);
+            }
         }
 
         private void OnTurnCompleted(object? sender, SkiTurn turn)

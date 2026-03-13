@@ -6,7 +6,8 @@
         {
             InitializeComponent();
 
-            // REGISTRAZIONE OBBLIGATORIA: dice alla Shell che la pagina esiste
+            Routing.RegisterRoute("RunsListPage", typeof(Views.Runs.RunsListPage));
+            Routing.RegisterRoute("RunDetailPage", typeof(Views.Runs.RunDetailPage));
             Routing.RegisterRoute(nameof(SettingsPage), typeof(SettingsPage));
         }
     }

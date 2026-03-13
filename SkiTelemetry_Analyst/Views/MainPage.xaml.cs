@@ -1,5 +1,6 @@
 ﻿using SkiTelemetry_Core;
-namespace SkiTelemetry_Analyst
+using SkiTelemetry_Analyst;
+namespace SkiTelemetry_Analyst.Views
 {
     [System.Runtime.Versioning.SupportedOSPlatform("ios15.0")]
     [System.Runtime.Versioning.SupportedOSPlatform("maccatalyst15.0")]
@@ -11,6 +12,7 @@ namespace SkiTelemetry_Analyst
         BluetoothService _bleService = new BluetoothService();
         private readonly SkiDataProcessor _dataProcessor = new();
         private bool _isSessionActive = false;
+        private HashSet<MonitorMode> _metrics = new();
 
         public MainPage()
         {
@@ -132,7 +134,7 @@ namespace SkiTelemetry_Analyst
                 else if (EarlyEdgingDisplay.IsVisible)
                     LblEarlyEdging.Text = $"{turn.EarlyEdging:0}%";
                 else if (ProgressiveBuildDisplay.IsVisible)
-                    LblProgressiveBuild.Text = $"{turn.ProgressiveEdgeBuild:1}%";
+                    LblProgressiveBuild.Text = $"{turn.ProgressiveEdgeBuild:0}%";
                 else if (TurnShapeDisplay.IsVisible)
                     LblTurnShape.Text = $"{turn.Shape}%";
                 else if (CarvingIndexDisplay.IsVisible)
@@ -169,9 +171,10 @@ namespace SkiTelemetry_Analyst
                 ConfigView.IsVisible = false;
                 ActiveView.IsVisible = true;
                 BtnScan.IsVisible = false;
+                BtnHistoryContainer.IsVisible = false;
                 DataContainer.IsVisible = true;
                 StatusLabel.Text = "Stato: Sessione Attiva";
-                if (ModePicker.SelectedIndex == -1) ModePicker.SelectedIndex = 5;
+                if (ModePicker.SelectedIndex == -1) ModePicker.SelectedIndex = 0;
                 bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
                 if (isSettingsLoggingEnabled)
                 {
@@ -188,6 +191,7 @@ namespace SkiTelemetry_Analyst
             DataContainer.IsVisible = false;
             BtnScan.IsVisible = true;
             BtnScan.IsEnabled = true;
+            BtnHistoryContainer.IsVisible = true;
 
             // Stop eventuali routine di SkiDataProcessor
             _dataProcessor.StopAll();
@@ -230,11 +234,16 @@ namespace SkiTelemetry_Analyst
             if (selectedIndex != -1)
             {
                 // Aggiorna la modalità nel processore
-                _dataProcessor.ActiveMode = (MonitorMode)selectedIndex;
+                //_dataProcessor.ActiveMode = (MonitorMode)selectedIndex;
+                System.Diagnostics.Debug.WriteLine($"[MainPage] Adding Metric: {(MonitorMode)selectedIndex}");
+
+                _metrics.Clear();
+                _metrics.Add((MonitorMode)selectedIndex);
+                _dataProcessor.setMetrics(_metrics);
 
                 // Feedback visivo opzionale
                 //StatusLabel.Text = $"Monitoring: {picker.Items[selectedIndex]}";
-                switch (_dataProcessor.ActiveMode)
+                switch ((MonitorMode)selectedIndex)
                 {
                     case MonitorMode.EdgeAngle: 
                         EdgeAngleDisplay.IsVisible = true;
@@ -265,6 +274,11 @@ namespace SkiTelemetry_Analyst
                         break;
                 }
             }
+        }
+
+        private async void OnHistoryClicked(object? sender, EventArgs e)
+        {
+            await Shell.Current.GoToAsync("RunsListPage");
         }
 
         private async void OnSettingsClicked(object? sender, EventArgs e)

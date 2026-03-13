@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="SkiTelemetry_Analyst.MainPage"
+             x:Class="SkiTelemetry_Analyst.Views.MainPage"
              Shell.NavBarIsVisible="True"
              Title="">
 
@@ -17,9 +17,9 @@
             HeightRequest="60" />
             </VerticalStackLayout>
 
-            <VerticalStackLayout x:Name="ActiveView" Spacing="20" IsVisible="False">
+            <VerticalStackLayout x:Name="ActiveView" IsVisible="False">
 
-                <VerticalStackLayout Spacing="15" Padding="20" VerticalOptions="Center">
+                <VerticalStackLayout Spacing="15" VerticalOptions="Center">
                     <Label x:Name="StatusLabel" Text="Stato: pronto per la sessione" HorizontalOptions="Center" />
                     <Button x:Name="BtnScan"
                             
@@ -28,7 +28,7 @@
                             BackgroundColor="DeepSkyBlue" HeightRequest="60" /> 
                 </VerticalStackLayout>
 
-                <VerticalStackLayout x:Name="DataContainer" IsVisible="False" Spacing="10" Padding="20">
+                <VerticalStackLayout x:Name="DataContainer" IsVisible="False" Spacing="10" >
                     <Picker x:Name="ModePicker" 
                         SelectedIndexChanged="OnModeChanged"
                         Title="Seleziona cosa monitorare">
@@ -147,18 +147,27 @@
                             </VerticalStackLayout>
                         </Grid>
                     </VerticalStackLayout>
-
+                    
                     <Button x:Name="BtnStop" 
                         Text="STOP SESSIONE" 
                         Clicked="OnStopClicked" 
                         BackgroundColor="Red" 
                         TextColor="White"
-                        HeightRequest="50"
+                        HeightRequest="60"
                         Margin="0,30,0,0" />
                 </VerticalStackLayout>
 
             </VerticalStackLayout>
+            <VerticalStackLayout x:Name="BtnHistoryContainer" VerticalOptions="Center">
 
+                <Button x:Name="BtnHistory"
+        
+                    Text="VISUALIZZA SESSIONI"
+                    Clicked="OnHistoryClicked"
+                    BackgroundColor="DarkMagenta" HeightRequest="60" 
+                        TextColor="White"/>
+
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 

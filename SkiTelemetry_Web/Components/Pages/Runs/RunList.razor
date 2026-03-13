@@ -36,7 +36,7 @@
                     <tr>
                         <td>@run.UploadDate.ToShortDateString()</td>
                         <td>@run.FileName</td>
-                        <td>@run.Athlete.FirstName @run.Athlete.LastName</td>
+                        <td>@(run.Athlete == null ? "" : run.Athlete.FirstName) @run.Athlete == null ? "" : run.Athlete.LastName</td>
                         <td>
                             <button class="btn btn-sm btn-primary" @onclick="() => GoToDetail(run.Id)">
                                 Analizza

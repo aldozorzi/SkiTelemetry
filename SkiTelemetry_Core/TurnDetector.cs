@@ -84,6 +84,7 @@
 
             if (RequestedMetrics.Contains(MonitorMode.EdgeAngle))
             {
+                
                 double? result = GetTurnAngle(left, right);
                 if (result.HasValue)
                 {

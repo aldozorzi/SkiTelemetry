@@ -32,10 +32,10 @@ public class RunService
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "DataStorage", "Runs", run.FileName);
         if (!File.Exists(filePath)) return (run, new List<SkiDataPoint>());
 
-        var telemetry = new List<SkiDataPoint>();
+        var telemetry = RunParser.ParseBinFile(filePath);
 
         // Leggiamo il file binario
-        using (var stream = File.OpenRead(filePath))
+        /*using (var stream = File.OpenRead(filePath))
         using (var reader = new BinaryReader(stream))
         {
             while (stream.Position < stream.Length)
@@ -63,7 +63,7 @@ public class RunService
                 };
                 telemetry.Add(data);
             }
-        }
+        }*/
 
         return (run, telemetry);
     }
