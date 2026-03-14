@@ -1,0 +1,17 @@
+1. Database (Neon)
+Avrai bisogno di tre tabelle principali:
+
+Users: ID, Email, Password (hash), Ruolo (Athlete / Coach).
+
+Relationships: CoachId, AthleteId, Status (PENDING, ACCEPTED).
+
+Files: Id, UserId (proprietario), S3Key (il percorso su R2), FileName.
+
+2. Sicurezza & File (Cloudflare R2)
+Il server Node.js su Vercel non riceve mai il file.
+
+Quando l'utente preme "Upload", l'API genera un Pre-signed URL di Cloudflare.
+
+Il browser carica il file direttamente su Cloudflare usando quel link.
+
+Vantaggio: Il tuo server Vercel resta leggerissimo e non superi mai i limiti di memoria.
