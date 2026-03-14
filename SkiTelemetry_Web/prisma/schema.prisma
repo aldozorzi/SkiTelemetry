@@ -1,0 +1,67 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ATHLETE
+  COACH
+}
+
+enum Status {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+  refreshTokens RefreshToken[]
+  
+  runs      Run[]
+
+  // Relazioni dirette e parlanti
+  coaching     CoachAthlete[] @relation("CoachSide")
+  coaches  CoachAthlete[] @relation("AthleteSide")
+}
+
+model CoachAthlete {
+  id           String   @id @default(uuid())
+  status       Status   @default(PENDING)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  coachId      String
+  coach        User     @relation("CoachSide", fields: [coachId], references: [id], onDelete: Cascade)
+  
+  athleteId    String
+  athlete      User     @relation("AthleteSide", fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@unique([coachId, athleteId]) 
+}
+
+model Run {
+  id        String   @id @default(uuid())
+  fileName  String
+  s3Key     String   
+  createdAt DateTime @default(now())
+  
+  userId    String
+  owner     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
