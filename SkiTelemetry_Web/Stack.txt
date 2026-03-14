@@ -1,5 +1,0 @@
-Componente,Tecnologia,Fornitore,Perché?
-Backend API,Node.js (Fastify o Express),Vercel,"Esecuzione istantanea, deploy automatico da GitHub, piano Hobby gratuito per sempre."
-Database,PostgreSQL,Neon.tech,Serverless Postgres che scala a zero. 500MB di spazio e ottima gestione delle connessioni (pooling).
-Object Storage,S3-Compatible,Cloudflare R2,"10GB gratuiti, zero costi di download (egress fees), ideale per i file binari."
-ORM / DB Tools,Prisma o Drizzle,-,"Ti permettono di definire le tabelle (Atleta, Allenatore) in modo visuale e sicuro."
