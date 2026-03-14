@@ -35,6 +35,9 @@ public class TelemetryLogger : IDisposable
     private void WritePoint(SkiDataPoint p)
     {
         if (_writer == null) return;
+
+        System.Diagnostics.Debug.WriteLine($"[LOGGER] Logging point: {p}");
+
         _writer.Write((uint)p.Timestamp); // 4 byte
         _writer.Write((byte)p.Side);      // 1 byte
         _writer.Write((float)p.AccX);     // 4 byte
@@ -43,7 +46,6 @@ public class TelemetryLogger : IDisposable
         _writer.Write((float)p.GyroX);    // 4 byte
         _writer.Write((float)p.GyroY);    // 4 byte
         _writer.Write((float)p.GyroZ);    // 4 byte
-        //_writer.Write((float)p.rawRoll);  // 4 byte
     }
 
     public void StopLogging()

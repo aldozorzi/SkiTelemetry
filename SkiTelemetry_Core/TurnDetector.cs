@@ -185,6 +185,7 @@
            if (!_isCurrentlyTurning &&  _wasTurningBefore)
             {    
                 double result = _maxRollInCurrentTurn;
+                System.Diagnostics.Debug.WriteLine($"[DETECTOR] EDGE ANGLE: {result:F1}°");
                 return result;
             }
 

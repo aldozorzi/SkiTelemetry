@@ -20,13 +20,14 @@ try
     using (var writer = new StreamWriter(outputPath))
     {
         // Intestazione CSV (usiamo il punto e virgola per Excel italiano)
-        writer.WriteLine("Timestamp;Side;AccX;AccY;AccZ;GyroX;GyroY;GyroZ;RawRoll");
+        writer.WriteLine("Timestamp;Side;AccX;AccY;AccZ;GyroX;GyroY;GyroZ");
 
         int recordCount = 0;
         long fileLength = reader.BaseStream.Length;
 
         while (reader.BaseStream.Position < fileLength)
         {
+            if (reader.BaseStream.Length - reader.BaseStream.Position < 29) break;
             // Leggiamo i dati rispettando l'ordine di scrittura del TelemetryLogger
             uint ts = reader.ReadUInt32();
             byte side = reader.ReadByte();
@@ -36,7 +37,6 @@ try
             float gx = reader.ReadSingle();
             float gy = reader.ReadSingle();
             float gz = reader.ReadSingle();
-            //float roll = reader.ReadSingle();
 
             // Formattiamo i float con la virgola o il punto in base alla cultura 
             // ma forziamo l'invariante per non avere problemi con i software di analisi

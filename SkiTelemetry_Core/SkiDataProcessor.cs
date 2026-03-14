@@ -1,5 +1,4 @@
-﻿using SkiTelemetry_Core;
-namespace SkiTelemetry_Analyst
+﻿namespace SkiTelemetry_Core
 {
     [System.Runtime.Versioning.SupportedOSPlatform("ios15.0")]
     [System.Runtime.Versioning.SupportedOSPlatform("maccatalyst15.0")]
@@ -17,7 +16,7 @@ namespace SkiTelemetry_Analyst
         private SkiDataPoint? _rightDataPoint;
         private SkiDataPoint? _leftDataPoint;
 
-        private readonly TelemetryLogger _logger = new();
+        
 
         public SkiDataProcessor()
         {
@@ -32,13 +31,11 @@ namespace SkiTelemetry_Analyst
 
             if (point.Side == SensorSide.Left)
             {
-                _leftDataPoint = point;
-                if (_logger.isLogging) _logger.LogData(_leftDataPoint);
+                _leftDataPoint = point; 
             }
             else if (point.Side == SensorSide.Right)
             {
                 _rightDataPoint = point;
-                if (_logger.isLogging) _logger.LogData(_rightDataPoint);
             }
 
             // 2. Controllo: se manca uno dei due, esci con null (SENZA RESETTARE)
@@ -70,12 +67,7 @@ namespace SkiTelemetry_Analyst
             OnNewTurn?.Invoke(this, turn);
         }
 
-        public void StartLogging(){ 
-            _logger.StartLogging(); 
-        }
-        public void StopLogging(){ 
-            _logger.StopLogging(); 
-        } 
+        
 
         private void ApplySmoothing(SkiDataPoint point)
         {
@@ -93,9 +85,6 @@ namespace SkiTelemetry_Analyst
         }
 
 
-        public void StopAll()
-        {
-            if(_logger.isLogging) _logger.StopLogging();
-        }
+       
     }
 }

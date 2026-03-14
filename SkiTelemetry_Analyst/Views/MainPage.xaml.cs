@@ -13,6 +13,7 @@ namespace SkiTelemetry_Analyst.Views
         private readonly SkiDataProcessor _dataProcessor = new();
         private bool _isSessionActive = false;
         private HashSet<MonitorMode> _metrics = new();
+        private readonly TelemetryLogger _logger = new();
 
         public MainPage()
         {
@@ -75,6 +76,7 @@ namespace SkiTelemetry_Analyst.Views
 
         private void OnTelemetryReceived(object? sender, SkiDataPoint rawPoint)
         {
+            if (_logger.isLogging) _logger.LogData(rawPoint);
             _dataProcessor.Process(rawPoint);
             // [RIGHT SENSOR] Forcing per test
             var rightDataPoint = new SkiDataPoint
@@ -88,8 +90,16 @@ namespace SkiTelemetry_Analyst.Views
                 GyroY = rawPoint.GyroY,
                 GyroZ = rawPoint.GyroZ
             };
+            if (_logger.isLogging) _logger.LogData(rightDataPoint);
             _dataProcessor.Process(rightDataPoint);
+            
             // [RIGHT SENSOR] fine right sensor test
+
+
+            
+            
+
+
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 if (DebugDataDisplay.IsVisible)
@@ -178,7 +188,7 @@ namespace SkiTelemetry_Analyst.Views
                 bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
                 if (isSettingsLoggingEnabled)
                 {
-                    _dataProcessor.StartLogging();
+                    StartLogging();
                 }
             });
         }
@@ -186,15 +196,12 @@ namespace SkiTelemetry_Analyst.Views
         {
             _isSessionActive = false;
             System.Diagnostics.Debug.WriteLine("OnStopClicked");
-            _dataProcessor.StopLogging();
+            StopLogging();
             // 2. Reset dell'interfaccia
             DataContainer.IsVisible = false;
             BtnScan.IsVisible = true;
             BtnScan.IsEnabled = true;
             BtnHistoryContainer.IsVisible = true;
-
-            // Stop eventuali routine di SkiDataProcessor
-            _dataProcessor.StopAll();
 
             // 3. Reset dello stato
             StatusLabel.Text = "Disconnessione in corso...";
@@ -293,6 +300,15 @@ namespace SkiTelemetry_Analyst.Views
 
             // Chiamiamo il metodo che controlla se ci sono sensori salvati
             CheckConfiguration();
+        }
+
+        public void StartLogging()
+        {
+            _logger.StartLogging();
+        }
+        public void StopLogging()
+        {
+            _logger.StopLogging();
         }
     }
 }
