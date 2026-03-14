@@ -2,5 +2,4 @@
   <Project Path="SkiTelemetry_Analyst/SkiTelemetry_Analyst.csproj" />
   <Project Path="SkiTelemetry_Core/SkiTelemetry_Core.csproj" Id="2ad41c65-b265-4a64-a159-8659ac3d025b" />
   <Project Path="SkiTelemetry_LogConverter/SkiTelemetry_LogConverter.csproj" Id="c2eb69d1-1727-44ab-8547-f67d57bafdb8" />
-  <Project Path="SkiTelemetry_Web/SkiTelemetry_Web.csproj" Id="e3b094d8-1661-45f5-8994-07c4b10cee0c" />
 </Solution>
