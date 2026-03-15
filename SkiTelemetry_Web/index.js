@@ -6,7 +6,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const authenticateToken = require('./middleware/auth');
 const app = express();
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, PutObjectCommand,GetObjectCommand,DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const crypto = require('crypto');
 
@@ -18,6 +18,7 @@ const s3 = new S3Client({
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
+  forcePathStyle: true,
 });
 
 // --- FUNZIONE DI UTILITY (da mettere sopra le rotte) ---
@@ -33,11 +34,19 @@ async function generateAndSaveTokens(user) {
   const refreshToken = crypto.randomBytes(64).toString('hex');
 
   // 3. Salvataggio su DB
-  await prisma.refreshToken.create({
-    data: {
+
+  await prisma.refreshToken.upsert({
+    where: {
+      userId: user.id, 
+    },
+    update: {
       token: refreshToken,
-      userId: user.id
-    }
+      createdAt: new Date(), // Aggiorniamo anche la data per sapere quando è stato emesso l'ultimo
+    },
+    create: {
+      token: refreshToken,
+      userId: user.id,
+    },
   });
 
   return { accessToken, refreshToken };
@@ -58,7 +67,7 @@ app.get('/', (req, res) => {
 //  rotta di registrazione
 app.post('/api/auth/signup', async (req, res) => {
   // 1. Controllo se il body esiste e se ha i campi necessari
-  const { email, password, role } = req.body || {};
+  const { email, password, role, firstName, lastName } = req.body || {};
 
   if (!email || !password || !role) {
     return res.status(400).json({ 
@@ -75,7 +84,7 @@ app.post('/api/auth/signup', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, role },
+      data: { email, password: hashedPassword, role, firstName, lastName },
     });
 
     // AUTO-LOGIN: Generiamo i token subito
@@ -85,7 +94,7 @@ app.post('/api/auth/signup', async (req, res) => {
       message: "User created and logged in", 
       accessToken, 
       refreshToken,
-      user: { id: user.id, role: user.role, email: user.email }
+      user: { id: user.id, role: user.role, email: user.email, firstName: user.firstName, lastName:user.lastName }
     });
   } catch (error) {
     if (error.code === 'P2002') {
@@ -131,7 +140,7 @@ app.post('/api/auth/login', async (req, res) => {
       message: "Login successful",
       accessToken,
       refreshToken,
-      user: { id: user.id, role: user.role, email: user.email }
+      user: { id: user.id, role: user.role, email: user.email, firstName: user.firstName, lastName:user.lastName }
     });
 
   } catch (error) {
@@ -234,11 +243,26 @@ app.post('/api/run/save', authenticateToken, async (req, res) => {
     res.status(201).json({ message: "Run saved successfully", run: newRun });
   } catch (error) {
     console.error(error);
+    try {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: s3Key,
+      });
+      
+      await s3.send(deleteCommand);
+      console.log(`Successfully deleted orphaned file from R2: ${s3Key}`);
+    } catch (s3Error) {
+      // Se fallisce anche l'eliminazione, logghiamo l'errore critico
+      console.error("CRITICAL: Failed to delete orphaned file from R2:", s3Error);
+    }
     res.status(500).json({ error: "Failed to save run to database" });
   }
 });
 
 app.get('/api/run/mine', authenticateToken, async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
   try {
     const runs = await prisma.run.findMany({
       where: {
@@ -253,13 +277,388 @@ app.get('/api/run/mine', authenticateToken, async (req, res) => {
         fileName: true,
         s3Key: true,
         createdAt: true,
-      }
+      },
+      take: limit, // Prendi solo X record
+      skip: skip,  // Salta i precedenti
     });
 
-    res.json(runs);
+    const totalRuns = await prisma.run.count({
+      where: { userId: req.user.userId }
+    });
+
+    res.json({
+      metadata: {
+        total: totalRuns,
+        page: page,
+        totalPages: Math.ceil(totalRuns / limit)
+      },
+      runs: runs
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Errore nel recupero delle tue sciate" });
+  }
+});
+app.post('/api/run/get-download-url', authenticateToken, async (req, res) => {
+  const { s3Key } = req.body; // Passiamo lo s3Key che abbiamo salvato nel DB
+
+  if (!s3Key) return res.status(400).json({ error: "s3Key is required" });
+
+  try {
+    // 1. (Opzionale ma consigliato) Controllo extra: 
+    // Se l'utente non è il proprietario E non è il coach dell'atleta, blocca tutto.
+    // Per ora facciamo la logica base, ma sappi che qui va il "lucchetto".
+
+    const command = new GetObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: s3Key,
+    });
+
+    // Genera l'URL per il download (scadenza 1 ora)
+    const downloadUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+
+    res.json({ downloadUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Could not generate download URL" });
+  }
+});
+app.post('/api/coach/invite-athlete', authenticateToken, async (req, res) => {
+  const { athleteId } = req.body;
+  const coachId = req.user.userId; // Preso dal token JWT
+  const coachRole = req.user.role;
+
+  // 1. Controllo permessi: solo i Coach possono invitare
+  if (coachRole !== 'COACH') {
+    return res.status(403).json({ error: "Only coaches can invite athletes." });
+  }
+
+  if (!athleteId) {
+    return res.status(400).json({ error: "Missing Param." });
+  }
+
+  try {
+    // 2. Cerchiamo l'atleta nel database tramite email
+    const athlete = await prisma.user.findUnique({
+      where: { id: athleteId}
+    });
+
+    if (!athlete) {
+      return res.status(404).json({ error: "Athlete not found." });
+    }
+    if (athleteId === coachId) {
+      return res.status(400).json({ error: "You cannot invite yourself." });
+    }
+
+    // 3. Creazione del collegamento (Invito)
+    // Usiamo connectOrCreate o un semplice create gestendo l'errore di duplicato
+    const invitation = await prisma.coachAthlete.create({
+      data: {
+        coachId: coachId,
+        athleteId: athlete.id,
+        invitedBy: coachId,
+        status: "PENDING" // L'atleta dovrà poi accettare (opzionale)
+      }
+    });
+
+    res.status(201).json({ 
+      message: "Invito inviato con successo!", 
+      athleteName: `${athlete.firstName} ${athlete.lastName}` 
+    });
+
+  } catch (error) {
+    // Gestione errore record duplicato (se il coach lo ha già invitato)
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: "Athlete already invited." });
+    }
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+});
+app.get('/api/coach/list-athletes', authenticateToken, async (req, res) => {
+  const coachId = req.user.userId;
+  const coachRole = req.user.role;
+
+  // Sicurezza: solo i coach possono vedere questa lista
+  if (coachRole !== 'COACH') {
+    return res.status(403).json({ error: "Only coaches can access this list." });
+  }
+
+  try {
+    const invitations = await prisma.coachAthlete.findMany({
+      where: {
+        coachId: coachId,
+        // Qui mostriamo tutto: PENDING, ACCEPTED, REJECTED
+      },
+      include: {
+        athlete: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Formattiamo per il frontend
+    const formatted = invitations.map(inv => ({
+      invitationId: inv.id,
+      invitationStatus: inv.status,
+      athleteId: inv.athlete.id,
+      athleteName: `${inv.athlete.firstName} ${inv.athlete.lastName}`,
+      athleteEmail: inv.athlete.email,
+      date: inv.createdAt
+    }));
+
+    res.json(formatted);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+});
+app.get('/api/coach/athletes-runs', authenticateToken, async (req, res) => {
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  const coachId = req.user.userId;
+  const coachRole = req.user.role;
+
+  if (coachRole !== 'COACH') {
+    return res.status(403).json({ error: "Access denied. Only coaches can view athletes' runs." });
+  }
+
+  try {
+    // 1. Troviamo gli ID di tutti gli atleti che hanno accettato questo coach
+    const acceptedConnections = await prisma.coachAthlete.findMany({
+      where: {
+        coachId: coachId,
+        status: 'ACCEPTED'
+      },
+      select: { athleteId: true }
+    });
+
+    const athleteIds = acceptedConnections.map(c => c.athleteId);
+
+    if (athleteIds.length === 0) {
+      return res.json([]); // Nessun atleta connesso, nessuna run da mostrare
+    }
+
+    // 2. Recuperiamo le run di quegli atleti
+    const runs = await prisma.run.findMany({
+      where: {
+        userId: { in: athleteIds }
+      },
+      include: {
+        owner: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: limit, // Prendi solo X record
+      skip: skip,  // Salta i precedenti
+    });
+
+    const totalRuns = await prisma.run.count({
+      where: { userId: { in: athleteIds } }
+    });
+
+    // 3. Formattiamo per il frontend
+    const formattedRuns = runs.map(run => ({
+      runId: run.id,
+      fileName: run.fileName,
+      s3Key: run.s3Key,
+      createdAt: run.createdAt,
+      athleteId: run.userId,
+      athleteName: `${run.owner.firstName} ${run.owner.lastName}`,
+      athleteEmail: run.owner.email
+    }));
+
+    res.json({
+      metadata: {
+        total: totalRuns,
+        page: page,
+        totalPages: Math.ceil(totalRuns / limit)
+      },
+      runs: formattedRuns
+    });
+
+  } catch (error) {
+    console.error("Error fetching athletes' runs:", error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+});
+app.put('/api/athlete/accept-coach', authenticateToken, async (req, res) => {
+  const { invitationId } = req.body;
+  if (!invitationId) {
+    return res.status(400).json({ error: "Missing Param." });
+  }
+  const athleteId = req.user.userId;
+
+  try {
+    // Cerchiamo l'invito specifico tra questo coach e questo atleta
+    const invitation = await prisma.coachAthlete.findUnique({
+      where: { id: invitationId }
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ error: "Invitation not found." });
+    }
+    if (invitation.athleteId !== athleteId) {
+      return res.status(403).json({ error: "You are not authorized to accept this invitation." });
+    }
+    if (invitation.status == 'ACCEPTED') {
+      return res.status(400).json({ error: "Invitation already accepted." });
+    }
+    if (invitation.invitedBy === req.user.userId) {
+      return res.status(403).json({ error: "You cannot accept your own invitation." });
+    }
+
+    // Aggiorniamo lo stato
+    const updatedInvitation = await prisma.coachAthlete.update({
+      where: {
+        id: invitationId
+      },
+      data: {
+        status: 'ACCEPTED'
+      }
+    });
+
+    res.json({ message: "Invitation accepted!", status: updatedInvitation.status });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+});
+app.put('/api/athlete/reject-coach', authenticateToken, async (req, res) => {
+  const { invitationId } = req.body;
+  if (!invitationId) {
+    return res.status(400).json({ error: "Missing Param." });
+  }
+  const athleteId = req.user.userId;
+
+  try {
+    // Cerchiamo l'invito specifico tra questo coach e questo atleta
+    const invitation = await prisma.coachAthlete.findUnique({
+      where: { id: invitationId }
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ error: "Invitation not found." });
+    }
+    if (invitation.athleteId !== athleteId) {
+      return res.status(403).json({ error: "You are not authorized to reject this invitation." });
+    }
+    if (invitation.status == 'REJECTED') {
+      return res.status(400).json({ error: "Invitation already rejected." });
+    }
+    if (invitation.invitedBy === req.user.userId) {
+      return res.status(403).json({ error: "You cannot reject your own invitation." });
+    }
+
+    // Aggiorniamo lo stato
+    const updatedInvitation = await prisma.coachAthlete.update({
+      where: {
+        id: invitationId
+      },
+      data: {
+        status: 'REJECTED'
+      }
+    });
+
+    res.json({ message: "Invitation rejected!", status: updatedInvitation.status });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+});
+app.get('/api/athlete/list-coaches', authenticateToken, async (req, res) => {
+  const athleteId = req.user.userId;
+
+  try {
+    const pendingInvitations = await prisma.coachAthlete.findMany({
+      where: {
+        athleteId: athleteId,
+        // Sicurezza extra: l'invito NON deve essere stato creato dall'atleta stesso
+        invitedBy: { not: athleteId } 
+      },
+      include: {
+        coach: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    // Formattiamo la risposta per renderla facile da leggere per il frontend MAUI
+    const formattedInvitations = pendingInvitations.map(inv => ({
+      invitationId: inv.id,
+      invitationStatus: inv.status,
+      coachId: inv.coach.id,
+      coachName: `${inv.coach.firstName} ${inv.coach.lastName}`,
+      coachEmail: inv.coach.email,
+      date: inv.createdAt
+    }));
+
+    res.json(formattedInvitations);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+});
+app.delete('/api/connection/delete', authenticateToken, async (req, res) => {
+  const { invitationId } = req.body;
+  const userId = req.user.userId;
+
+  if (!invitationId) {
+    return res.status(400).json({ error: "Missing param." });
+  }
+
+  try {
+    // 1. Recuperiamo l'invito
+    const invitation = await prisma.coachAthlete.findUnique({
+      where: { id: invitationId }
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ error: "Connection not found." });
+    }
+
+    // 2. Controllo Sicurezza: 
+    if (invitation.invitedBy !== userId) {
+      return res.status(403).json({ error: "Unauthorized to delete this connection." });
+    }
+
+    // 3. Cancellazione fisica
+    await prisma.coachAthlete.delete({
+      where: { id: invitationId }
+    });
+
+    res.json({ message: "Connection removed successfully." });
+
+  } catch (error) {
+    console.error("Delete Connection Error:", error);
+    res.status(500).json({ error: "Internal Server Error." });
   }
 });
 
