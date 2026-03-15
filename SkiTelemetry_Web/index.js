@@ -269,7 +269,7 @@ app.get('/api/run/mine', authenticateToken, async (req, res) => {
         userId: req.user.userId, // Filtriamo per l'utente loggato
       },
       orderBy: {
-        createdAt: 'desc', // Ordine decrescente (la più recente per prima)
+        fileName: 'desc', // Ordine decrescente (la più recente per prima)
       },
       // Opzionale: possiamo scegliere quali campi restituire
       select: {
@@ -466,7 +466,7 @@ app.get('/api/coach/athletes-runs', authenticateToken, async (req, res) => {
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        fileName: 'desc'
       },
       take: limit, // Prendi solo X record
       skip: skip,  // Salta i precedenti
