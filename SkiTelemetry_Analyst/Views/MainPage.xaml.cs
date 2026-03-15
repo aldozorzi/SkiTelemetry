@@ -30,10 +30,9 @@ namespace SkiTelemetry_Analyst.Views
 
         private void CheckConfiguration()
         {
-            bool hasLeft = Preferences.Default.ContainsKey("LeftSensorId");
-            bool hasRight = Preferences.Default.ContainsKey("RightSensorId");
+            bool hasSensor = Preferences.Default.ContainsKey("SensorKey");
 
-            if (hasLeft /*&& hasRight*/) //[RIGHT SENSOR]
+            if (hasSensor)
             {
                 // Both sensors are paired: show the session UI
                 ConfigView.IsVisible = false;
@@ -56,7 +55,7 @@ namespace SkiTelemetry_Analyst.Views
 
             // 1. Tenta il pairing e la connessione reale
             // Il metodo nel Service deve restituire true solo se ConnectToDeviceAsync ha successo
-            bool paired = await _bleService.PairBothDevicesAsync();
+            bool paired = await _bleService.PairDevicesAsync();
 
             if (paired)
             {
@@ -78,20 +77,6 @@ namespace SkiTelemetry_Analyst.Views
         {
             if (_logger.isLogging) _logger.LogData(rawPoint);
             _dataProcessor.Process(rawPoint);
-            // [RIGHT SENSOR] Forcing per test
-            var rightDataPoint = new SkiDataPoint
-            {
-                Side = SensorSide.Right,
-                Timestamp = rawPoint.Timestamp+1,
-                AccX = rawPoint.AccX,
-                AccY = rawPoint.AccY,
-                AccZ = rawPoint.AccZ,
-                GyroX = rawPoint.GyroX,
-                GyroY = rawPoint.GyroY,
-                GyroZ = rawPoint.GyroZ
-            };
-            if (_logger.isLogging) _logger.LogData(rightDataPoint);
-            _dataProcessor.Process(rightDataPoint);
             
             // [RIGHT SENSOR] fine right sensor test
 
@@ -159,7 +144,7 @@ namespace SkiTelemetry_Analyst.Views
             BtnPair.IsEnabled = false;
 
             // Chiamiamo il NUOVO metodo unico che abbiamo scritto nel Service
-            bool success = await _bleService.PairBothDevicesAsync();
+            bool success = await _bleService.PairDevicesAsync();
 
             if (success)
             {

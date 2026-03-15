@@ -36,7 +36,7 @@ public class TelemetryLogger : IDisposable
     {
         if (_writer == null) return;
 
-        System.Diagnostics.Debug.WriteLine($"[LOGGER] Logging point: {p}");
+        //System.Diagnostics.Debug.WriteLine($"[LOGGER] Logging point: {p}");
 
         _writer.Write((uint)p.Timestamp); // 4 byte
         _writer.Write((byte)p.Side);      // 1 byte

@@ -19,8 +19,7 @@ namespace SkiTelemetry_Analyst
         private readonly IAdapter _adapter;
 
         // Chiavi per salvare gli ID permanentemente
-        private const string LeftSensorKey = "LeftSensorId";
-        private const string RightSensorKey = "RightSensorId";
+        private const string SensorKey = "MainSensorId";
 
         // UUID del Servizio (puoi inventarli, ma questi sono un buon punto di partenza)
         public static readonly Guid SkiServiceId = Guid.Parse("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
@@ -29,20 +28,16 @@ namespace SkiTelemetry_Analyst
         public static readonly Guid TelemetryCharacteristicId = Guid.Parse("beb5483e-36e1-4688-b7f5-ea07361b26a8");
 
         // Lista dei sensori connessi (Sinistro e Destro)
-        public List<IDevice> ConnectedDevices { get; } = new();
 
         public event EventHandler<SkiDataPoint>? DataReceived;
 
         // Questo dizionario tiene traccia dei sensori connessi per lato
-        public Dictionary<SensorSide, IDevice> ConnectedSensors { get; } = new Dictionary<SensorSide, IDevice>();
+        public IDevice? ConnectedSensor { get; set; }
 
         public BluetoothService()
         {
             _ble = CrossBluetoothLE.Current;
             _adapter = CrossBluetoothLE.Current.Adapter;
-
-            // Evento che scatta quando troviamo un sensore
-            // _adapter.DeviceDiscovered += OnDeviceDiscovered;
         }
 
         public async Task StartScanning()
@@ -52,147 +47,28 @@ namespace SkiTelemetry_Analyst
         }
 
         // Metodo per "accoppiare" un sensore specifico
-        public void PairSensor(IDevice device, SensorSide side)
+        public void PairSensor(IDevice device)
         {
-            string key = (side == SensorSide.Left) ? LeftSensorKey : RightSensorKey;
+            string key = SensorKey;
             Preferences.Default.Set(key, device.Id.ToString());
         }
 
-        // Verifica se un dispositivo è quello salvato
-        private bool IsMySensor(IDevice device, SensorSide side)
-        {
-            string key = (side == SensorSide.Left) ? LeftSensorKey : RightSensorKey;
-            string savedId = Preferences.Default.Get(key, string.Empty);
-
-            return !string.IsNullOrEmpty(savedId) && device.Id.ToString() == savedId;
-        }
-
-        private async void OnDeviceDiscovered(object? sender, Plugin.BLE.Abstractions.EventArgs.DeviceEventArgs e)
-        {
-            var device = e.Device;
-            if (string.IsNullOrEmpty(device.Name)) return;
-
-            // Se è il MIO sensore sinistro
-            if (IsMySensor(device, SensorSide.Left))
-            {
-                await ConnectToSensor(device, SensorSide.Left);
-            }
-            // Se è il MIO sensore destro
-            else if (IsMySensor(device, SensorSide.Right))
-            {
-                await ConnectToSensor(device, SensorSide.Right);
-            }
-            // Opzionale: Se non sono accoppiati ma si chiamano SKI_L/R, 
-            // potresti mostrarli in una lista per fare il primo pairing
-        }
-
-        private async Task ConnectToSensor(IDevice device, SensorSide side)
-        {
-            try
-            {
-                await _adapter.ConnectToDeviceAsync(device);
-                ConnectedSensors[side] = device;
-
-                // ECCOLO QUI: Chiamiamo finalmente il metodo che attiva i dati
-                await SetupDataStreaming(device, side);
-
-                System.Diagnostics.Debug.WriteLine($"Sincronizzato con sensore {side}");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Errore connessione {side}: {ex.Message}");
-            }
-        }
-
-        private async Task SetupDataStreaming(IDevice device, SensorSide side)
-        {
-            try
-            {
-                var service = await device.GetServiceAsync(SkiServiceId);
-                if (service == null) return;
-
-                var characteristic = await service.GetCharacteristicAsync(TelemetryCharacteristicId);
-                if (characteristic != null)
-                {
-                    // 1. IMPORTANTE: Rimuoviamo il metodo se era già registrato 
-                    // per evitare che lo stesso dato venga processato due volte
-                    characteristic.ValueUpdated -= OnCharacteristicValueChanged;
-
-                    // 2. Registriamo il metodo
-                    characteristic.ValueUpdated += OnCharacteristicValueChanged;
-
-                    // 3. Diciamo all'ESP32 di iniziare a inviare
-                    await characteristic.StartUpdatesAsync();
-
-                    System.Diagnostics.Debug.WriteLine($"[BLE] Sottoscrizione attiva per {side}");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[BLE] Errore attivazione streaming: {ex.Message}");
-            }
-        }
-
-        private void OnCharacteristicValueChanged(object? sender, Plugin.BLE.Abstractions.EventArgs.CharacteristicUpdatedEventArgs e)
-        {
-            var rawBytes = e.Characteristic.Value;
-            if (rawBytes == null || rawBytes.Length < 28) return;
-
-            var point = DecodePayload(rawBytes);
-            // Cerchiamo nel dizionario quale lato corrisponde al dispositivo che ha inviato il dato
-            var deviceId = e.Characteristic.Service.Device.Id;
-            var sensorEntry = ConnectedSensors.FirstOrDefault(x => x.Value.Id == deviceId);
-            point.Side = sensorEntry.Key;
-
-
-            // Identifichiamo il lato in base al dispositivo che ha mandato il dato
-            // (Possiamo farlo verificando quale sensore nel dizionario ha questa caratteristica, 
-            // ma per ora manteniamo la logica semplice)
-            DataReceived?.Invoke(this, point);
-        }
-
-        private SkiDataPoint DecodePayload(byte[] data)
-        {
-            // Verifichiamo che il pacchetto sia della dimensione corretta
-            if (data.Length < 28) return new SkiDataPoint();
-
-            return new SkiDataPoint
-            {
-                // Ogni ToSingle legge 4 byte
-                AccX = BitConverter.ToSingle(data, 0),
-                AccY = BitConverter.ToSingle(data, 4),
-                AccZ = BitConverter.ToSingle(data, 8),
-                GyroX = BitConverter.ToSingle(data, 12),
-                GyroY = BitConverter.ToSingle(data, 16),
-                GyroZ = BitConverter.ToSingle(data, 20),
-                Timestamp = BitConverter.ToUInt32(data, 24)
-            };
-        }
-
-        public async Task<bool> PairBothDevicesAsync()
+        public async Task<bool> PairDevicesAsync()
         {
             if (_adapter.IsScanning) await _adapter.StopScanningForDevicesAsync();
 
             var tcs = new TaskCompletionSource<bool>();
-            var foundLeft = false;
-            var foundRight = false;
-            bool needRight = false; // Imposta a true se usi SKI_R
+            var foundSensor = false;
 
             EventHandler<DeviceEventArgs>? handler = null;
             handler = async (s, e) =>
             {
                 string name = e.Device.Name ?? "";
-                if (name == "SKI_L" && !foundLeft)
+                if (name == "MASTER" && !foundSensor)
                 {
-                    foundLeft = true;
-                    bool ok = await ConnectAndSetup(e.Device, SensorSide.Left,tcs);
-                    if (ok && (!needRight || foundRight)) tcs.TrySetResult(true);
-                }
-                else if (name == "SKI_R" && !foundRight)
-                {
-                    foundRight = true;
-                    bool ok = await ConnectAndSetup(e.Device, SensorSide.Right,tcs);
-                    if (ok && foundLeft) tcs.TrySetResult(true);
+                    foundSensor = true;
+                    bool ok = await ConnectAndSetup(e.Device, tcs);
+                    if (ok) tcs.TrySetResult(true);
                 }
             };
 
@@ -215,60 +91,73 @@ namespace SkiTelemetry_Analyst
             return tcs.Task.IsCompleted && tcs.Task.Result;
         }
 
-        private async Task<bool> ConnectAndSetup(IDevice device, SensorSide side, TaskCompletionSource<bool> tcs)
+        private async Task<bool> ConnectAndSetup(IDevice device, TaskCompletionSource<bool> tcs)
         {
             try
             {
                 await _adapter.ConnectToDeviceAsync(device);
-                
-                ConnectedSensors[side] = device;
-                Preferences.Default.Set(side == SensorSide.Left ? "LeftSensorId" : "RightSensorId", device.Id.ToString());
+                ConnectedSensor = device;
+                Preferences.Default.Set(SensorKey, device.Id.ToString());
                 var services = await device.GetServicesAsync();
-                var service = await device.GetServiceAsync(Guid.Parse("4fafc201-1fb5-459e-8fcc-c5c9c331914b"));
+                var service = await device.GetServiceAsync(SkiServiceId);
                 if (service == null)
                 {
-                    Debug.WriteLine($"[BLE] Errore: Servizio non trovato sul dispositivo {side}");
+                    Debug.WriteLine($"[BLE] Errore: Servizio non trovato sul dispositivo");
                     return false;
                 }
-                var characteristic = await service.GetCharacteristicAsync(Guid.Parse("beb5483e-36e1-4688-b7f5-ea07361b26a8"));
+                var characteristic = await service.GetCharacteristicAsync(TelemetryCharacteristicId);
                 if (characteristic == null)
                 {
-                    Debug.WriteLine($"[BLE] Errore: Caratteristica non trovata sul dispositivo {side}");
+                    Debug.WriteLine($"[BLE] Errore: Caratteristica non trovata sul dispositivo");
                     return false;
                 }
+                Debug.WriteLine($"[BLE] binding characteristic.ValueUpdated");
                 characteristic.ValueUpdated += (s, e) =>
                 {
-                    var rawBytes = e.Characteristic.Value;
+                   
+                    var data = e.Characteristic.Value;
 
-                    // Se il pacchetto è vuoto o troppo corto (meno di 28 byte), esci
-                    if (rawBytes == null || rawBytes.Length < 28) return;
+                    uint ts = BitConverter.ToUInt32(data, 0);
 
-                    // TRASFORMAZIONE DA BYTE A DATI TELEMETRICI
-                    var point = new SkiDataPoint
+                    // --- PIEDE SINISTRO (Offset 4) ---
+                    var leftPoint = new SkiDataPoint
                     {
-                        // Ogni float occupa 4 byte. Leggiamo in sequenza:
-                        AccX = BitConverter.ToSingle(rawBytes, 0),
-                        AccY = BitConverter.ToSingle(rawBytes, 4),
-                        AccZ = BitConverter.ToSingle(rawBytes, 8),
-                        GyroX = BitConverter.ToSingle(rawBytes, 12),
-                        GyroY = BitConverter.ToSingle(rawBytes, 16),
-                        GyroZ = BitConverter.ToSingle(rawBytes, 20),
-                        Timestamp = BitConverter.ToUInt32(rawBytes, 24),
-                        Side = side
+                        Timestamp = ts,
+                        Side = SensorSide.Left,
+                        AccX = BitConverter.ToSingle(data, 4),
+                        AccY = BitConverter.ToSingle(data, 8),
+                        AccZ = BitConverter.ToSingle(data, 12),
+                        GyroX = BitConverter.ToSingle(data, 16),
+                        GyroY = BitConverter.ToSingle(data, 20),
+                        GyroZ = BitConverter.ToSingle(data, 24)
                     };
 
-                    // SPARA IL DATO ALLA UI
-                    DataReceived?.Invoke(this, point);
+                    // --- PIEDE DESTRO (Offset 28) ---
+                    var rightPoint = new SkiDataPoint
+                    {
+                        Timestamp = ts,
+                        Side = SensorSide.Right,
+                        AccX = BitConverter.ToSingle(data, 28),
+                        AccY = BitConverter.ToSingle(data, 32),
+                        AccZ = BitConverter.ToSingle(data, 36),
+                        GyroX = BitConverter.ToSingle(data, 40),
+                        GyroY = BitConverter.ToSingle(data, 44),
+                        GyroZ = BitConverter.ToSingle(data, 48)
+                    };
+
+                    // Invia i punti uno dopo l'altro
+                    DataReceived?.Invoke(this, leftPoint);
+                    DataReceived?.Invoke(this, rightPoint);
                 };
 
                 await characteristic.StartUpdatesAsync();
                 tcs.TrySetResult(true);
-                Debug.WriteLine($"[BLE] {side} pronto.");
+                Debug.WriteLine($"[BLE] Sensore pronto.");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[BLE] Fallimento setup {side}: {ex.Message}");
+                Debug.WriteLine($"[BLE] Fallimento setup: {ex.Message}");
                 return false;
             }
         }
@@ -278,29 +167,23 @@ namespace SkiTelemetry_Analyst
             // 1. Stacchiamo subito l'evento per liberare la UI
             DataReceived = null;
 
-            // 2. Creiamo una copia della lista per evitare conflitti di iterazione
-            var devices = ConnectedSensors.Values.ToList();
-
-            foreach (var device in devices)
+            try
             {
-                try
+                if (ConnectedSensor != null)
                 {
-                    if (device != null)
-                    {
-                        Debug.WriteLine($"[BLE] Richiesta disconnessione adattatore...");
+                    Debug.WriteLine($"[BLE] Richiesta disconnessione adattatore...");
 
-                        // Usiamo il comando base dell'adattatore. 
-                        // NON cerchiamo servizi, NON fermiamo notifiche.
-                        await _adapter.DisconnectDeviceAsync(device);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[BLE] Errore: {ex.Message}");
+                    // Usiamo il comando base dell'adattatore. 
+                    // NON cerchiamo servizi, NON fermiamo notifiche.
+                    await _adapter.DisconnectDeviceAsync(ConnectedSensor);
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[BLE] Errore: {ex.Message}");
+            }
 
-            ConnectedSensors.Clear();
+            ConnectedSensor = null;
         }
     }
 }
