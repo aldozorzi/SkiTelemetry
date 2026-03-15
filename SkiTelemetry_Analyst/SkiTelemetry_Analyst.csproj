@@ -78,7 +78,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-	  <Compile Update="SettingsPage.xaml.cs">
+	  <Compile Update="Views\SettingsPage.xaml.cs">
 	    <DependentUpon>SettingsPage.xaml</DependentUpon>
 	  </Compile>
 	  <Compile Update="Views\Runs\RunDetailPage.xaml.cs">
@@ -87,7 +87,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiXaml Update="SettingsPage.xaml">
+	  <MauiXaml Update="Views\SettingsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\Runs\RunDetailPage.xaml">
