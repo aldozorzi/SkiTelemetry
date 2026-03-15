@@ -23,7 +23,7 @@ struct __attribute__((packed)) SkiDataCombo {
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
       deviceConnected = true;
-      Serial.println(">>> EVENTO: Smartphone connesso!");
+      Serial.println(">>> EVENTO: Smartphone connesso, inizio invio dati...");
     };
 
     void onDisconnect(BLEServer* pServer) {
@@ -89,8 +89,8 @@ void loop() {
     pCharacteristic->setValue((uint8_t*)&dataCombo, sizeof(SkiDataCombo));
     pCharacteristic->notify();
 
-    Serial.print("Dati inviati - TS: ");
-    Serial.println(currentMillis);
+    /*Serial.print("Dati inviati - TS: ");
+    Serial.println(currentMillis);*/
     
     delay(100); // 10Hz
   }

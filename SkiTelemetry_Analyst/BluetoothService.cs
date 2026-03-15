@@ -43,6 +43,7 @@ namespace SkiTelemetry_Analyst
         public async Task StartScanning()
         {
             if (!_ble.IsOn) return;
+            _adapter.ClearDeviceRegistries();
             await _adapter.StartScanningForDevicesAsync();
         }
 
@@ -172,9 +173,6 @@ namespace SkiTelemetry_Analyst
                 if (ConnectedSensor != null)
                 {
                     Debug.WriteLine($"[BLE] Richiesta disconnessione adattatore...");
-
-                    // Usiamo il comando base dell'adattatore. 
-                    // NON cerchiamo servizi, NON fermiamo notifiche.
                     await _adapter.DisconnectDeviceAsync(ConnectedSensor);
                 }
             }

@@ -1,0 +1,63 @@
+﻿
+---
+
+## 1. Hardware (I Dispositivi)
+
+* **Slave Sensor (Scarpone B):** M5StickC Plus2. Legge i dati IMU e trasmette in tempo reale.
+* **Master Logger (Scarpone A):** M5StickC Plus2 + **M5Stack SDHat**. Riceve dallo Slave, legge il proprio IMU e gestisce il salvataggio o il rilancio dei dati.
+* **Input Fisico:** Pulsante BLE esterno (es. Shelly BLU, Flic 2 o Shutter economico) fissato al bastoncino o al guanto.
+* **Interfaccia Utente:** Smartphone (nella giacca o a bordo pista) con l'app **.NET MAUI**.
+
+---
+
+## 2. Protocolli di Comunicazione (Il Mix Ibrido)
+
+L'intelligenza del sistema sta nello switch automatico dei protocolli:
+
+* **ESP-NOW (Slave → Master):** Comunicazione a bassissima latenza tra i due scarponi. È il "bus" dati principale che garantisce la sincronizzazione millesimale dei due sensori.
+* **BLE - Bluetooth Low Energy (Master ↔ Smartphone/Button):**
+* **Verso lo Smartphone:** Il Master agisce come *Server* per inviare il pacchetto dati unificato all'app MAUI.
+* **Verso il Pulsante:** Il Master agisce come *Client* (in modalità standalone) per ricevere il comando di Start/Stop.
+
+
+
+---
+
+## 3. Logica Operativa (Workflow)
+
+### Fase A: Discovery (Primi 30 secondi)
+
+All'accensione, i sensori cercano il Master; il Master cerca lo Smartphone o il Pulsante. Se non trovano nulla, entrano in risparmio energetico.
+
+### Fase B: Modalità di Lavoro
+
+1. **Modalità "Giacca" (Live Streaming):**
+* Lo Slave manda i dati al Master (ESP-NOW).
+* Il Master impacchetta tutto e lo manda via BLE allo smartphone.
+* **MAUI** visualizza i grafici in tempo reale e registra sul database locale.
+
+
+2. **Modalità "Standalone" (Pro Logging):**
+* Il Master riceve l'input dal **Pulsante BLE**.
+* Inizia a scrivere i dati sincronizzati di entrambi i sensori sulla **MicroSD**.
+* A fine giornata, MAUI scarica i file via Wi-Fi o leggendo la SD.
+
+
+
+---
+
+## 4. Software Stack
+
+| Livello | Tecnologia | Funzione |
+| --- | --- | --- |
+| **Firmware** | C++ (Arduino/ESP-IDF) | Gestione sensori IMU, ESP-NOW e stack BLE. |
+| **App Mobile** | **.NET MAUI (C#)** | UI/UX, gestione connessione BLE, parsing binario. |
+| **Data Storage** | Binary/CSV (SD) + SQLite (MAUI) | Salvataggio grezzo su hardware e database strutturato su App. |
+
+---
+
+### Punti Critici da Presidiare
+
+* **Sincronizzazione:** Il Master deve applicare lo stesso timestamp a entrambi i campioni nel momento in cui riceve il pacchetto ESP-NOW.
+* **Resilienza Scrittura:** Usare `file.flush()` a intervalli regolari sul Master per evitare perdite di dati in caso di caduta o spegnimento improvviso.
+* **Dimensioni Pacchetto:** Ottimizzare l'array di byte inviato via BLE per non saturare la banda quando trasmetti i dati di due sensori a 50-100Hz.

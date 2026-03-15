@@ -61,20 +61,30 @@ public class TelemetryLogger : IDisposable
 
     private string GenerateProgressiveFileName(string folder)
     {
-        string datePart = DateTime.Now.ToString("yyyy_MM_dd");
-        int runNumber = 1;
+        string dateToday = DateTime.Now.ToString("yyyy_MM_dd");
 
-        // Recupera i file esistenti per trovare l'ultimo numero
-        var files = Directory.GetFiles(folder, $"{datePart}_RUN_*.bin");
-        if (files.Length > 0)
+        // 1. Recupera la data dell'ultima RUN registrata
+        string lastRunDate = Preferences.Default.Get("LastRunDate", "");
+        int lastRunNumber = Preferences.Default.Get("LastRunNumber", 0);
+
+        int currentRunNumber;
+
+        // 2. Controllo: se la data salvata è diversa da oggi, resetta il contatore
+        if (lastRunDate != dateToday)
         {
-            runNumber = files
-                .Select(f => Path.GetFileNameWithoutExtension(f))
-                .Select(name => name.Split('_').Last())
-                .Select(num => int.TryParse(num, out int n) ? n : 0)
-                .Max() + 1;
+            currentRunNumber = 1;
         }
-        return Path.Combine(folder, $"{datePart}_RUN_{runNumber}.bin");
+        else
+        {
+            // Se è lo stesso giorno, incrementa il numero precedente
+            currentRunNumber = lastRunNumber + 1;
+        }
+
+        // 3. Aggiorna le Preferences per la prossima chiamata
+        Preferences.Default.Set("LastRunDate", dateToday);
+        Preferences.Default.Set("LastRunNumber", currentRunNumber);
+
+        return Path.Combine(folder, $"{dateToday}_RUN_{currentRunNumber}.bin");
     }
     public void Dispose() => StopLogging();
 }

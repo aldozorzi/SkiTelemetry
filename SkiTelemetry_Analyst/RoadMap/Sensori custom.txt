@@ -1,0 +1,78 @@
+﻿
+----------------
+
+Su Aliexpress
+
+ESP32-S3 SuperMini o ESP32-C3 SuperMini con connettore USBC e circuito di ricarica
+
+Modulo BMI270  Breakout Board
+
+Batteria LiPo 300mAh
+
+Un interruttore a scorrimento: SMD o Through-hole
+
+Case in TPU: Stampato da te (costo irrisorio).
+
+----------------
+
+MCU: XIAO ESP32-S3 (Potenza S3, Bluetooth 5.0, ricarica integrata).
+
+IMU: BMI270 su breakout board (Molto più precisa per il carving rispetto ai vecchi MPU).
+
+Batteria: Una LiPo piatta da 300-400mAh (ti garantisce 8-10 ore di sciata continua).
+
+Case: Stampato in TPU (morbido/gommoso).
+
+Design: Un guscio unico con un solo foro per la ricarica USB-C, protetto da un tappino in gomma.
+
+Feedback: Il LED della XIAO traspare attraverso il TPU se lo stampi bianco o trasparente, quindi non devi nemmeno fare un buco per la luce.
+
+----------------
+
+Il salto di qualità (PCBA): Quando inizierai ad avere ordini ricorrenti (es. 20-30 pezzi), non cercherai più board su AliExpress. Userai un servizio di PCB Assembly.
+
+Mandano il tuo schema a una fabbrica.
+
+Loro stampano il circuito e saldano ESP32, IMU e slot SD a macchina.
+
+Ti spediscono il sensore finito (senza case) a un costo che può scendere sotto i 10-12€ per pezzo.
+
+----------------
+
+La soluzione "Definitiva": LILYGO T-OI PLUS (senza SD, senza imu, da saldare)
+Questa scheda è quella che si avvicina di più al tuo "Sacro Graal": economica, All-in-One, e senza necessità di saldature hardware complesse.
+
+Chip: ESP32-C3 (costa meno dell'S3, gestisce benissimo il BLE 5.0).
+
+Batteria: Ha già il supporto per una batteria ricaricabile 16340 sul retro. La inserisci come una normale stilo.
+
+Costo: Circa 8€ - 10€.
+
+Memoria: Usa la memoria interna (SPIFFS o LittleFS) per salvare i dati se il telefono si disconnette.
+
+Case: Essendo piatta con la batteria sotto, il case 3D sarebbe un semplice "mattoncino" ultra-resistente.
+
+----------------
+
+Saldatura "a castello" (Sandwich): Invece di usare cavetti, si salda la IMU direttamente sopra o sotto l'ESP32 usando dei pin header accorciati. Questo riduce i tempi di assemblaggio a meno di 5 minuti e rende il blocco solido.
+
+Batteria come struttura: Si usa la batteria LiPo (che è piatta) come base su cui incollare l'elettronica, creando un pacchetto ultra-compatto che entra in un case stampato 3D su misura.
+
+Gestione del LED: Poiché non avrai lo schermo, dovrai mappare bene i colori del LED RGB (presente su quasi tutti i moduli S3/C3) per comunicare lo stato:
+
+Bianco: Avvio/Boot.
+
+Blu Lampeggiante: Pairing BLE.
+
+Verde: Recording attivo (Telemetria in corso).
+
+Giallo: Batteria < 20%.
+
+Rosso: Errore scrittura memoria interna.
+
+Cosa considerare ora
+Mentre ci pensi, tieni a mente questi due componenti che sono lo standard "de facto" per chi fa quello che stai facendo tu:
+
+MCU: Seeed Studio XIAO ESP32-S3 (affidabile, minuscola, ricarica batteria integrata).
+
+IMU: Bosch BMI270 Breakout Board (il sensore che ha sostituito l'MPU6050 in quasi tutti i wearable moderni).
