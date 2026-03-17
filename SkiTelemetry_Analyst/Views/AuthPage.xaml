@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SkiTelemetry_Analyst.Views.AuthPage"
+             Title="Autenticazione">
+
+    <VerticalStackLayout Spacing="15" Padding="30" VerticalOptions="Center">
+
+        <Label x:Name="LblTitle" FontSize="26" FontAttributes="Bold" HorizontalOptions="Center" />
+
+        <Entry x:Name="EntEmail" Placeholder="Email" Keyboard="Email" />
+        <Entry x:Name="EntPassword" Placeholder="Password" IsPassword="True" />
+
+        <VerticalStackLayout x:Name="RegisterFields" Spacing="15">
+            <Entry x:Name="EntFirstName" Placeholder="Nome" />
+            <Entry x:Name="EntLastName" Placeholder="Cognome" />
+            <Picker x:Name="PkRole" Title="Seleziona Ruolo" SelectedIndex="0">
+                <Picker.Items>
+                    <x:String>ATHLETE</x:String>
+                    <x:String>COACH</x:String>
+                </Picker.Items>
+            </Picker>
+        </VerticalStackLayout>
+
+        <Button x:Name="BtnSubmit" Clicked="OnSubmitClicked" />
+        <Button x:Name="BtnSwitch" Clicked="OnSwitchModeClicked" BackgroundColor="Transparent" TextColor="White" />
+        <Button Text="Annulla" Clicked="OnCancelClicked" BackgroundColor="Transparent" TextColor="Gray" />
+
+    </VerticalStackLayout>
+</ContentPage>

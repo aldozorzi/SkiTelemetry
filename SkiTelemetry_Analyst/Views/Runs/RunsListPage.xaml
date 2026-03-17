@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:helpers="clr-namespace:SkiTelemetry_Analyst.Helpers"
              x:Class="SkiTelemetry_Analyst.Views.Runs.RunsListPage"
              Title="">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <helpers:InvertBoolConverter x:Key="InvertBoolConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
     <Grid RowDefinitions="Auto, Auto, *" Padding="30, 30">
 
         <Label Grid.Row="0" Text="STORICO SESSIONI" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center" />
@@ -21,13 +27,11 @@
         <CollectionView Grid.Row="2" x:Name="RunsCollection" SelectionMode="None">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="10,15" ColumnDefinitions="*, *, Auto, Auto" ColumnSpacing="10">
+                    <Grid Padding="10,15" ColumnDefinitions="*, Auto, Auto" ColumnSpacing="10">
 
-                        <Label Grid.Column="0" Text="{Binding RunName}" FontAttributes="Bold" VerticalOptions="Center" />
+                        <Label Grid.Column="0" Text="{Binding DisplayTitle}" FontSize="13" VerticalOptions="Center" />
 
-                        <Label Grid.Column="1" Text="{Binding FormattedDate}" FontSize="13" TextColor="Gray" VerticalOptions="Center" />
-
-                        <Button Grid.Column="2" 
+                        <Button Grid.Column="1" 
                             Text="👁" 
                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ViewCommand}"
                             CommandParameter="{Binding .}"
@@ -35,16 +39,36 @@
                             TextColor="Black"
                             WidthRequest="45" />
 
-                        <Button Grid.Column="3" 
+                        <Button Grid.Column="2" 
                             Text="☁" 
                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SyncCommand}"
                             CommandParameter="{Binding .}"
-                            BackgroundColor="DeepSkyBlue"
-                            TextColor="White"
-                            WidthRequest="45" />
+                            BackgroundColor="{Binding IsLocal, Converter={StaticResource LocalToColorConverter}}"
+                            IsVisible="{Binding IsLocal}" 
+                            WidthRequest="45" />            
+
+                        <Label Grid.Column="2" 
+                           Text="☁" 
+                           VerticalOptions="Center" 
+                           HorizontalOptions="Fill"
+                           IsVisible="{Binding IsLocal, Converter={StaticResource InvertBoolConverter}}"
+                           HorizontalTextAlignment="Center"
+                               WidthRequest="45" />
                     </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
+        <VerticalStackLayout Grid.Row="0" Grid.RowSpan="3" 
+                         VerticalOptions="Center" 
+                         HorizontalOptions="Center"
+                         IsVisible="{Binding IsLoading}">
+            <ActivityIndicator IsRunning="{Binding IsLoading}" 
+                           Color="DeepSkyBlue" 
+                           WidthRequest="50" 
+                           HeightRequest="50" />
+            <Label Text="Caricamento sessione..." 
+               TextColor="White" 
+               HorizontalOptions="Center" />
+        </VerticalStackLayout>
     </Grid>
 </ContentPage>

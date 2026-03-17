@@ -96,60 +96,41 @@ namespace SkiTelemetry_Analyst
         {
             try
             {
+                // TRUCCO: Se l'adattatore crede di essere già connesso, forza il distacco
+                if (device.State == DeviceState.Connected)
+                {
+                    await _adapter.DisconnectDeviceAsync(device);
+                    await Task.Delay(500); // Un po' di respiro per il driver BT
+                }
                 await _adapter.ConnectToDeviceAsync(device);
                 ConnectedSensor = device;
+
                 Preferences.Default.Set(SensorKey, device.Id.ToString());
+                
                 var services = await device.GetServicesAsync();
                 var service = await device.GetServiceAsync(SkiServiceId);
                 if (service == null)
                 {
                     Debug.WriteLine($"[BLE] Errore: Servizio non trovato sul dispositivo");
+                    await DisconnectDevices();
                     return false;
                 }
                 var characteristic = await service.GetCharacteristicAsync(TelemetryCharacteristicId);
                 if (characteristic == null)
                 {
                     Debug.WriteLine($"[BLE] Errore: Caratteristica non trovata sul dispositivo");
+                    await DisconnectDevices();
                     return false;
                 }
                 Debug.WriteLine($"[BLE] binding characteristic.ValueUpdated");
-                characteristic.ValueUpdated += (s, e) =>
+                characteristic.ValueUpdated -= OnCharacteristicValueChanged;
+                characteristic.ValueUpdated += OnCharacteristicValueChanged;
+
+                try
                 {
-                   
-                    var data = e.Characteristic.Value;
-
-                    uint ts = BitConverter.ToUInt32(data, 0);
-
-                    // --- PIEDE SINISTRO (Offset 4) ---
-                    var leftPoint = new SkiDataPoint
-                    {
-                        Timestamp = ts,
-                        Side = SensorSide.Left,
-                        AccX = BitConverter.ToSingle(data, 4),
-                        AccY = BitConverter.ToSingle(data, 8),
-                        AccZ = BitConverter.ToSingle(data, 12),
-                        GyroX = BitConverter.ToSingle(data, 16),
-                        GyroY = BitConverter.ToSingle(data, 20),
-                        GyroZ = BitConverter.ToSingle(data, 24)
-                    };
-
-                    // --- PIEDE DESTRO (Offset 28) ---
-                    var rightPoint = new SkiDataPoint
-                    {
-                        Timestamp = ts,
-                        Side = SensorSide.Right,
-                        AccX = BitConverter.ToSingle(data, 28),
-                        AccY = BitConverter.ToSingle(data, 32),
-                        AccZ = BitConverter.ToSingle(data, 36),
-                        GyroX = BitConverter.ToSingle(data, 40),
-                        GyroY = BitConverter.ToSingle(data, 44),
-                        GyroZ = BitConverter.ToSingle(data, 48)
-                    };
-
-                    // Invia i punti uno dopo l'altro
-                    DataReceived?.Invoke(this, leftPoint);
-                    DataReceived?.Invoke(this, rightPoint);
-                };
+                    await characteristic.StopUpdatesAsync();
+                }
+                catch { /* Ignora se fallisce perché già spente */ }
 
                 await characteristic.StartUpdatesAsync();
                 tcs.TrySetResult(true);
@@ -159,28 +140,72 @@ namespace SkiTelemetry_Analyst
             catch (Exception ex)
             {
                 Debug.WriteLine($"[BLE] Fallimento setup: {ex.Message}");
+                await DisconnectDevices();
                 return false;
             }
         }
 
+        private void OnCharacteristicValueChanged(object? s, CharacteristicUpdatedEventArgs e)
+        {
+
+
+            var data = e.Characteristic.Value;
+
+            if (data == null || data.Length < 52)
+            {
+                Debug.WriteLine("[BLE] Ricevuto pacchetto incompleto o nullo");
+                return;
+            }
+
+            uint ts = BitConverter.ToUInt32(data, 0);
+
+            // --- PIEDE SINISTRO (Offset 4) ---
+            var leftPoint = new SkiDataPoint
+            {
+                Timestamp = ts,
+                Side = SensorSide.Left,
+                AccX = BitConverter.ToSingle(data, 4),
+                AccY = BitConverter.ToSingle(data, 8),
+                AccZ = BitConverter.ToSingle(data, 12),
+                GyroX = BitConverter.ToSingle(data, 16),
+                GyroY = BitConverter.ToSingle(data, 20),
+                GyroZ = BitConverter.ToSingle(data, 24)
+            };
+
+            // --- PIEDE DESTRO (Offset 28) ---
+            var rightPoint = new SkiDataPoint
+            {
+                Timestamp = ts,
+                Side = SensorSide.Right,
+                AccX = BitConverter.ToSingle(data, 28),
+                AccY = BitConverter.ToSingle(data, 32),
+                AccZ = BitConverter.ToSingle(data, 36),
+                GyroX = BitConverter.ToSingle(data, 40),
+                GyroY = BitConverter.ToSingle(data, 44),
+                GyroZ = BitConverter.ToSingle(data, 48)
+            };
+
+            // Invia i punti uno dopo l'altro
+            DataReceived?.Invoke(this, leftPoint);
+            DataReceived?.Invoke(this, rightPoint);
+
+        }
+
         public async Task DisconnectDevices()
         {
-            // 1. Stacchiamo subito l'evento per liberare la UI
-            DataReceived = null;
-
-            try
+            if (ConnectedSensor != null)
             {
-                if (ConnectedSensor != null)
+                // MOLTO IMPORTANTE: Sottoscrivi esplicitamente la rimozione qui
+                // prima di perdere il riferimento all'oggetto
+                var service = await ConnectedSensor.GetServiceAsync(SkiServiceId);
+                var characteristic = await service?.GetCharacteristicAsync(TelemetryCharacteristicId);
+                if (characteristic != null)
                 {
-                    Debug.WriteLine($"[BLE] Richiesta disconnessione adattatore...");
-                    await _adapter.DisconnectDeviceAsync(ConnectedSensor);
+                    characteristic.ValueUpdated -= OnCharacteristicValueChanged;
+                    await characteristic.StopUpdatesAsync();
                 }
+                await _adapter.DisconnectDeviceAsync(ConnectedSensor);
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[BLE] Errore: {ex.Message}");
-            }
-
             ConnectedSensor = null;
         }
     }

@@ -1,9 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using SkiTelemetry_Analyst.Views;
 
 namespace SkiTelemetry_Analyst
 {
+
     public partial class App : Application
     {
+        public static string ApiBaseUrl = "http://localhost:3000/";
         public App()
         {
             InitializeComponent();
@@ -13,5 +16,6 @@ namespace SkiTelemetry_Analyst
         {
             return new Window(new AppShell());
         }
+       
     }
 }

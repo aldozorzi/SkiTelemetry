@@ -62,4 +62,20 @@ public partial class SettingsPage : ContentPage
             await Shell.Current.GoToAsync("..");
         }
     }
+
+    private async void OnResetServerClicked(object? sender, EventArgs e)
+    {
+        bool answer = await DisplayAlertAsync("Reset Server", "Vuoi davvero cancellare i dati di accesso?", "Sì", "Annulla");
+
+        if (answer)
+        {
+            // Rimuove i parametri della gestione server
+            SecureStorage.Default.Remove("access_token");
+            SecureStorage.Default.Remove("refresh_token");
+            Preferences.Default.Remove("HasAccount");
+
+            await DisplayAlertAsync("Fatto", "Dati server cancellati.", "OK");
+            await Shell.Current.GoToAsync("..");
+        }
+    }
 }

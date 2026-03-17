@@ -3,75 +3,99 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="SkiTelemetry_Analyst.SettingsPage"
              Title="">
+    <VerticalStackLayout>
+        <VerticalStackLayout Padding="30" Spacing="25">
+            <Label Text="GESTIONE DATI" 
+           FontSize="20" 
+           FontAttributes="Bold" 
+           HorizontalOptions="Center" />
 
-    <VerticalStackLayout Padding="30" Spacing="25">
-        <Label Text="GESTIONE DATI" 
-       FontSize="20" 
-       FontAttributes="Bold" 
-       HorizontalOptions="Center" />
+            <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="15"/>
+                </Border.StrokeShape>
 
-        <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="15"/>
-            </Border.StrokeShape>
+                <VerticalStackLayout Spacing="15">
+                    <HorizontalStackLayout Spacing="20" VerticalOptions="Center">
+                        <Label Text="Attiva Logging" 
+                       VerticalOptions="Center" 
+                       FontAttributes="Bold" 
+                       FontSize="16" 
+                               TextColor="#666666"/>
+                        <Switch x:Name="SwitchLogging" 
+                        Toggled="OnLoggingToggled" 
+                        VerticalOptions="Center" />
+                    </HorizontalStackLayout>
 
-            <VerticalStackLayout Spacing="15">
-                <HorizontalStackLayout Spacing="20" VerticalOptions="Center">
-                    <Label Text="Attiva Logging" 
-                   VerticalOptions="Center" 
-                   FontAttributes="Bold" 
-                   FontSize="16" 
-                           TextColor="#666666"/>
-                    <Switch x:Name="SwitchLogging" 
-                    Toggled="OnLoggingToggled" 
-                    VerticalOptions="Center" />
-                </HorizontalStackLayout>
+                    <Label x:Name ="lblLogging" Text="Se attivo, l'app salverà i dati grezzi dei sensori durante la sessione."
+                   FontSize="13" 
+                   TextColor="#666666" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+        <VerticalStackLayout Padding="30" Spacing="25">
+            <Label Text="GESTIONE SENSORI" 
+                       FontSize="20" 
+                       FontAttributes="Bold" 
+                       HorizontalOptions="Center" />
 
-                <Label x:Name ="lblLogging" Text="Se attivo, l'app salverà i dati grezzi dei sensori durante la sessione."
-               FontSize="13" 
-               TextColor="#666666" />
-            </VerticalStackLayout>
-        </Border>
+            <Border Stroke="#E0E0E0"
+                    StrokeThickness="1"
+                    BackgroundColor="#F9F9F9"
+                    Padding="20">
 
-        <Label Text="GESTIONE SENSORI" 
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="15"/>
+                </Border.StrokeShape>
+
+                <Border.Shadow>
+                    <Shadow Brush="Black"
+                            Offset="2,2"
+                            Radius="5"
+                            Opacity="0.1" />
+                </Border.Shadow>
+
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Pairing Attuale" 
+                           FontAttributes="Bold" 
+                           FontSize="16" />
+
+                    <Label Text="Se i sensori non si connettono o vuoi cambiare dispositivi, usa il tasto reset qui sotto." 
+                           FontSize="13" 
+                           TextColor="#666666" />
+
+                    <Button x:Name="BtnReset"
+                            Text="RESET CONFIGURAZIONE"
+                            BackgroundColor="#FF3B30"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            Clicked="OnResetConfigClicked"
+                            HeightRequest="50" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+        <VerticalStackLayout Padding="30" Spacing="25">
+            <Label Text="ACCOUNT &amp; SERVER" 
                FontSize="20" 
                FontAttributes="Bold" 
                HorizontalOptions="Center" />
 
-        <Border Stroke="#E0E0E0"
-                StrokeThickness="1"
-                BackgroundColor="#F9F9F9"
-                Padding="20">
-
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="15"/>
-            </Border.StrokeShape>
-
-            <Border.Shadow>
-                <Shadow Brush="Black"
-                        Offset="2,2"
-                        Radius="5"
-                        Opacity="0.1" />
-            </Border.Shadow>
-
-            <VerticalStackLayout Spacing="15">
-                <Label Text="Pairing Attuale" 
-                       FontAttributes="Bold" 
-                       FontSize="16" />
-
-                <Label Text="Se i sensori non si connettono o vuoi cambiare dispositivi, usa il tasto reset qui sotto." 
-                       FontSize="13" 
-                       TextColor="#666666" />
-
-                <Button x:Name="BtnReset"
-                        Text="RESET CONFIGURAZIONE"
-                        BackgroundColor="#FF3B30"
+            <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="15"/>
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="15">
+                    <Label Text="Connessione Server" FontAttributes="Bold" FontSize="16" />
+                    <Label Text="Usa questo tasto per disconnetterti e cancellare i dati di accesso (Token e Account)." 
+                       FontSize="13" TextColor="#666666" />
+                    <Button Text="LOGOUT / RESET SERVER"
+                        BackgroundColor="#FF9500"
                         TextColor="White"
                         FontAttributes="Bold"
-                        Clicked="OnResetConfigClicked"
+                        Clicked="OnResetServerClicked"
                         HeightRequest="50" />
-            </VerticalStackLayout>
-        </Border>
-
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>        
     </VerticalStackLayout>
 </ContentPage>

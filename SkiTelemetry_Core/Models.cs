@@ -66,8 +66,8 @@ public class SkiDataPoint
     public float GyroZ { get; set; }
 
     // Calcoliamo l'inclinazione (Roll) semplificata per ora
-    public double rawRoll => Math.Atan2(AccY, AccZ) * (180 / Math.PI);
-    public double Roll => Math.Atan2(AccY, AccZ) * (180 / Math.PI);
+    public double rawRoll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
+    public double Roll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
     //public double Roll { get; set; } // Dato filtrato
 
     public override string ToString()

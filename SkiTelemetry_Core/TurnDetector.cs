@@ -34,8 +34,8 @@
         private double _maxGForceInCurrentTurn = 0;
 
         // TURN RADIUS
-        private double _accumulatedAccY = 0;
-        private double _accumulatedGyroZ = 0;
+        private double _accumulatedAccX = 0;
+        private double _accumulatedGyroY = 0;
         private int _radiusSampleCount = 0;
 
         // EARLY EDGING
@@ -262,11 +262,11 @@
             if (_isCurrentlyTurning)
             {
                 // Prendiamo il valore dallo sci esterno (quello con più roll)
-                double currentAccY = Math.Abs(left.Roll) > Math.Abs(right.Roll) ? Math.Abs(left.AccY) : Math.Abs(right.AccY);
-                double currentGyroZ = Math.Abs(left.Roll) > Math.Abs(right.Roll) ? Math.Abs(left.GyroZ) : Math.Abs(right.GyroZ);
+                double currentAccX = Math.Abs(left.Roll) > Math.Abs(right.Roll) ? Math.Abs(left.AccX) : Math.Abs(right.AccX);
+                double currentGyroY = Math.Abs(left.Roll) > Math.Abs(right.Roll) ? Math.Abs(left.GyroY) : Math.Abs(right.GyroY);
 
-                _accumulatedAccY += currentAccY;
-                _accumulatedGyroZ += currentGyroZ;
+                _accumulatedAccX += currentAccX;
+                _accumulatedGyroY += currentGyroY;
                 _radiusSampleCount++;
             }
             else if (_wasTurningBefore)
@@ -275,14 +275,14 @@
 
                 if (_radiusSampleCount > 0)
                 {
-                    double avgAccY = (_accumulatedAccY / _radiusSampleCount) * 9.81; // Convertiamo G in m/s^2
+                    double avgAccX = (_accumulatedAccX / _radiusSampleCount) * 9.81; // Convertiamo G in m/s^2
                     // double avgGyroZ = (_accumulatedGyroZ / _radiusSampleCount) * (Math.PI / 180.0); // Convertiamo Deg/s in Rad/s
-                    double avgGyroZ = (_accumulatedGyroZ / _radiusSampleCount); // dato già in radianti
-                    System.Diagnostics.Debug.WriteLine($"[DETECTOR][{left.Timestamp}ms] avgAccY: {avgAccY} - avgGyroZ: {avgGyroZ}");
+                    double avgGyroY = (_accumulatedGyroY / _radiusSampleCount); // dato già in radianti
+                    System.Diagnostics.Debug.WriteLine($"[DETECTOR][{left.Timestamp}ms] avgAccX: {avgAccX} - avgGyroY: {avgGyroY}");
                     // Evitiamo divisioni per zero se lo sciatore è andato quasi dritto
-                    if (avgGyroZ > 0.05)
+                    if (avgGyroY > 0.05)
                     {
-                        double radius = avgAccY / Math.Pow(avgGyroZ, 2);
+                        double radius = avgAccX / Math.Pow(avgGyroY, 2);
                         finalRadius = Math.Round(Math.Min(radius, 99.9), 1);
                     }
                 }
@@ -472,11 +472,11 @@
                 // Identifichiamo lo sci esterno (quello con più roll)
                 var outsideSki = Math.Abs(left.Roll) > Math.Abs(right.Roll) ? left : right;
 
-                double accY = Math.Abs(outsideSki.AccY);
-                double gyroZ = Math.Abs(outsideSki.GyroZ);
-                if (accY > 0)
+                double accX = Math.Abs(outsideSki.AccX);
+                double gyroY = Math.Abs(outsideSki.GyroY);
+                if (accX > 0)
                 {
-                    double carvingRatio = gyroZ / accY;
+                    double carvingRatio = gyroY / accX;
                     //System.Diagnostics.Debug.WriteLine($"[DETECTOR] gyroZ: {gyroZ} - accY: {accY} - carvingRatio:{carvingRatio}");
                     _accumulatedCarvingDeviation += Math.Abs(carvingRatio - _targetCarvingRatio);
                     _carvingSampleCount++;
@@ -559,8 +559,8 @@
             _maxGForceInCurrentTurn = 0;
 
             // RADIUS
-            _accumulatedAccY = 0;
-            _accumulatedGyroZ = 0;
+            _accumulatedAccX = 0;
+            _accumulatedGyroY = 0;
             _radiusSampleCount = 0;
 
              // EARLY EDGING

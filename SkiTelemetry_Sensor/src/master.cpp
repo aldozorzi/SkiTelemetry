@@ -1,7 +1,8 @@
-#include <Arduino.h>
+#include <M5Unified.h>
+#include <esp_now.h>
+#include <WiFi.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
-#include <BLEUtils.h>
 #include <BLE2902.h>
 
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
@@ -9,93 +10,116 @@
 
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
+uint8_t slaveAddress[] = {0x00, 0x4B, 0x12, 0xC4, 0xCB, 0xE4};
+bool displayOn = true; // Stato iniziale
+static unsigned long lastBatUpdate = 0;
 
-// Struttura Combo: 52 byte totali
 struct __attribute__((packed)) SkiDataCombo {
-  uint32_t timestamp; 
-  float accXL, accYL, accZL;
-  float gyroXL, gyroYL, gyroZL;
-  float accXR, accYR, accZR;
-  float gyroXR, gyroYR, gyroZR;
+    uint32_t timestamp; 
+    float accXL, accYL, accZL;
+    float gyroXL, gyroYL, gyroZL;
+    float accXR, accYR, accZR;
+    float gyroXR, gyroYR, gyroZR;
 } dataCombo;
 
-// Callback per monitorare la connessione
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+    if (len == 24) {
+        memcpy(&dataCombo.accXL, incomingData, 24);
+        M5.Display.fillCircle(5, 5, 3, GREEN); 
+    }
+}
+
+void sendCommandToSlave(bool start) {
+    esp_now_send(slaveAddress, (uint8_t *) &start, sizeof(start));
+}
+
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-      Serial.println(">>> EVENTO: Smartphone connesso, inizio invio dati...");
+        deviceConnected = true;
+        M5.Display.fillCircle(15, 5, 3, BLUE); 
+        sendCommandToSlave(true); // DICE ALLO SLAVE DI PARTIRE
     };
-
     void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-      Serial.println(">>> EVENTO: Smartphone disconnesso!");
-      // Riavvia l'advertising per permettere la riconnessione immediata
-      pServer->getAdvertising()->start();
-      Serial.println(">>> INFO: Advertising riavviato. Pronto per nuova connessione...");
-    }
+    deviceConnected = false;
+    M5.Display.fillCircle(15, 5, 3, RED);
+    sendCommandToSlave(false); // DICE ALLO SLAVE DI FERMARSI
+    M5.Display.fillCircle(5, 5, 3, RED); 
+    // Lasciamo un attimo di respiro allo smartphone per accorgersi della chiusura
+    delay(200); 
+    pServer->getAdvertising()->start();
+}
 };
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("--- AVVIO SISTEMA TELEMETRIA ---");
+    auto cfg = M5.config();
+    M5.begin(cfg);
+    
+    // Inizializziamo prima il Wi-Fi per ESP-NOW
+    WiFi.mode(WIFI_STA);
+    if (esp_now_init() == ESP_OK) {
+        esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
+    }
 
-  BLEDevice::init("MASTER"); 
-  BLEServer *pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new MyServerCallbacks());
+    // BLE Minimalista
+    BLEDevice::init("MASTER");
+    BLEServer *pServer = BLEDevice::createServer();
+    pServer->setCallbacks(new MyServerCallbacks());
+    BLEService *pService = pServer->createService(SERVICE_UUID);
+    
+    pCharacteristic = pService->createCharacteristic(
+                        CHARACTERISTIC_UUID,
+                        BLECharacteristic::PROPERTY_NOTIFY
+                      );
 
-  BLEService *pService = pServer->createService(SERVICE_UUID);
-  
-  pCharacteristic = pService->createCharacteristic(
-                      CHARACTERISTIC_UUID, 
-                      BLECharacteristic::PROPERTY_NOTIFY
-                    );
-  
-  pCharacteristic->addDescriptor(new BLE2902());
-  pService->start();
+    pCharacteristic->addDescriptor(new BLE2902());
+    pService->start();
+    
+    pServer->getAdvertising()->addServiceUUID(SERVICE_UUID);
+    pServer->getAdvertising()->start();
 
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(SERVICE_UUID);
-  pAdvertising->setScanResponse(true);
-  
-  BLEDevice::startAdvertising();
-  Serial.println("--- SETUP COMPLETATO: In attesa di connessione... ---");
+    M5.Display.fillScreen(BLACK);
+    M5.Display.drawString("MASTER (R)", 10, 40);
+
+    esp_now_peer_info_t peerInfo = {};
+    memcpy(peerInfo.peer_addr, slaveAddress, 6);
+    peerInfo.channel = 0;  
+    peerInfo.encrypt = false;
+    esp_now_add_peer(&peerInfo);
 }
 
 void loop() {
-  if (deviceConnected) {
-    unsigned long currentMillis = millis();
-    float time = currentMillis / 1000.0f;
-    float amp = 0.6f; 
+    M5.update();
+    if (M5.BtnA.wasPressed()) {
+        displayOn = !displayOn;
+        if (displayOn) {
+            M5.Display.setBrightness(100); // Riaccendi (puoi mettere anche 60 per risparmiare)
+            M5.Display.wakeup();
+        } else {
+            M5.Display.setBrightness(0);   // Spegni retroilluminazione
+            M5.Display.sleep();            // Metti il display in basso consumo
+        }
+    }
 
-    dataCombo.timestamp = currentMillis;
+    if (deviceConnected) {
+        dataCombo.timestamp = millis();
+        M5.Imu.update();
+        M5.Imu.getAccel(&dataCombo.accXR, &dataCombo.accYR, &dataCombo.accZR);
+        M5.Imu.getGyro(&dataCombo.gyroXR, &dataCombo.gyroYR, &dataCombo.gyroZR);
 
-    // SIMULAZIONE SINISTRO
-    dataCombo.accXL = 0.0f;
-    dataCombo.accYL = (sin(time) * amp); 
-    dataCombo.accZL = 1.0f;
-    dataCombo.gyroXL = (cos(time) * 1.5f);
-    dataCombo.gyroYL = 0.2f;
-    dataCombo.gyroZL = (sin(time) * 0.8f);
+        pCharacteristic->setValue((uint8_t*)&dataCombo, sizeof(dataCombo));
+        pCharacteristic->notify();
+    }
 
-    // SIMULAZIONE DESTRO
-    dataCombo.accXR = 0.0f;
-    dataCombo.accYR = (sin(time) * amp); 
-    dataCombo.accZR = 1.0f;
-    dataCombo.gyroXR = (cos(time) * 1.5f);
-    dataCombo.gyroYR = 0.2f;
-    dataCombo.gyroZR = (sin(time) * 0.8f);
-
-    // Invio pacchetto Combo (52 byte)
-    pCharacteristic->setValue((uint8_t*)&dataCombo, sizeof(SkiDataCombo));
-    pCharacteristic->notify();
-
-    /*Serial.print("Dati inviati - TS: ");
-    Serial.println(currentMillis);*/
+    if (displayOn && (millis() - lastBatUpdate > 10000)) {
+        int batPct = M5.Power.getBatteryLevel();
+        
+        // Puliamo solo l'area della scritta per non ridisegnare tutto lo schermo
+        M5.Display.fillRect(10, 100, 120, 20, BLACK); 
+        M5.Display.setCursor(10, 100);
+        M5.Display.printf("BAT: %d%%", batPct);
+        
+        lastBatUpdate = millis();
+    }
     
-    delay(100); // 10Hz
-  }
-  else {
-    // Se non connesso, possiamo rallentare il loop
-    delay(1000);
-  }
+    delay(50); 
 }

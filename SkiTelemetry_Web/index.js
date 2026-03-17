@@ -305,10 +305,6 @@ app.post('/api/run/get-download-url', authenticateToken, async (req, res) => {
   if (!s3Key) return res.status(400).json({ error: "s3Key is required" });
 
   try {
-    // 1. (Opzionale ma consigliato) Controllo extra: 
-    // Se l'utente non è il proprietario E non è il coach dell'atleta, blocca tutto.
-    // Per ora facciamo la logica base, ma sappi che qui va il "lucchetto".
-
     const command = new GetObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
       Key: s3Key,
