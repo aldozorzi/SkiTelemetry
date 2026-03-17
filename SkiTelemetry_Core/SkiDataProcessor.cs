@@ -8,9 +8,9 @@
     {
         public event EventHandler<SkiTurn>? OnNewTurn;
 
-        /*private double _lastLeftRoll = 0;
+        private double _lastLeftRoll = 0;
         private double _lastRightRoll = 0;
-        private const double Alpha = 0.2;*/
+        private const double Alpha = 0.2;
 
         private readonly TurnDetector _turnDetector = new();
         private SkiDataPoint? _rightDataPoint;
@@ -71,7 +71,7 @@
 
         private void ApplySmoothing(SkiDataPoint point)
         {
-            /*double currentRaw = point.rawRoll;
+            double currentRaw = point.rawRoll;
             if (point.Side == SensorSide.Left)
             {
                 _lastLeftRoll = (Alpha * currentRaw) + ((1 - Alpha) * _lastLeftRoll);
@@ -81,7 +81,7 @@
             {
                 _lastRightRoll = (Alpha * currentRaw) + ((1 - Alpha) * _lastRightRoll);
                 point.Roll = _lastRightRoll;
-            }*/
+            }
         }
 
 

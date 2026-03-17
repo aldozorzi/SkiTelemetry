@@ -198,11 +198,14 @@ namespace SkiTelemetry_Analyst
                 // MOLTO IMPORTANTE: Sottoscrivi esplicitamente la rimozione qui
                 // prima di perdere il riferimento all'oggetto
                 var service = await ConnectedSensor.GetServiceAsync(SkiServiceId);
-                var characteristic = await service?.GetCharacteristicAsync(TelemetryCharacteristicId);
-                if (characteristic != null)
+                if (service != null)
                 {
-                    characteristic.ValueUpdated -= OnCharacteristicValueChanged;
-                    await characteristic.StopUpdatesAsync();
+                    var characteristic = await service?.GetCharacteristicAsync(TelemetryCharacteristicId);
+                    if (characteristic != null)
+                    {
+                        characteristic.ValueUpdated -= OnCharacteristicValueChanged;
+                        await characteristic.StopUpdatesAsync();
+                    }
                 }
                 await _adapter.DisconnectDeviceAsync(ConnectedSensor);
             }

@@ -67,8 +67,8 @@ public class SkiDataPoint
 
     // Calcoliamo l'inclinazione (Roll) semplificata per ora
     public double rawRoll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
-    public double Roll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
-    //public double Roll { get; set; } // Dato filtrato
+    //public double Roll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
+    public double Roll { get; set; } // Dato filtrato
 
     public override string ToString()
     {

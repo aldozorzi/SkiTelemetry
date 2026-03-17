@@ -107,7 +107,7 @@
                     <VerticalStackLayout x:Name="DebugDataDisplay" IsVisible="False" Spacing="5" Padding="5">
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                             <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                <Label Text="LEFT SENSOR" FontAttributes="Bold" TextColor="Blue" HorizontalOptions="Center"/>
+                                <Label Text="LEFT SENSOR" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                                 <Border Padding="5" >
                                     <VerticalStackLayout>
                                         <Label Text="ACCELEROMETER (m/s²)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
@@ -127,7 +127,7 @@
                             </VerticalStackLayout>
 
                             <VerticalStackLayout Grid.Column="1" Spacing="2">
-                                <Label Text="RIGHT SENSOR" FontAttributes="Bold" TextColor="Red" HorizontalOptions="Center"/>
+                                <Label Text="RIGHT SENSOR" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                                 <Border Padding="5" >
                                     <VerticalStackLayout>
                                         <Label Text="ACCELEROMETER (m/s²)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>

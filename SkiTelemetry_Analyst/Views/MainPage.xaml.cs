@@ -77,40 +77,50 @@ namespace SkiTelemetry_Analyst.Views
         {
             if (_logger.isLogging) _logger.LogData(rawPoint);
             _dataProcessor.Process(rawPoint);
-            
-            // [RIGHT SENSOR] fine right sensor test
 
-
-            
-            
-
-
-            MainThread.BeginInvokeOnMainThread(() =>
+            if (MainThread.IsMainThread)
             {
-                if (DebugDataDisplay.IsVisible)
+                UpdateDebugUI(rawPoint);
+            }
+            else
+            {
+                try
                 {
-                    if (rawPoint.Side == SensorSide.Left)
-                    {
-                        LblAccXL.Text = $"X: {rawPoint.AccX:F2}";
-                        LblAccYL.Text = $"Y: {rawPoint.AccY:F2}";
-                        LblAccZL.Text = $"Z: {rawPoint.AccZ:F2}";
-                        LblGyrXL.Text = $"X: {rawPoint.GyroX:F1}";
-                        LblGyrYL.Text = $"Y: {rawPoint.GyroY:F1}";
-                        LblGyrZL.Text = $"Z: {rawPoint.GyroZ:F1}";
-                        LblRollL.Text = $"{rawPoint.rawRoll:F1}°";
-                    }
-                    else
-                    {
-                        LblAccXR.Text = $"X: {rawPoint.AccX:F2}";
-                        LblAccYR.Text = $"Y: {rawPoint.AccY:F2}";
-                        LblAccZR.Text = $"Z: {rawPoint.AccZ:F2}";
-                        LblGyrXR.Text = $"X: {rawPoint.GyroX:F1}";
-                        LblGyrYR.Text = $"Y: {rawPoint.GyroY:F1}";
-                        LblGyrZR.Text = $"Z: {rawPoint.GyroZ:F1}";
-                        LblRollR.Text = $"{rawPoint.rawRoll:F1}°";
-                    }
+                    MainThread.BeginInvokeOnMainThread(() => UpdateDebugUI(rawPoint));
                 }
-            });
+                catch (InvalidOperationException)
+                {
+                    // Se il MainThread non è disponibile, ignoriamo l'aggiornamento
+                    // per evitare il crash dell'intera ricezione dati
+                }
+            }
+        }
+
+        private void UpdateDebugUI(SkiDataPoint rawPoint)
+        {
+            if (!DebugDataDisplay.IsVisible) return;
+            
+            if (rawPoint.Side == SensorSide.Left)
+            {
+                LblAccXL.Text = $"X: {rawPoint.AccX:F2}";
+                LblAccYL.Text = $"Y: {rawPoint.AccY:F2}";
+                LblAccZL.Text = $"Z: {rawPoint.AccZ:F2}";
+                LblGyrXL.Text = $"X: {rawPoint.GyroX:F1}";
+                LblGyrYL.Text = $"Y: {rawPoint.GyroY:F1}";
+                LblGyrZL.Text = $"Z: {rawPoint.GyroZ:F1}";
+                LblRollL.Text = $"{rawPoint.Roll:F1}°";
+            }
+            else
+            {
+                LblAccXR.Text = $"X: {rawPoint.AccX:F2}";
+                LblAccYR.Text = $"Y: {rawPoint.AccY:F2}";
+                LblAccZR.Text = $"Z: {rawPoint.AccZ:F2}";
+                LblGyrXR.Text = $"X: {rawPoint.GyroX:F1}";
+                LblGyrYR.Text = $"Y: {rawPoint.GyroY:F1}";
+                LblGyrZR.Text = $"Z: {rawPoint.GyroZ:F1}";
+                LblRollR.Text = $"{rawPoint.Roll:F1}°";
+            }
+ 
         }
 
         private void DisplayTurnValues(object? sender, SkiTurn turn)
