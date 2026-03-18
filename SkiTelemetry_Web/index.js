@@ -52,6 +52,20 @@ async function generateAndSaveTokens(user) {
   return { accessToken, refreshToken };
 }
 
+async function deleteBucketFile(s3Key){
+  try {
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: s3Key,
+      });
+      
+      await s3.send(deleteCommand);
+      console.log(`Successfully deleted file from R2: ${s3Key}`);
+    } catch (s3Error) {
+      // Se fallisce anche l'eliminazione, logghiamo l'errore critico
+      console.error("CRITICAL: Failed to delete orphaned file from R2:", s3Error);
+    }
+}
 
 app.use(express.json());
 
@@ -232,6 +246,7 @@ app.post('/api/run/save', authenticateToken, async (req, res) => {
 
   try {
     // Solo ora, con il file già su R2, scriviamo su Neon
+    //console.log(`Trying to save to database - s3Key: ${s3Key}, fileName:${fileName}, userId:${req.user.userId}`);
     const newRun = await prisma.run.create({
       data: {
         s3Key: s3Key,
@@ -239,22 +254,10 @@ app.post('/api/run/save', authenticateToken, async (req, res) => {
         userId: req.user.userId
       }
     });
-
     res.status(201).json({ message: "Run saved successfully", run: newRun });
   } catch (error) {
     console.error(error);
-    try {
-      const deleteCommand = new DeleteObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: s3Key,
-      });
-      
-      await s3.send(deleteCommand);
-      console.log(`Successfully deleted orphaned file from R2: ${s3Key}`);
-    } catch (s3Error) {
-      // Se fallisce anche l'eliminazione, logghiamo l'errore critico
-      console.error("CRITICAL: Failed to delete orphaned file from R2:", s3Error);
-    }
+    await deleteBucketFile(s3Key);
     res.status(500).json({ error: "Failed to save run to database" });
   }
 });
@@ -299,6 +302,43 @@ app.get('/api/run/mine', authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Errore nel recupero delle tue sciate" });
   }
 });
+app.delete('/api/run/delete/:runId', authenticateToken, async (req, res) => {
+  const { runId } = req.params;
+  // console.log(`[/api/run/delete] Trying to get run ${runId}`)
+  const userId = req.user.userId;
+
+  if (!runId) {
+    return res.status(400).json({ error: "Missing param." });
+  }
+
+  try {
+    // 1. Recuperiamo l'invito
+    const run = await prisma.run.findUnique({
+      where: { id: runId }
+    });
+    
+    if (!run) {
+      return res.status(404).json({ error: `Run not found:${runId}` });
+    }
+
+    // 2. Controllo Sicurezza: 
+    if (run.userId !== userId) {
+      return res.status(403).json({ error: "Unauthorized to delete this connection." });
+    }
+    
+    // 3. Cancellazione fisica
+    await prisma.run.delete({
+      where: { id: runId }
+    });
+    await deleteBucketFile(run.s3Key);
+    res.json({ message: "Run removed successfully." });
+
+  } catch (error) {
+    console.error("Delete Run Error:", error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+});
+
 app.post('/api/run/get-download-url', authenticateToken, async (req, res) => {
   const { s3Key } = req.body; // Passiamo lo s3Key che abbiamo salvato nel DB
 
@@ -622,18 +662,18 @@ app.get('/api/athlete/list-coaches', authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Internal Server Error." });
   }
 });
-app.delete('/api/connection/delete', authenticateToken, async (req, res) => {
-  const { invitationId } = req.body;
+app.delete('/api/connection/delete:connectionId', authenticateToken, async (req, res) => {
+  const { connectionId } = req.params;
   const userId = req.user.userId;
 
-  if (!invitationId) {
+  if (!connectionId) {
     return res.status(400).json({ error: "Missing param." });
   }
 
   try {
     // 1. Recuperiamo l'invito
     const invitation = await prisma.coachAthlete.findUnique({
-      where: { id: invitationId }
+      where: { id: connectionId }
     });
 
     if (!invitation) {
@@ -647,7 +687,7 @@ app.delete('/api/connection/delete', authenticateToken, async (req, res) => {
 
     // 3. Cancellazione fisica
     await prisma.coachAthlete.delete({
-      where: { id: invitationId }
+      where: { id: connectionId }
     });
 
     res.json({ message: "Connection removed successfully." });

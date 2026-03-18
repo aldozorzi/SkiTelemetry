@@ -9,6 +9,7 @@ using System.Diagnostics;
 
 namespace SkiTelemetry_Analyst
 {
+    [Microsoft.Maui.Controls.Internals.Preserve(AllMembers = true)]
     [System.Runtime.Versioning.SupportedOSPlatform("ios15.0")]
     [System.Runtime.Versioning.SupportedOSPlatform("maccatalyst15.0")]
     [System.Runtime.Versioning.SupportedOSPlatform("android21.0")]
@@ -103,6 +104,11 @@ namespace SkiTelemetry_Analyst
                     await Task.Delay(500); // Un po' di respiro per il driver BT
                 }
                 await _adapter.ConnectToDeviceAsync(device);
+
+                var mtu = await device.RequestMtuAsync(517);
+                Console.WriteLine($"[BLE] MTU negoziato: {mtu} byte");
+
+
                 ConnectedSensor = device;
 
                 Preferences.Default.Set(SensorKey, device.Id.ToString());
@@ -153,7 +159,7 @@ namespace SkiTelemetry_Analyst
 
             if (data == null || data.Length < 52)
             {
-                Debug.WriteLine("[BLE] Ricevuto pacchetto incompleto o nullo");
+                Debug.WriteLine($"[BLE] Ricevuto pacchetto incompleto o nullo ({data?.Length} bytes)");
                 return;
             }
 
@@ -200,7 +206,7 @@ namespace SkiTelemetry_Analyst
                 var service = await ConnectedSensor.GetServiceAsync(SkiServiceId);
                 if (service != null)
                 {
-                    var characteristic = await service?.GetCharacteristicAsync(TelemetryCharacteristicId);
+                    var characteristic = await service.GetCharacteristicAsync(TelemetryCharacteristicId);
                     if (characteristic != null)
                     {
                         characteristic.ValueUpdated -= OnCharacteristicValueChanged;

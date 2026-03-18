@@ -17,21 +17,21 @@ namespace SkiTelemetry_Analyst.Services
                 // 1. Otteniamo l'URL di upload e la S3Key
                 var uploadInfo = await GetUploadUrlAsync(filePath);
                 if (uploadInfo == null) return false;
-                //System.Diagnostics.Debug.WriteLine($"uploadInfo recuperate");
+                //System.Diagnostics.Trace.WriteLine($"uploadInfo recuperate, UploadUrl:{uploadInfo.UploadUrl}");
                 // 2. Upload fisico su R2
                 var uploadSuccess = await UploadToR2Async(filePath, uploadInfo.UploadUrl);
                 if (!uploadSuccess) return false;
-
+                //System.Diagnostics.Trace.WriteLine($"uploadSuccess:{uploadSuccess}, {uploadInfo.S3Key}");
                 // 3. Conferma al backend
                 var confirmedFileName = await ConfirmSaveAsync(filePath, uploadInfo.S3Key);
-
+                //System.Diagnostics.Trace.WriteLine($"confirmedFileName:{confirmedFileName}");
                 if (!string.IsNullOrEmpty(confirmedFileName))
                 {
                     // 4. Eliminazione file locale dopo il successo totale
                     if (File.Exists(filePath))
                     {
                         File.Delete(filePath);
-                        System.Diagnostics.Debug.WriteLine($"File locale eliminato: {confirmedFileName}");
+                        //System.Diagnostics.Trace.WriteLine($"File locale eliminato: {confirmedFileName}");
                     }
                     return true;
                 }
@@ -39,7 +39,26 @@ namespace SkiTelemetry_Analyst.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Errore Sync & Delete: {ex.Message}");
+                System.Diagnostics.Trace.WriteLine($"Errore Sync & Delete: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteRunAsync(string runId)
+        {
+            try
+            {
+                var authData = await _authService.GetAuthStatusAsync();
+                if (authData == null) return false;
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authData.AccessToken);
+
+                var response = await _httpClient.DeleteAsync($"api/run/delete/{runId}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Errore DeleteRun: {ex.Message}");
                 return false;
             }
         }
@@ -86,7 +105,7 @@ namespace SkiTelemetry_Analyst.Services
             var savePayload = new { fileName = Path.GetFileName(filePath), s3Key = s3Key };
 
             var response = await _httpClient.PostAsJsonAsync("api/run/save", savePayload);
-
+            // System.Diagnostics.Trace.WriteLine($"response:{response}");
             if (response.IsSuccessStatusCode)
             {
                 // Estraiamo il filename dalla risposta del server (message: ..., run: { fileName: ... })
@@ -128,6 +147,8 @@ namespace SkiTelemetry_Analyst.Services
                 {
                     return run.FullPath;
                 }
+
+                if (run.FileName == null) return null;
 
                 // 2. Se è remoto, verifichiamo se l'abbiamo già scaricato in cache
                 string cacheFolder = Path.Combine(FileSystem.Current.CacheDirectory, "RemoteRuns");

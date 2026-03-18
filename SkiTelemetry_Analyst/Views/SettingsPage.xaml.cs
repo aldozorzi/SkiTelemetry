@@ -52,8 +52,7 @@ public partial class SettingsPage : ContentPage
         if (answer)
         {
             // Cancelliamo i dati salvati (usa le chiavi che hai definito nel BluetoothService)
-            Preferences.Default.Remove("LeftSensorId");
-            Preferences.Default.Remove("RightSensorId");
+            Preferences.Default.Remove("MainSensorId");
 
 
             await DisplayAlertAsync("Fatto", "Configurazione resettata.", "OK");

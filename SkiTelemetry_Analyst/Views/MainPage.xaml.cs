@@ -1,23 +1,30 @@
 ﻿using SkiTelemetry_Core;
-using SkiTelemetry_Analyst;
+using SkiTelemetry_Analyst.Helpers;
+
 namespace SkiTelemetry_Analyst.Views
 {
+    [Microsoft.Maui.Controls.Internals.Preserve(AllMembers = true)]
     [System.Runtime.Versioning.SupportedOSPlatform("ios15.0")]
     [System.Runtime.Versioning.SupportedOSPlatform("maccatalyst15.0")]
     [System.Runtime.Versioning.SupportedOSPlatform("android21.0")]
     [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
+    
     public partial class MainPage : ContentPage
     {
+        
+
         // Istanza del servizio
         BluetoothService _bleService = new BluetoothService();
         private readonly SkiDataProcessor _dataProcessor = new();
         private bool _isSessionActive = false;
         private HashSet<MonitorMode> _metrics = new();
         private readonly TelemetryLogger _logger = new();
+        private const string SensorKey = "MainSensorId";
 
         public MainPage()
         {
             InitializeComponent();
+
             // Ci iscriviamo all'evento che abbiamo creato prima
             _bleService.DataReceived -= OnTelemetryReceived;
             _bleService.DataReceived += OnTelemetryReceived;
@@ -30,7 +37,7 @@ namespace SkiTelemetry_Analyst.Views
 
         private void CheckConfiguration()
         {
-            bool hasSensor = Preferences.Default.ContainsKey("SensorKey");
+            bool hasSensor = Preferences.Default.ContainsKey(SensorKey);
 
             if (hasSensor)
             {
@@ -50,6 +57,7 @@ namespace SkiTelemetry_Analyst.Views
 
         private async void OnScanClicked(object? sender, EventArgs e)
         {
+            
             StatusLabel.Text = "Connessione...";
             BtnScan.IsEnabled = false; // Disabilita per evitare click multipli
 
@@ -129,27 +137,64 @@ namespace SkiTelemetry_Analyst.Views
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 if (EdgeAngleDisplay.IsVisible)
+                {
                     LblEdgeAngle.Text = $"{turn.EdgeAngle:0}°";
-                else if (EdgeSimilarityDisplay.IsVisible)
+                    _ = SpeechHelper.SpeakAsync($"{turn.EdgeAngle}");
+                }
+                    
+                else if (EdgeSimilarityDisplay.IsVisible) {
                     LblEdgeSimilarity.Text = $"{turn.EdgeSimilarity:0}%";
+                    _ = SpeechHelper.SpeakAsync($"{turn.EdgeSimilarity}");
+                }
+                    
                 else if (GForceDisplay.IsVisible)
+                {
                     LblGForce.Text = $"{turn.GForce:0.0}";
+                    _ = SpeechHelper.SpeakAsync($"{turn.GForce}");
+                }
+                    
                 else if (RadiusDisplay.IsVisible)
+                {
                     LblRadius.Text = $"{turn.Radius:0.0}m";
+                    _ = SpeechHelper.SpeakAsync($"{turn.Radius}");
+                }
+                    
                 else if (EarlyEdgingDisplay.IsVisible)
+                {
                     LblEarlyEdging.Text = $"{turn.EarlyEdging:0}%";
+                    _ = SpeechHelper.SpeakAsync($"{turn.EarlyEdging}");
+                }
+                    
                 else if (ProgressiveBuildDisplay.IsVisible)
+                {
                     LblProgressiveBuild.Text = $"{turn.ProgressiveEdgeBuild:0}%";
+                    _ = SpeechHelper.SpeakAsync($"{turn.ProgressiveEdgeBuild}");
+                }
+                    
                 else if (TurnShapeDisplay.IsVisible)
+                {
                     LblTurnShape.Text = $"{turn.Shape}%";
+                    _ = SpeechHelper.SpeakAsync($"{turn.Shape}");
+                }
+                    
                 else if (CarvingIndexDisplay.IsVisible)
+                {
                     LblCarvingIndex.Text = $"{turn.CarvingIndex}%";
+                    _ = SpeechHelper.SpeakAsync($"{turn.CarvingIndex}");
+                }
+                    
 
             });
         }
 
         private async void OnPairSensorsClicked(object? sender, EventArgs e)
         {
+            PermissionStatus status = await Permissions.CheckStatusAsync<Permissions.Bluetooth>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.Bluetooth>();
+            }
+
             StatusLabel.Text = "Pairing in corso...";
             BtnPair.IsEnabled = false;
 
@@ -185,6 +230,7 @@ namespace SkiTelemetry_Analyst.Views
                 {
                     StartLogging();
                 }
+                _ = SpeechHelper.SpeakAsync($"Pronti, via!");
             });
         }
         private async void OnStopClicked(object? sender, EventArgs e)

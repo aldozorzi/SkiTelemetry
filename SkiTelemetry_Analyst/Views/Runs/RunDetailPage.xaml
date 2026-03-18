@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:helpers="clr-namespace:SkiTelemetry_Analyst.Helpers"
              x:Class="SkiTelemetry_Analyst.Views.Runs.RunDetailPage"
              Title=""
              BackgroundColor="#000000">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <helpers:AngleToPercentConverter x:Key="AngleToPercentConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="Auto, Auto, *" Padding="20">
 

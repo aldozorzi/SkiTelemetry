@@ -186,7 +186,7 @@
             {    
                 double result = _maxRollInCurrentTurn;
                 System.Diagnostics.Debug.WriteLine($"[DETECTOR] EDGE ANGLE: {result:F1}°");
-                return result;
+                return Math.Round(result);
             }
 
             return null;
@@ -216,7 +216,7 @@
 
                 System.Diagnostics.Debug.WriteLine($"[DETECTOR] DIFF MEDIA: {averageDiff:F1}° | SCORE SIMMETRIA: {finalScore}");
 
-                return finalScore;
+                return Math.Round(finalScore);
             }
 
             return null;
@@ -251,7 +251,7 @@
                 double finalG = _maxGForceInCurrentTurn;
                 _maxGForceInCurrentTurn = 0;
                 System.Diagnostics.Debug.WriteLine($"[DETECTOR][{left.Timestamp}ms] G-FORCE: {finalG}");
-                return finalG;
+                return Math.Round(finalG,1);
             }
 
             return null;
@@ -332,7 +332,7 @@
                     double finalScore = Math.Round(score);
                     System.Diagnostics.Debug.WriteLine($"[DETECTOR] EARLY EDGING: {timeToEdge}ms | SCORE: {finalScore}");
 
-                    return finalScore;
+                    return Math.Round(finalScore);
                 }
             }
             
@@ -394,7 +394,7 @@
                 double finalScore = normalizedScore * 100.0;
 
                 System.Diagnostics.Debug.WriteLine($"[DETECTOR] PROG BUILD: {finalScore:F1}% (Raw: {rawScore * 100:F1}%, Campioni: {_positiveSamples}/{_totalSamples})");
-                return Math.Round(finalScore, 1);
+                return Math.Round(finalScore);
             }
             return null;
         }
@@ -497,7 +497,7 @@
 
                 System.Diagnostics.Debug.WriteLine($"[DETECTOR] CARVING INDEX: {finalCarvingIndex:F1}%");
 
-                return Math.Round(finalCarvingIndex, 1);
+                return Math.Round(finalCarvingIndex);
             }
             return null;
         }

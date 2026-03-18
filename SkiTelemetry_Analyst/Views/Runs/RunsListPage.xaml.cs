@@ -10,6 +10,8 @@ namespace SkiTelemetry_Analyst.Views.Runs
         public ICommand ViewCommand { get; }
         public ICommand SyncCommand { get; }
 
+        public ICommand DeleteCommand { get; }
+
         private RunService _runService = new();
 
         private bool _isLoading;
@@ -29,6 +31,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
             // Inizializziamo i comandi
             ViewCommand = new Command<dynamic>(async (run) => await OpenRun(run));
             SyncCommand = new Command<dynamic>(async (run) => await SyncRun(run));
+            DeleteCommand = new Command<VisualRunItem>(async (run) => await DeleteRun(run));
             BindingContext = this;
 
         }
@@ -95,6 +98,54 @@ namespace SkiTelemetry_Analyst.Views.Runs
             
         }
 
+        private async Task DeleteRun(VisualRunItem run)
+        {
+            if (IsLoading) return;
+
+            string origine = run.IsLocal ? "locale" : "nel cloud";
+            bool confirm = await DisplayAlertAsync("Elimina Sessione",
+                $"Vuoi davvero eliminare questa run {origine}? L'azione è irreversibile.", "Elimina", "Annulla");
+
+            if (!confirm) return;
+
+            IsLoading = true;
+            bool success = false;
+
+            try
+            {
+                if (run.IsLocal)
+                {
+
+                    if (File.Exists(run.FullPath))
+                    {
+                        File.Delete(run.FullPath);
+                        success = true;
+                    }
+                }
+                else
+                {
+
+                    success = await _runService.DeleteRunAsync(run.Id);
+                }
+
+                if (success)
+                {
+                    LoadFiles();
+                }
+                else
+                {
+                    await DisplayAlertAsync("Errore", "Impossibile completare l'eliminazione.", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlertAsync("Errore", $"Errore durante l'eliminazione: {ex.Message}", "OK");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
         private async void OnSyncAllClicked(object? sender, EventArgs e)
         {
             var hasAccount = Preferences.Default.Get("HasAccount", false);
@@ -159,6 +210,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
                         {
                             combinedList.Add(new VisualRunItem
                             {
+                                Id = remote.Id,
                                 FileName = remote.FileName,
                                 RunName = ParseRunName(remote.FileName),
                                 IsLocal = false,
@@ -191,11 +243,12 @@ namespace SkiTelemetry_Analyst.Views.Runs
         // Classe di supporto per la lista
         public class VisualRunItem
         {
-            public string FileName { get; set; }
-            public string RunName { get; set; }
-            public string FormattedDate { get; set; }
-            public string FullPath { get; set; }
-            public string S3Key { get; set; }
+            public string? Id { get; set; }
+            public string? FileName { get; set; }
+            public string? RunName { get; set; }
+            public string? FormattedDate { get; set; }
+            public string? FullPath { get; set; }
+            public string? S3Key { get; set; }
             public bool IsLocal { get; set; }
 
             // Questa proprietà unifica i dati per la UI

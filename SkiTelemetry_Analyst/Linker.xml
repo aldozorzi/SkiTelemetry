@@ -1,0 +1,5 @@
+﻿<linker>
+  <assembly fullname="SkiTelemetry_Analyst" preserve="all" />
+  <assembly fullname="SkiTelemetry_Core" preserve="all" />
+  <assembly fullname="Plugin.BLE" preserve="all" />
+</linker>

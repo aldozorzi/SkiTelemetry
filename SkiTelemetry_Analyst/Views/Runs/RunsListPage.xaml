@@ -27,7 +27,7 @@
         <CollectionView Grid.Row="2" x:Name="RunsCollection" SelectionMode="None">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="10,15" ColumnDefinitions="*, Auto, Auto" ColumnSpacing="10">
+                    <Grid Padding="10,15" ColumnDefinitions="*, Auto, Auto, Auto" ColumnSpacing="10">
 
                         <Label Grid.Column="0" Text="{Binding DisplayTitle}" FontSize="13" VerticalOptions="Center" />
 
@@ -43,7 +43,6 @@
                             Text="☁" 
                             Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SyncCommand}"
                             CommandParameter="{Binding .}"
-                            BackgroundColor="{Binding IsLocal, Converter={StaticResource LocalToColorConverter}}"
                             IsVisible="{Binding IsLocal}" 
                             WidthRequest="45" />            
 
@@ -54,6 +53,10 @@
                            IsVisible="{Binding IsLocal, Converter={StaticResource InvertBoolConverter}}"
                            HorizontalTextAlignment="Center"
                                WidthRequest="45" />
+                        <Button Grid.Column="3" Text="🗑" 
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteCommand}"
+                            CommandParameter="{Binding .}"
+                            BackgroundColor="#FF3B30" TextColor="White" WidthRequest="45" />        
                     </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>

@@ -47,27 +47,25 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 		<SignAssembly>True</SignAssembly>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
 	</PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)' == 'Release|net10.0-android'">
-
-    <RunAOTCompilation>true</RunAOTCompilation>
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <AndroidManagedSymbols>false</AndroidManagedSymbols>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 
     <PublishTrimmed>true</PublishTrimmed>
-
-    <AndroidCreatePackagePerAbi>true</AndroidCreatePackagePerAbi>
-
+    <TrimMode>partial</TrimMode>
+    <AndroidLinkMode>SdkOnly</AndroidLinkMode>
   </PropertyGroup>
 
 	<ItemGroup>
-    <MauiIcon Include="Resources\AppIcon\logo_light.svg"
-              ForegroundScale="0.65"
-              BaseColor="#000000" />
+    <MauiIcon Include="Resources\AppIcon\logo_light.svg" ForegroundScale="0.65" Color="#000000" />
 
-    <MauiSplashScreen Include="Resources\AppIcon\logo_light.svg"
-                     Color="#000000"
-                     BaseColor="#000000"
-                     ForegroundScale="0.5" />
+    <!-- Splash Screen -->
+
+    <MauiSplashScreen Include="Resources\AppIcon\logo_light.svg" Color="#000000" BaseColor="#000000" ForegroundScale="0.5" />
 
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
@@ -78,6 +76,10 @@
 
 		<!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <AndroidResource Remove="Platforms\Android\Resources\values\styles.xml" />
 	</ItemGroup>
 
 	<ItemGroup>

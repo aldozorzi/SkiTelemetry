@@ -13,33 +13,41 @@ namespace SkiTelemetry_Analyst.Views
             SetMode(startInLogin);
         }
 
-        private async void OnSubmitClicked(object sender, EventArgs e)
+        private async void OnSubmitClicked(object? sender, EventArgs e)
         {
-            // Otteniamo l'oggetto AuthResponse completo
-            var authData = _isLoginMode
+            try
+            {
+                // Otteniamo l'oggetto AuthResponse completo
+                var authData = _isLoginMode
                 ? await _authService.LoginAsync(EntEmail.Text, EntPassword.Text)
                 : await _authService.SignupAsync(EntEmail.Text, EntPassword.Text, PkRole.SelectedItem?.ToString(), EntFirstName.Text, EntLastName.Text);
 
-            if (authData != null)
-            {
-                // Passiamo tutto l'oggetto al chiamante
-                Services.AuthService.AuthCompletionSource?.SetResult(authData);
-                await Navigation.PopModalAsync();
+                if (authData != null)
+                {
+                    // Passiamo tutto l'oggetto al chiamante
+                    Services.AuthService.AuthCompletionSource?.TrySetResult(authData);
+                    await Navigation.PopModalAsync();
+                }
+                else
+                {
+                    await DisplayAlertAsync("Errore", "Credenziali errate o errore server", "OK");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await DisplayAlertAsync("Errore", "Credenziali errate o errore server", "OK");
+                // Questo Alert fermerà il crash e ti mostrerà il colpevole
+                System.Diagnostics.Trace.WriteLine($"CRASH :{ex.ToString()}");
             }
         }
 
-        private async void OnCancelClicked(object sender, EventArgs e)
+        private async void OnCancelClicked(object? sender, EventArgs e)
         {
             // Se annulla, sblocchiamo con null così la sincronizzazione non parte
-            Services.AuthService.AuthCompletionSource?.SetResult(null);
+            Services.AuthService.AuthCompletionSource?.TrySetResult(null);
             await Navigation.PopModalAsync();
         }
 
-        private void OnSwitchModeClicked(object sender, EventArgs e)
+        private void OnSwitchModeClicked(object? sender, EventArgs e)
         {
             // Cambia la modalità (se era login diventa registrazione e viceversa)
             SetMode(!_isLoginMode);

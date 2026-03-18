@@ -12,8 +12,9 @@ public class TelemetryLogger : IDisposable
 
     public void StartLogging()
     {
-        //string folder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string folder = Path.Combine(FileSystem.Current.AppDataDirectory, "Logs");
+        string baseDir = FileSystem.Current.AppDataDirectory;
+        if (!Directory.Exists(baseDir)) Directory.CreateDirectory(baseDir);
+        string folder = Path.Combine(baseDir, "Logs");
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
         string filePath = GenerateProgressiveFileName(folder);
         _fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
