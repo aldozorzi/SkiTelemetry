@@ -1,4 +1,5 @@
 using SkiTelemetry_Analyst.Services;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -9,6 +10,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
 {
     public partial class RunsListPage : ContentPage
     {
+        public ObservableCollection<VisualRunItem> Runs { get; set; } = new();
         public ICommand ViewCommand { get; }
         public ICommand SyncCommand { get; }
 
@@ -38,7 +40,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
             SyncCommand = new Command<dynamic>(async (run) => await SyncRun(run));
             DeleteCommand = new Command<VisualRunItem>(async (run) => await DeleteRun(run));
             BindingContext = this;
-
+            RunsCollection.ItemsSource = Runs;
         }
 
         protected override void OnAppearing()
@@ -80,14 +82,15 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
             if (result == null) return; // Utente ha annullato
 
-            run.Notes = result;
+            //run.Notes = result;
 
             if (run.IsLocal && !string.IsNullOrEmpty(run.FullPath))
             {
                 // Salviamo su file sidecar .json
                 string jsonPath = Path.ChangeExtension(run.FullPath, ".json");
                 await File.WriteAllTextAsync(jsonPath, System.Text.Json.JsonSerializer.Serialize(new { notes = result }));
-                LoadFiles();
+                run.Notes = result;
+                //LoadFiles();
             }
             else if (!string.IsNullOrEmpty(run.Id))
             {
@@ -95,10 +98,11 @@ namespace SkiTelemetry_Analyst.Views.Runs
                 IsLoading = true;
                 try
                 {
-                    bool asyncSuccess = await _runService.UpdateRunNotesAsync(run.Id, run.Notes);
+                    bool asyncSuccess = await _runService.UpdateRunNotesAsync(run.Id, result);
                     if (asyncSuccess)
                     {
-                        LoadFiles();
+                        run.Notes = result;
+                        //LoadFiles();
                     }
                     else
                     {
@@ -130,7 +134,9 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
                 if (success)
                 {
-                    LoadFiles();
+                    run.IsLocal = false;
+                    BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
+                    // LoadFiles();
                     // Qui potresti aggiornare la UI o segnare il file come "sincronizzato"
                 }
                 else
@@ -181,7 +187,9 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
                 if (success)
                 {
-                    LoadFiles();
+                    Runs.Remove(run);
+                    BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
+                    //LoadFiles();
                 }
                 else
                 {
@@ -291,9 +299,14 @@ namespace SkiTelemetry_Analyst.Views.Runs
             }
 
                 // 4. Ordinamento e UI
-                var sortedList = combinedList.OrderByDescending(x => x.FileName).ToList();
-                BtnSyncAll.IsVisible = sortedList.Any(x => x.IsLocal);
-                RunsCollection.ItemsSource = sortedList;
+                var tempSortedList = combinedList.OrderByDescending(x => x.FileName).ToList();
+                
+                Runs.Clear();
+                foreach (var item in tempSortedList)
+                {
+                    Runs.Add(item);
+                }
+                BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
         }
 
         // Helper per il parsing del nome
@@ -305,7 +318,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
         }
 
         // Classe di supporto per la lista
-        public class VisualRunItem
+        public class VisualRunItem : INotifyPropertyChanged
         {
             public string? Id { get; set; }
             public string? FileName { get; set; }
@@ -313,7 +326,14 @@ namespace SkiTelemetry_Analyst.Views.Runs
             public string? FormattedDate { get; set; }
             public string? FullPath { get; set; }
             public string? S3Key { get; set; }
-            public bool IsLocal { get; set; }
+            
+            private bool _isLocal;
+            public bool IsLocal { 
+                get => _isLocal;
+                set { _isLocal = value; OnPropertyChanged();}
+                
+            }
+
             private string? _notes;
             public string? Notes
             {

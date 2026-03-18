@@ -283,7 +283,7 @@ app.patch('/api/run/:runId/notes', authenticateToken, async (req, res) => {
     if (!isOwner) {
       return res.status(403).json({ error: "Non hai i permessi per modificare queste note" });
     }
-
+    //console.log(`[/api/run/:runId/notes] Updating Run: ${runId}`);
     // 3. Aggiornamento su Prisma
     const updatedRun = await prisma.run.update({
       where: { id: runId },

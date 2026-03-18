@@ -24,7 +24,7 @@
             HeightRequest="45" 
             IsVisible="false"/>
 
-        <CollectionView Grid.Row="2" x:Name="RunsCollection" SelectionMode="None">
+        <CollectionView Grid.Row="2" x:Name="RunsCollection" SelectionMode="None" ItemsSource="{Binding Runs}">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Border StrokeShape="RoundRectangle 10" StrokeThickness="0" Margin="0,8" Padding="15" BackgroundColor="#2A2A2A">
