@@ -44,7 +44,7 @@ namespace SkiTelemetry_Analyst.Services
             }
         }
 
-        public async Task<bool> DeleteRunAsync(string runId)
+        public async Task<bool> DeleteRunAsync(string? runId)
         {
             try
             {

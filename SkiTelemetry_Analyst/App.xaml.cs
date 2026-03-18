@@ -6,8 +6,15 @@ namespace SkiTelemetry_Analyst
 
     public partial class App : Application
     {
-        public static string ApiBaseUrl = "http://192.168.8.178:3000/";
-        //public static string ApiBaseUrl = "https://ski-telemetry-web.vercel.app/";
+
+#if WINDOWS
+            public static string ApiBaseUrl = "http://192.168.8.178:3000/";
+#elif ANDROID
+        public static string ApiBaseUrl = "https://ski-telemetry-web.vercel.app/";
+#else
+            public static string ApiBaseUrl = "https://ski-telemetry-web.vercel.app/";
+#endif
+
         public App()
         {
             InitializeComponent();
