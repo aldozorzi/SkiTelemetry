@@ -238,7 +238,7 @@ app.post('/api/run/get-upload-url', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/run/save', authenticateToken, async (req, res) => {
-  const { s3Key, fileName } = req.body;
+  const { s3Key, fileName, notes } = req.body;
 
   if (!s3Key || !fileName) {
     return res.status(400).json({ error: "Missing required metadata" });
@@ -251,6 +251,7 @@ app.post('/api/run/save', authenticateToken, async (req, res) => {
       data: {
         s3Key: s3Key,
         fileName: fileName,
+        notes: notes || null, // Salviamo le note se presenti
         userId: req.user.userId
       }
     });
@@ -259,6 +260,41 @@ app.post('/api/run/save', authenticateToken, async (req, res) => {
     console.error(error);
     await deleteBucketFile(s3Key);
     res.status(500).json({ error: "Failed to save run to database" });
+  }
+});
+app.patch('/api/run/:runId/notes', authenticateToken, async (req, res) => {
+  const { runId } = req.params;
+  const { notes } = req.body;
+  const userId = req.user.userId;
+
+  try {
+    // 1. Recuperiamo la run per controllare i permessi
+    const run = await prisma.run.findUnique({
+      where: { id: runId }
+    });
+
+    if (!run) return res.status(404).json({ error: "Run non trovata" });
+
+    // 2. Controllo Permessi:
+    // Può modificare le note solo il proprietario (Atleta) 
+    // O un coach che ha una relazione ACCEPTED con quell'atleta
+    const isOwner = run.userId === userId;
+
+    if (!isOwner) {
+      return res.status(403).json({ error: "Non hai i permessi per modificare queste note" });
+    }
+
+    // 3. Aggiornamento su Prisma
+    const updatedRun = await prisma.run.update({
+      where: { id: runId },
+      data: { notes: notes }
+    });
+
+    res.json({ message: "Note aggiornate correttamente", notes: updatedRun.notes });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Errore durante l'aggiornamento delle note" });
   }
 });
 
@@ -280,6 +316,7 @@ app.get('/api/run/mine', authenticateToken, async (req, res) => {
         fileName: true,
         s3Key: true,
         createdAt: true,
+        notes: true
       },
       take: limit, // Prendi solo X record
       skip: skip,  // Salta i precedenti
@@ -517,6 +554,7 @@ app.get('/api/coach/athletes-runs', authenticateToken, async (req, res) => {
       runId: run.id,
       fileName: run.fileName,
       s3Key: run.s3Key,
+      notes: run.notes,
       createdAt: run.createdAt,
       athleteId: run.userId,
       athleteName: `${run.owner.firstName} ${run.owner.lastName}`,

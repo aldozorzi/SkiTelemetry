@@ -54,6 +54,7 @@ model Run {
   id        String   @id @default(uuid())
   fileName  String
   s3Key     String   
+  notes     String?  // <-- Aggiungi questa riga (opzionale)
   createdAt DateTime @default(now())
   
   userId    String

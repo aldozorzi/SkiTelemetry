@@ -1,5 +1,7 @@
 using SkiTelemetry_Analyst.Services;
+using System.ComponentModel;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows.Input;
 
@@ -11,6 +13,8 @@ namespace SkiTelemetry_Analyst.Views.Runs
         public ICommand SyncCommand { get; }
 
         public ICommand DeleteCommand { get; }
+
+        public ICommand EditNotesCommand { get; }
 
         private RunService _runService = new();
 
@@ -30,6 +34,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
             InitializeComponent();
             // Inizializziamo i comandi
             ViewCommand = new Command<dynamic>(async (run) => await OpenRun(run));
+            EditNotesCommand = new Command<VisualRunItem>(async (run) => await EditNotes(run));
             SyncCommand = new Command<dynamic>(async (run) => await SyncRun(run));
             DeleteCommand = new Command<VisualRunItem>(async (run) => await DeleteRun(run));
             BindingContext = this;
@@ -66,6 +71,46 @@ namespace SkiTelemetry_Analyst.Views.Runs
             }
         }
 
+        private async Task EditNotes(VisualRunItem run)
+        {
+            // Apre un prompt di sistema: ottimo perché supporta la dettatura vocale
+            string result = await DisplayPromptAsync("Note Sessione",
+                "Inserisci commenti sulla run:",
+                initialValue: run.Notes, keyboard: Keyboard.Text);
+
+            if (result == null) return; // Utente ha annullato
+
+            run.Notes = result;
+
+            if (run.IsLocal && !string.IsNullOrEmpty(run.FullPath))
+            {
+                // Salviamo su file sidecar .json
+                string jsonPath = Path.ChangeExtension(run.FullPath, ".json");
+                await File.WriteAllTextAsync(jsonPath, System.Text.Json.JsonSerializer.Serialize(new { notes = result }));
+                LoadFiles();
+            }
+            else if (!string.IsNullOrEmpty(run.Id))
+            {
+                // Gestione Cloud tramite RunService
+                IsLoading = true;
+                try
+                {
+                    bool asyncSuccess = await _runService.UpdateRunNotesAsync(run.Id, run.Notes);
+                    if (asyncSuccess)
+                    {
+                        LoadFiles();
+                    }
+                    else
+                    {
+                        await DisplayAlertAsync("Errore", "Sincronizzazione note fallita.", "OK");
+                    }
+                }
+                finally
+                {
+                    IsLoading = false;
+                }
+            }
+        }
         private async Task SyncRun(dynamic run)
         {
             var hasAccount = Preferences.Default.Get("HasAccount", false);
@@ -121,12 +166,18 @@ namespace SkiTelemetry_Analyst.Views.Runs
                         File.Delete(run.FullPath);
                         success = true;
                     }
+                    string? jsonPath = Path.ChangeExtension(run.FullPath, ".json");
+                    if (File.Exists(jsonPath))
+                    {
+                        File.Delete(jsonPath);
+                    }
                 }
                 else
                 {
 
                     success = await _runService.DeleteRunAsync(run.Id);
                 }
+
 
                 if (success)
                 {
@@ -187,13 +238,25 @@ namespace SkiTelemetry_Analyst.Views.Runs
                 var info = new FileInfo(filePath); // <--- PRENDIAMO LE INFO DEL FILE
                 var fileName = Path.GetFileName(filePath);
 
+                string jsonPath = Path.ChangeExtension(filePath, ".json");
+                System.Diagnostics.Trace.WriteLine($"[RunsListPage] Searching for : {jsonPath}");
+                string savedNotes = "";
+                if (File.Exists(jsonPath))
+                {
+                    System.Diagnostics.Trace.WriteLine($"[RunsListPage] File Exists! : {jsonPath}");
+                    var jsonContent = File.ReadAllText(jsonPath);
+                    var data = System.Text.Json.JsonDocument.Parse(jsonContent);
+                    savedNotes = data.RootElement.GetProperty("notes").GetString() ?? "";
+                    System.Diagnostics.Trace.WriteLine($"[RunsListPage] Saved Notes : {savedNotes}");
+                }
+
                 combinedList.Add(new VisualRunItem
                 {
                     FileName = fileName,
                     RunName = ParseRunName(fileName),
                     IsLocal = true,
                     FullPath = filePath,
-                    // QUI IL FIX: Recuperiamo la data dal file system
+                    Notes = savedNotes,
                     FormattedDate = info.CreationTime.ToString("dd MMMM yyyy", new CultureInfo("it-IT"))
                 });
             }
@@ -215,6 +278,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
                                 RunName = ParseRunName(remote.FileName),
                                 IsLocal = false,
                                 S3Key = remote.S3Key,
+                                Notes = remote.Notes,
                                 FormattedDate = remote.CreatedAt.ToString("dd MMMM yyyy", new CultureInfo("it-IT"))
                             });
                         }
@@ -250,9 +314,18 @@ namespace SkiTelemetry_Analyst.Views.Runs
             public string? FullPath { get; set; }
             public string? S3Key { get; set; }
             public bool IsLocal { get; set; }
-
+            private string? _notes;
+            public string? Notes
+            {
+                get => _notes;
+                set { _notes = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasNotes)); }
+            }
+            public bool HasNotes => !string.IsNullOrWhiteSpace(Notes);
             // Questa proprietà unifica i dati per la UI
             public string DisplayTitle => $"{FormattedDate} - {RunName}";
+            public event PropertyChangedEventHandler? PropertyChanged;
+            protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+                => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

@@ -18,7 +18,7 @@
             Grid.Row="1" 
             Text="SINCRONIZZA TUTTE" 
             Clicked="OnSyncAllClicked"
-            BackgroundColor="SeaGreen"
+            BackgroundColor="CornflowerBlue"
             TextColor="White"
             Margin="0,10,0,20"
             HeightRequest="45" 
@@ -27,37 +27,29 @@
         <CollectionView Grid.Row="2" x:Name="RunsCollection" SelectionMode="None">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid Padding="10,15" ColumnDefinitions="*, Auto, Auto, Auto" ColumnSpacing="10">
+                    <Border StrokeShape="RoundRectangle 10" StrokeThickness="0" Margin="0,8" Padding="15" BackgroundColor="#2A2A2A">
+                        <VerticalStackLayout Spacing="10">
 
-                        <Label Grid.Column="0" Text="{Binding DisplayTitle}" FontSize="13" VerticalOptions="Center" />
+                            <Label Text="{Binding DisplayTitle}" FontSize="16" FontAttributes="Bold" TextColor="White" />
 
-                        <Button Grid.Column="1" 
-                            Text="👁" 
-                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ViewCommand}"
-                            CommandParameter="{Binding .}"
-                            BackgroundColor="LightGray"
-                            TextColor="Black"
-                            WidthRequest="45" />
+                            <Label Text="{Binding Notes}" FontSize="13" TextColor="LightGray" 
+                           LineBreakMode="WordWrap" MaxLines="3"
+                           IsVisible="{Binding HasNotes}" />
 
-                        <Button Grid.Column="2" 
-                            Text="☁" 
-                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SyncCommand}"
-                            CommandParameter="{Binding .}"
-                            IsVisible="{Binding IsLocal}" 
-                            WidthRequest="45" />            
+                            <BoxView HeightRequest="1" Color="#444" Margin="0,5" />
 
-                        <Label Grid.Column="2" 
-                           Text="☁" 
-                           VerticalOptions="Center" 
-                           HorizontalOptions="Fill"
-                           IsVisible="{Binding IsLocal, Converter={StaticResource InvertBoolConverter}}"
-                           HorizontalTextAlignment="Center"
-                               WidthRequest="45" />
-                        <Button Grid.Column="3" Text="🗑" 
-                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteCommand}"
-                            CommandParameter="{Binding .}"
-                            BackgroundColor="#FF3B30" TextColor="White" WidthRequest="45" />        
-                    </Grid>
+                            <Grid ColumnDefinitions="*, *, *, *" ColumnSpacing="10">
+                                <Button Grid.Column="0" Text="👁" Command="{Binding BindingContext.ViewCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="#555"/>
+
+                                <Button Grid.Column="1" Text="✎" Command="{Binding BindingContext.EditNotesCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="Goldenrod"/>
+
+                                <Button Grid.Column="2" Text="🗑" Command="{Binding BindingContext.DeleteCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="IndianRed" />
+
+                                <Button Grid.Column="3" Text="☁" Command="{Binding BindingContext.SyncCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" IsVisible="{Binding IsLocal}" BackgroundColor="CornflowerBlue"/>
+                                <Label Grid.Column="3" Text="☁"  TextColor="CornflowerBlue" VerticalOptions="Center" HorizontalOptions="Fill" IsVisible="{Binding IsLocal, Converter={StaticResource InvertBoolConverter}}" HorizontalTextAlignment="Center"/>
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

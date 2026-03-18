@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Serialization;
 using static SkiTelemetry_Analyst.Views.Runs.RunsListPage;
 
@@ -32,6 +33,11 @@ namespace SkiTelemetry_Analyst.Services
                     {
                         File.Delete(filePath);
                         //System.Diagnostics.Trace.WriteLine($"File locale eliminato: {confirmedFileName}");
+                        string? jsonPath = Path.ChangeExtension(filePath, ".json");
+                        if (File.Exists(jsonPath))
+                        {
+                            File.Delete(jsonPath);
+                        }
                     }
                     return true;
                 }
@@ -59,6 +65,30 @@ namespace SkiTelemetry_Analyst.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Errore DeleteRun: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateRunNotesAsync(string? runId, string? notes)
+        {
+            try
+            {
+                var authData = await _authService.GetAuthStatusAsync();
+                if (authData == null) return false;
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authData.AccessToken);
+
+                // Prepariamo l'oggetto JSON richiesto dal tuo backend
+                var payload = new { notes = notes };
+
+                // Chiamata PATCH a /api/run/{runId}/notes
+                var response = await _httpClient.PatchAsJsonAsync($"api/run/{runId}/notes", payload);
+
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"[RunService] Errore PATCH note: {ex.Message}");
                 return false;
             }
         }
@@ -102,7 +132,31 @@ namespace SkiTelemetry_Analyst.Services
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authData.AccessToken);
 
-            var savePayload = new { fileName = Path.GetFileName(filePath), s3Key = s3Key };
+            // --- LOGICA NOTE ---
+            string? notesContent = null;
+            string jsonPath = Path.ChangeExtension(filePath, ".json");
+
+            if (File.Exists(jsonPath))
+            {
+                try
+                {
+                    string jsonText = await File.ReadAllTextAsync(jsonPath);
+                    using var doc = System.Text.Json.JsonDocument.Parse(jsonText);
+                    if (doc.RootElement.TryGetProperty("notes", out var noteProp))
+                    {
+                        notesContent = noteProp.GetString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.WriteLine($"[SYNC] Errore lettura note sidecar: {ex.Message}");
+                    // Decidi se bloccare tutto o mandare comunque la run senza note. 
+                    // Qui proseguiamo mandando null se il file è corrotto.
+                }
+            }
+
+
+            var savePayload = new { fileName = Path.GetFileName(filePath), s3Key = s3Key, notes = notesContent};
 
             var response = await _httpClient.PostAsJsonAsync("api/run/save", savePayload);
             // System.Diagnostics.Trace.WriteLine($"response:{response}");
@@ -217,6 +271,7 @@ namespace SkiTelemetry_Analyst.Services
         [JsonPropertyName("fileName")] public string FileName { get; set; } = string.Empty;
         [JsonPropertyName("createdAt")] public DateTime CreatedAt { get; set; }
         [JsonPropertyName("s3Key")] public string S3Key { get; set; } = string.Empty;
+        [JsonPropertyName("notes")] public string Notes { get; set; } = string.Empty;
     }
     public class DownloadUrlResponse
     {
