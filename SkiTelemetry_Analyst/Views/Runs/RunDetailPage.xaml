@@ -56,12 +56,17 @@
                     <Border Padding="15" Margin="5,5" Stroke="#333" BackgroundColor="#121212" StrokeShape="RoundRectangle 10">
                         <VerticalStackLayout Spacing="12">
 
-                            <Grid ColumnDefinitions="*, Auto">
+                            <Grid ColumnDefinitions="*, auto, auto">
                                 <Label Text="{Binding EdgeAngle, StringFormat='MAX ROLL: {0:F1}°'}" 
                                        FontAttributes="Bold" 
                                        TextColor="Cyan" 
-                                       FontSize="16" />
+                                       FontSize="12" />
                                 <Label Grid.Column="1" 
+                                   Text="{Binding Foot, StringFormat='FOOT: {0}'}" 
+                                   TextColor="White" 
+                                   FontSize="12" 
+                                   VerticalOptions="Center" />          
+                                <Label Grid.Column="2" 
                                        Text="{Binding Shape, StringFormat='SHAPE: {0:F0}%'}" 
                                        TextColor="White" 
                                        FontSize="12" 

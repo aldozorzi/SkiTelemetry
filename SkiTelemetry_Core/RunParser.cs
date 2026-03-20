@@ -7,11 +7,11 @@ public static class RunParser
         var dataPoints = new List<SkiDataPoint>();
 
         if (!File.Exists(filePath)) return dataPoints;
-
+        const int bytesPerRecord = 29;
         using (var stream = File.OpenRead(filePath))
         using (var reader = new BinaryReader(stream))
         {
-            while (stream.Position < stream.Length)
+            while (stream.Position + bytesPerRecord < stream.Length)
             {
                 dataPoints.Add(new SkiDataPoint
                 {

@@ -16,7 +16,8 @@ public enum MonitorMode
     LineChoice,
     LoadDistribution,
     RaceEfficiencyIndex,
-    DebugData
+    DebugData,
+    Foot
 }
 
 public enum SensorSide { Left, Right }
@@ -66,12 +67,18 @@ public class SkiDataPoint
     public float GyroZ { get; set; }
 
     // Calcoliamo l'inclinazione (Roll) semplificata per ora
-    public double rawRoll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
-    //public double Roll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
-    public double Roll { get; set; } // Dato filtrato
+    // public double rawRoll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
+    public double Roll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
+    // public double Roll { get; set; } // Dato filtrato
 
     public override string ToString()
     {
-        return $"[DATA] Side: {Side}, Roll: {Roll:0.0}, Acc:({AccX:0.0},{AccY:0.0},{AccZ:0.0})";
+        return $"[DATA] Side: {Side}, Roll: {Roll:0.0}, Acc:({AccX:0.0},{AccY:0.0},{AccZ:0.0}, Gyro:{GyroY:0.0})";
     }
+}
+
+public class SensorBias
+{
+    public float AccX, AccY, AccZ;
+    public float GyroX, GyroY, GyroZ;
 }

@@ -14,9 +14,11 @@
         public double? Shape { get; set; }
         public double? ProgressiveEdgeBuild { get; set; }
         public double? CarvingIndex { get; set; }
+
+        public SensorSide? Foot { get; set; }
         public override string ToString()
         {
-            return $"[DATA] EdgeAngle: {EdgeAngle}, EdgeSimilarity: {EdgeSimilarity}, EarlyEdging:{EarlyEdging}, GForce:{GForce}, Radius{Radius}, Shape: {Shape}, ProgressiveEdgeBuild: {ProgressiveEdgeBuild}, CarvingIndex:{CarvingIndex})";
+            return $"[DATA] EdgeAngle: {EdgeAngle}, EdgeSimilarity: {EdgeSimilarity}, EarlyEdging:{EarlyEdging}, GForce:{GForce}, Radius{Radius}, Shape: {Shape}, ProgressiveEdgeBuild: {ProgressiveEdgeBuild}, CarvingIndex:{CarvingIndex}, Foot:{Foot})";
         }
     }
 

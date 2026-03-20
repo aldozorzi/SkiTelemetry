@@ -83,6 +83,7 @@ namespace SkiTelemetry_Analyst.Views
 
         private void OnTelemetryReceived(object? sender, SkiDataPoint rawPoint)
         {
+            System.Diagnostics.Trace.WriteLine($"[MAinPage] rawPoint {rawPoint} ");
             if (_logger.isLogging) _logger.LogData(rawPoint);
             _dataProcessor.Process(rawPoint);
 

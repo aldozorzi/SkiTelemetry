@@ -26,11 +26,13 @@ namespace SkiTelemetry_Analyst.Services
                 {
                     return new AuthResponse { AccessToken = accessToken, RefreshToken = refreshToken };
                 }
-
+                System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] accesstoken scaduto");
                 // 2. Se è scaduto, proviamo il Refresh
                 if (!string.IsNullOrEmpty(refreshToken))
                 {
+                    System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] trying to refresh");
                     var refreshedResponse = await RefreshTokenAsync(refreshToken);
+                    System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] refreshedResponse: {refreshedResponse}");
                     if (refreshedResponse != null) return refreshedResponse;
                 }
             }
@@ -45,8 +47,10 @@ namespace SkiTelemetry_Analyst.Services
 
         private async Task<AuthResponse?> RefreshTokenAsync(string refreshToken)
         {
+            System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] calling api/auth/refresh: {refreshToken}");
             try
             {
+                
                 var response = await _httpClient.PostAsJsonAsync("api/auth/refresh", new { refreshToken });
                 return await ProcessAuthResponse(response);
             }
@@ -83,6 +87,7 @@ namespace SkiTelemetry_Analyst.Services
             if (result == null || string.IsNullOrEmpty(result.AccessToken)) return null;
 
             // Salvataggio persistente
+            System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] saving refresh_token: {result.RefreshToken}");
             await SecureStorage.Default.SetAsync("access_token", result.AccessToken);
             await SecureStorage.Default.SetAsync("refresh_token", result.RefreshToken);
             Preferences.Default.Set("HasAccount", true);

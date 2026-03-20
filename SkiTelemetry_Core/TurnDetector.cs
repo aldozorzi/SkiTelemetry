@@ -18,12 +18,18 @@
         private double? _turnProgressiveEdgeBuild { get; set; }
         private double? _turnCarvingIndex { get; set; }
 
-        // EDGE ANGLE PEAK
+        private SensorSide? _foot { get; set; }
+
+
+        // GENERAL TURN
         private double _maxRollInCurrentTurn = 0;
         private bool _isCurrentlyTurning = false;
         private bool _wasTurningBefore = false;
         private bool _isPeakReached = false;
-
+        private uint _turnStartTime = 0;
+        private List<double> _medianWindow = new List<double>();
+        private const int MedianSize = 5; // Finestra piccola per non avere lag
+        private double _smoothRoll = 0;
 
         // EDGE SIMILARITY
         private double _accumulatedDiff = 0;
@@ -39,7 +45,6 @@
         private int _radiusSampleCount = 0;
 
         // EARLY EDGING
-        private uint _turnStartTime = 0;
         private bool _thresholdReached = false;
         private const double _earlyEdgingExcellentTime = 500; // Sotto i 250ms è un 100 pieno (Fulmineo)
         private const double _earlyEdgingMaxAcceptableTime = 1500; // Oltre 1 secondo è uno 0 (Ritardato)
@@ -66,20 +71,32 @@
         private int _apexSampleIndex = 0;
         private int _currentTurnSampleCount = 0;
 
+        // FOOT
+        private double _accumulatedRightLeftDiff = 0;
+
         // Soglie personalizzabili
-        private const double StartThreshold = 10; // Gradi minimi per considerare l'inizio di un turn
-        private const double GapToConfirmPeak = 3.0; // Quanti gradi devi "risalire" per confermare il picco 
-        private const double ExitThreshold = 6; // Valore massimo per l'uscita forzata da una cruva, qualora venisse "saltato" il calcolo StartThreshold-GapToConfirmPeak
+        private const double StartThreshold = 15; // Gradi minimi per considerare l'inizio di un turn
+        private const double GapToConfirmPeak = 3; // Quanti gradi devi "risalire" per confermare il picco 
+        private const double ExitThreshold = 10; // Valore massimo per l'uscita forzata da una cruva, qualora venisse "saltato" il calcolo StartThreshold-GapToConfirmPeak
         private const double EarlyEdgingStartThresholdDelta = 5; // Gradi minimi per considerare l'attivazione dell'earlyedging rispetto a StartThreshold (che definisce l'inizio curva)
         private const double ProgressiveBuildPerfectionTolerance = 0.90; // Un risultato di ProgressiveBuildPerfectionTolerance*100 è considerato 100 (es. 0.90->90% = 100%)
+
+        
 
         public void AddPoints(SkiDataPoint left, SkiDataPoint right)
         {
             //System.Diagnostics.Debug.WriteLine($"[DETECTOR] receiving Points: [{left}] - [{right}]");
+            
+
             double leftRoll = left.Roll;
             double rightRoll = right.Roll;
+
+            //System.Diagnostics.Trace.WriteLine($"[DETECTOR] Roll Points: [{left.Roll}] - [{right.Roll}]");
+
             double absRoll = Math.Max(Math.Abs(leftRoll), Math.Abs(rightRoll));
             _wasTurningBefore = _isCurrentlyTurning;
+            
+
             UpdateTurnState(absRoll, left.Timestamp);
 
             if (RequestedMetrics.Contains(MonitorMode.EdgeAngle))
@@ -146,8 +163,15 @@
                     _turnCarvingIndex = result;
                 }
             }
-
-
+            if (RequestedMetrics.Contains(MonitorMode.Foot))
+            {
+                // FOOT , always calculated
+                SensorSide? foot = GetFoot(left, right);
+                if (foot.HasValue)
+                {
+                    _foot = foot;
+                }
+            }
 
 
             if (_isCurrentlyTurning && !_wasTurningBefore)
@@ -165,7 +189,6 @@
             else if (!_isCurrentlyTurning && _wasTurningBefore)
             {
                 // fine curva
-                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Fine curva");
                 var turn = new SkiTurn();
                 turn.EdgeAngle = _turnEdgeAngle;
                 turn.EdgeSimilarity = _turnEdgeSimilarity;
@@ -175,17 +198,42 @@
                 turn.Shape = _turnShape;
                 turn.ProgressiveEdgeBuild = _turnProgressiveEdgeBuild;
                 turn.CarvingIndex = _turnCarvingIndex;
-                // System.Diagnostics.Debug.WriteLine($"[DETECTOR] Sending Turn: {turn}");
+                turn.Foot = _foot;
+                //System.Diagnostics.Trace.WriteLine($"[DETECTOR] Sending foot: {_accumulatedRightLeftDiff}");
                 ResetMetrics(); // Pulizia immediata dopo il calcolo finale
                 OnTurnCompleted?.Invoke(this, turn);
             }
+        }
+
+
+        public SensorSide? GetFoot(SkiDataPoint left, SkiDataPoint right)
+        {
+            if (_isCurrentlyTurning)
+            {
+                double diff = left.Roll - right.Roll;
+
+                if (Math.Abs(left.Roll) > 5 || Math.Abs(right.Roll) > 5)
+                {
+                    _accumulatedRightLeftDiff += diff;
+                }
+            }
+            else if (_wasTurningBefore)
+            {
+                var result = _accumulatedRightLeftDiff > 0 ? SensorSide.Left : SensorSide.Right;
+
+                // Log di debug per vedere il verdetto finale
+                //System.Diagnostics.Trace.WriteLine($"[DETECTOR] Verdetto finale: {_accumulatedRightLeftDiff:F2} -> {result}");
+
+                return result;
+            }
+            return null;
         }
         public double? GetTurnAngle(SkiDataPoint left, SkiDataPoint right)
         {
            if (!_isCurrentlyTurning &&  _wasTurningBefore)
             {    
                 double result = _maxRollInCurrentTurn;
-                System.Diagnostics.Debug.WriteLine($"[DETECTOR] EDGE ANGLE: {result:F1}°");
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] EDGE ANGLE: {result:F1}°");
                 return Math.Round(result);
             }
 
@@ -214,7 +262,7 @@
                 // 3. Limitiamo il range tra 0 e 100 (non vogliamo punteggi negativi)
                 double finalScore = Math.Clamp(Math.Round(score), 0, 100);
 
-                System.Diagnostics.Debug.WriteLine($"[DETECTOR] DIFF MEDIA: {averageDiff:F1}° | SCORE SIMMETRIA: {finalScore}");
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] DIFF MEDIA: {averageDiff:F1}° | SCORE SIMMETRIA: {finalScore}");
 
                 return Math.Round(finalScore);
             }
@@ -250,7 +298,7 @@
                 
                 double finalG = _maxGForceInCurrentTurn;
                 _maxGForceInCurrentTurn = 0;
-                System.Diagnostics.Debug.WriteLine($"[DETECTOR][{left.Timestamp}ms] G-FORCE: {finalG}");
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR][{left.Timestamp}ms] G-FORCE: {finalG}");
                 return Math.Round(finalG,1);
             }
 
@@ -287,7 +335,7 @@
                     }
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[DETECTOR] TURN RADIUS: {finalRadius} m");
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] TURN RADIUS: {finalRadius} m");
                 return finalRadius;
             }
 
@@ -330,7 +378,7 @@
                     }
 
                     double finalScore = Math.Round(score);
-                    System.Diagnostics.Debug.WriteLine($"[DETECTOR] EARLY EDGING: {timeToEdge}ms | SCORE: {finalScore}");
+                    //System.Diagnostics.Debug.WriteLine($"[DETECTOR] EARLY EDGING: {timeToEdge}ms | SCORE: {finalScore}");
 
                     return Math.Round(finalScore);
                 }
@@ -384,7 +432,7 @@
             }
             else if (_wasTurningBefore) // Fine curva
             {
-                if (_totalSamples == 0) { ResetMetrics(); return null; }
+                if (_totalSamples == 0) {return null; }
 
                 // Calcolo grezzo
                 double rawScore = ((double)_positiveSamples / _totalSamples);
@@ -393,7 +441,7 @@
                 double normalizedScore = Math.Min(1.0, rawScore / ProgressiveBuildPerfectionTolerance);
                 double finalScore = normalizedScore * 100.0;
 
-                System.Diagnostics.Debug.WriteLine($"[DETECTOR] PROG BUILD: {finalScore:F1}% (Raw: {rawScore * 100:F1}%, Campioni: {_positiveSamples}/{_totalSamples})");
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] PROG BUILD: {finalScore:F1}% (Raw: {rawScore * 100:F1}%, Campioni: {_positiveSamples}/{_totalSamples})");
                 return Math.Round(finalScore);
             }
             return null;
@@ -456,7 +504,7 @@
                     {
                         finalScore = MapValue(apexPercent, 0, 30, 0, 30);
                     }
-                    System.Diagnostics.Debug.WriteLine($"[DETECTOR] TURN SHAPE: {finalScore:F1}% - Apex:{apexPercent}% - buildScore:{buildScore}%");
+                    // System.Diagnostics.Debug.WriteLine($"[DETECTOR] TURN SHAPE: {finalScore:F1}% - Apex:{apexPercent}% - buildScore:{buildScore}%");
                     return Math.Round(finalScore);
                 }
 
@@ -495,7 +543,7 @@
                 // Un valore di 5.0 di deviazione lo consideriamo già "derapata totale" (0%)
                 double finalCarvingIndex = Math.Max(0, 100 - (avgDeviation / 0.2 * 100));
 
-                System.Diagnostics.Debug.WriteLine($"[DETECTOR] CARVING INDEX: {finalCarvingIndex:F1}%");
+                // System.Diagnostics.Debug.WriteLine($"[DETECTOR] CARVING INDEX: {finalCarvingIndex:F1}%");
 
                 return Math.Round(finalCarvingIndex);
             }
@@ -503,37 +551,53 @@
         }
         private void UpdateTurnState(double absRoll, uint ts)
         {
-            //System.Diagnostics.Debug.WriteLine($"[DETECTOR] UpdateTurnState absRoll:{absRoll}");
-            if (!_isCurrentlyTurning )
+            _medianWindow.Add(absRoll);
+            if (_medianWindow.Count > MedianSize) _medianWindow.RemoveAt(0);
+
+            // La mediana è il valore centrale della lista ordinata
+            var sorted = _medianWindow.OrderBy(x => x).ToList();
+            double medianRoll = sorted[sorted.Count / 2];
+
+            // 2. SMOOTHING LEGGERO (solo sulla mediana)
+            _smoothRoll = (_smoothRoll * 0.6) + (medianRoll * 0.4);
+
+            //System.Diagnostics.Trace.WriteLine($"[DETECTOR] ts={ts} absRoll: {absRoll} _smoothRoll: {_smoothRoll:F2} ");
+            if (!_isCurrentlyTurning)
             {
                 // Posso iniziare solo se sono sopra la soglia E non sono in fase di rientro
-                if (absRoll > StartThreshold)
+                if (_smoothRoll > StartThreshold)
                 {
                     _isCurrentlyTurning = true;
-                    _maxRollInCurrentTurn = absRoll;
+                    _maxRollInCurrentTurn = _smoothRoll;
                     _turnStartTime = ts;
-                    //System.Diagnostics.Debug.WriteLine($"[DETECTOR][{ts}ms] CURVA INIZIATA");
+                    //System.Diagnostics.Trace.WriteLine($"[DETECTOR] START: ts={ts}, roll={_smoothRoll:F2}");
                 }
             }
             else if (_isCurrentlyTurning)
             {
                 // Aggiorna picco
-                if (absRoll > _maxRollInCurrentTurn) _maxRollInCurrentTurn = absRoll;
+                if (_smoothRoll > _maxRollInCurrentTurn) _maxRollInCurrentTurn = _smoothRoll;
 
                 // Condizioni di chiusura
-                bool dropFromPeak = absRoll < (_maxRollInCurrentTurn - GapToConfirmPeak);
-                bool dropBelowExit = absRoll < ExitThreshold;
+                bool dropFromPeak = _smoothRoll < (_maxRollInCurrentTurn - GapToConfirmPeak);
+                bool dropBelowExit = _smoothRoll < ExitThreshold;
                 if (dropFromPeak)
                 {
                     _isPeakReached = true;
                 }
                 if (dropBelowExit)
                 {
+                    uint duration = ts - _turnStartTime;
+                    if (duration > 400) // Solo se è una curva e non un sobbalzo
+                    {
+                        
+                    }
+                    //System.Diagnostics.Trace.WriteLine($"[DETECTOR] FINE: durata={duration}ms, max={_maxRollInCurrentTurn:F2}");
                     _isCurrentlyTurning = false;
-                    //System.Diagnostics.Debug.WriteLine($"[DEBUG][{ts}ms] CURVA TERMINATA, Inizio cool-down");
+                    
                 }
             }
-            
+
         }
 
 
@@ -547,9 +611,14 @@
         }
         private void ResetMetrics()
         {
+            //System.Diagnostics.Trace.WriteLine($"[DETECTOR] ResetMetrics()");
             // EDGE ANGLE
             _maxRollInCurrentTurn = 0;
             _isPeakReached = false;
+            _smoothRoll = 0;
+            _medianWindow.Clear();
+
+
 
             // EDGE SIMILARITY
             _accumulatedDiff = 0;
@@ -564,7 +633,6 @@
             _radiusSampleCount = 0;
 
              // EARLY EDGING
-            _turnStartTime = 0;
             _thresholdReached = false;
 
             // PROGRESSIVE BUILD
@@ -581,6 +649,9 @@
             _maxRollForShape = 0;
             _apexSampleIndex = 0;
             _currentTurnSampleCount = 0;
+
+            // FOOT
+            _accumulatedRightLeftDiff = 0;
 
             // proprietà della curva (da inserire nell'oggetto SkiTurn)
             _turnEdgeAngle = 0;

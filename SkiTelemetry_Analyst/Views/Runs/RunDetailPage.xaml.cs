@@ -43,8 +43,10 @@ public partial class RunDetailPage : ContentPage
             metrics.Add(MonitorMode.TurnShape);
             metrics.Add(MonitorMode.CarvingIndex);
             metrics.Add(MonitorMode.EdgeSimilarity);
+            metrics.Add(MonitorMode.Foot);
 
             processor.setMetrics(metrics);
+
 
             foreach (var p in points)
             {
