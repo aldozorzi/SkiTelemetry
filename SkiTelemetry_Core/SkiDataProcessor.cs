@@ -52,8 +52,8 @@ namespace SkiTelemetry_Core
 
                 _leftSamples.Add(left.GyroY);
                 _rightSamples.Add(right.GyroY);
-                System.Diagnostics.Trace.WriteLine($"Adding Calibrating point: {left.ToString()} ");
-                System.Diagnostics.Trace.WriteLine($"Adding Calibrating point: {right.ToString()} ");
+                //System.Diagnostics.Trace.WriteLine($"Adding Calibrating point: {left.ToString()} ");
+                //System.Diagnostics.Trace.WriteLine($"Adding Calibrating point: {right.ToString()} ");
                 _sampleCounter++;
 
                 if (_sampleCounter >= SamplesRequired) // Altri 3 secondi di campionamento statico
@@ -96,10 +96,6 @@ namespace SkiTelemetry_Core
 
         public void Process(SkiDataPoint point)
         {
-
-            
-
-
             if (point.Side == SensorSide.Left)
             {
                 _leftDataPoint = point; 
@@ -126,7 +122,10 @@ namespace SkiTelemetry_Core
             _rightDataPoint.AccY = (float)(_rightDataPoint.AccY * _rightGain);
             _rightDataPoint.AccZ = (float)((_rightDataPoint.AccZ - _rightBias.AccZ) * _rightGain);
             _rightDataPoint.GyroY = (float)((_rightDataPoint.GyroY - _rightBias.GyroY) * _rightGyroGain);
+
             
+           
+
 
             // Aggiungiamo la metrica attualmente selezionata nella UI
             //System.Diagnostics.Trace.WriteLine($"Adding point: {point.ToString()} ");

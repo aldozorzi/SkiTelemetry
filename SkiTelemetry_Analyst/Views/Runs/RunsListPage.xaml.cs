@@ -1,4 +1,5 @@
 using SkiTelemetry_Analyst.Services;
+using SkiTelemetry_Core;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -10,13 +11,13 @@ namespace SkiTelemetry_Analyst.Views.Runs
 {
     public partial class RunsListPage : ContentPage
     {
+        private readonly SkiDataProcessor _dataProcessor = new();
         public ObservableCollection<VisualRunItem> Runs { get; set; } = new();
         public ICommand ViewCommand { get; }
         public ICommand SyncCommand { get; }
-
         public ICommand DeleteCommand { get; }
-
         public ICommand EditNotesCommand { get; }
+        public ICommand ExportCsvCommand { get; }
 
         private RunService _runService = new();
 
@@ -39,6 +40,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
             EditNotesCommand = new Command<VisualRunItem>(async (run) => await EditNotes(run));
             SyncCommand = new Command<dynamic>(async (run) => await SyncRun(run));
             DeleteCommand = new Command<VisualRunItem>(async (run) => await DeleteRun(run));
+            ExportCsvCommand = new Command<VisualRunItem>(async (run) => await ExportRunToCsv(run));
             BindingContext = this;
             RunsCollection.ItemsSource = Runs;
         }
@@ -205,6 +207,52 @@ namespace SkiTelemetry_Analyst.Views.Runs
                 IsLoading = false;
             }
         }
+
+        private async Task ExportRunToCsv(VisualRunItem runItem)
+        {
+            string? dataFilePath = await _runService.GetDownloadPathAsync(runItem);
+            if (dataFilePath == null) return;
+            try
+            {
+                IsLoading = true;
+
+                // Carichiamo la run usando il servizio esistente
+                var points = RunParser.ParseBinFile(dataFilePath);
+                if (points == null) return;
+
+                StringBuilder csv = new StringBuilder();
+                // Header (usiamo ; per Excel italiano)
+                csv.AppendLine("Timestamp;Side;AccX;AccY;AccZ;GyroX;GyroY;GyroZ");
+
+                foreach (var p in points)
+                {
+                    IFormatProvider provider = CultureInfo.InvariantCulture;
+
+                    csv.AppendLine($"{p.Timestamp};{p.Side};{p.AccX.ToString(provider)};{p.AccY.ToString(provider)};{p.AccZ.ToString(provider)};" +
+                                     $"{p.GyroX.ToString(provider)};{p.GyroY.ToString(provider)};{p.GyroZ.ToString(provider)};");
+                }
+
+                // Definiamo il percorso di salvataggio (cartella Downloads o documenti pubblica)
+                string folder = Path.Combine(FileSystem.AppDataDirectory, "Exports");
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+                string fileName = $"Export_{runItem.RunName}_{DateTime.Now:HHmmss}.csv";
+                string filePath = Path.Combine(folder, fileName);
+
+                await File.WriteAllTextAsync(filePath, csv.ToString());
+
+                await DisplayAlertAsync("Esportazione", $"CSV generato in:\n{filePath}", "OK");
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlertAsync("Errore", ex.Message, "OK");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private async void OnSyncAllClicked(object? sender, EventArgs e)
         {
             var hasAccount = Preferences.Default.Get("HasAccount", false);

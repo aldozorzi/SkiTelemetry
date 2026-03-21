@@ -1,4 +1,7 @@
-﻿namespace SkiTelemetry_Core
+﻿using System.Drawing;
+using static System.Net.Mime.MediaTypeNames;
+
+namespace SkiTelemetry_Core
 {
     public class TurnDetector
     {
@@ -27,9 +30,13 @@
         private bool _wasTurningBefore = false;
         private bool _isPeakReached = false;
         private uint _turnStartTime = 0;
-        private List<double> _medianWindow = new List<double>();
-        private const int MedianSize = 5; // Finestra piccola per non avere lag
-        private double _smoothRoll = 0;
+        
+
+        // ROLL
+        private double _RightRoll = 0;
+        private double _LeftRoll = 0;
+        private long _lastLeftTimestamp = 0;
+        private long _lastRightTimestamp = 0;
 
         // EDGE SIMILARITY
         private double _accumulatedDiff = 0;
@@ -71,9 +78,6 @@
         private int _apexSampleIndex = 0;
         private int _currentTurnSampleCount = 0;
 
-        // FOOT
-        private double _accumulatedRightLeftDiff = 0;
-
         // Soglie personalizzabili
         private const double StartThreshold = 15; // Gradi minimi per considerare l'inizio di un turn
         private const double GapToConfirmPeak = 3; // Quanti gradi devi "risalire" per confermare il picco 
@@ -81,17 +85,47 @@
         private const double EarlyEdgingStartThresholdDelta = 5; // Gradi minimi per considerare l'attivazione dell'earlyedging rispetto a StartThreshold (che definisce l'inizio curva)
         private const double ProgressiveBuildPerfectionTolerance = 0.90; // Un risultato di ProgressiveBuildPerfectionTolerance*100 è considerato 100 (es. 0.90->90% = 100%)
 
-        
+        private double GetRoll(SkiDataPoint point)
+        {
+            
+
+            // 1. Calcola il Roll "statico" dall'accelerometro (molto rumoroso)
+            double accelRoll = Math.Atan2(point.AccX, point.AccY) * (180 / Math.PI);
+
+           
+            if(point.Side == SensorSide.Left)
+            {
+
+                double dt = (point.Timestamp - _lastLeftTimestamp) / 1000.0;
+                if (dt <= 0 || dt > 0.5) dt = 0.02; 
+                _lastLeftTimestamp = point.Timestamp;
+
+                _LeftRoll = 0.98 * (_LeftRoll + point.GyroZ * dt) + 0.02 * accelRoll;
+                return _LeftRoll;
+            }else{
+                // 2. Calcola il tempo trascorso (dt) in secondi
+                double dt = (point.Timestamp - _lastRightTimestamp) / 1000.0;
+                if (dt <= 0 || dt > 0.5) dt = 0.02; 
+                _lastRightTimestamp = point.Timestamp;
+
+                _RightRoll = 0.98 * (_RightRoll + point.GyroZ * dt) + 0.02 * accelRoll;
+                return _RightRoll;
+            }
+            
+        }
 
         public void AddPoints(SkiDataPoint left, SkiDataPoint right)
         {
             //System.Diagnostics.Debug.WriteLine($"[DETECTOR] receiving Points: [{left}] - [{right}]");
             
 
-            double leftRoll = left.Roll;
-            double rightRoll = right.Roll;
+            double leftRoll = GetRoll(left);
+            double rightRoll = GetRoll(right);
 
-            //System.Diagnostics.Trace.WriteLine($"[DETECTOR] Roll Points: [{left.Roll}] - [{right.Roll}]");
+            left.SmoothRoll = leftRoll;
+            right.SmoothRoll = rightRoll;
+
+            System.Diagnostics.Trace.WriteLine($"[DETECTOR] Left RAW: [{left.Roll}], Left SoftRoll[{leftRoll}] - Right RAW: [{right.Roll}], Right SoftRoll[{rightRoll}]");
 
             double absRoll = Math.Max(Math.Abs(leftRoll), Math.Abs(rightRoll));
             _wasTurningBefore = _isCurrentlyTurning;
@@ -208,23 +242,21 @@
 
         public SensorSide? GetFoot(SkiDataPoint left, SkiDataPoint right)
         {
-            if (_isCurrentlyTurning)
+            if (_isCurrentlyTurning && _foot == null)
             {
-                double diff = left.Roll - right.Roll;
-
-                if (Math.Abs(left.Roll) > 5 || Math.Abs(right.Roll) > 5)
+                double extreme = 0;
+                if (left.SmoothRoll > 0 && right.SmoothRoll > 0) extreme = Math.Max(left.SmoothRoll,right.SmoothRoll);
+                else if (left.SmoothRoll < 0 && right.SmoothRoll < 0) extreme = Math.Min(left.SmoothRoll, right.SmoothRoll);
+                if (extreme != 0)
                 {
-                    _accumulatedRightLeftDiff += diff;
+                    // System.Diagnostics.Debug.WriteLine($"[DETECTOR] Setting foot - extreme:{extreme} ({left.SmoothRoll},{right.SmoothRoll})");
+                    _foot = extreme > 0 ? SensorSide.Left : SensorSide.Right;
                 }
+
             }
             else if (_wasTurningBefore)
             {
-                var result = _accumulatedRightLeftDiff > 0 ? SensorSide.Left : SensorSide.Right;
-
-                // Log di debug per vedere il verdetto finale
-                //System.Diagnostics.Trace.WriteLine($"[DETECTOR] Verdetto finale: {_accumulatedRightLeftDiff:F2} -> {result}");
-
-                return result;
+                if (_foot != null) return _foot;
             }
             return null;
         }
@@ -551,36 +583,27 @@
         }
         private void UpdateTurnState(double absRoll, uint ts)
         {
-            _medianWindow.Add(absRoll);
-            if (_medianWindow.Count > MedianSize) _medianWindow.RemoveAt(0);
 
-            // La mediana è il valore centrale della lista ordinata
-            var sorted = _medianWindow.OrderBy(x => x).ToList();
-            double medianRoll = sorted[sorted.Count / 2];
-
-            // 2. SMOOTHING LEGGERO (solo sulla mediana)
-            _smoothRoll = (_smoothRoll * 0.6) + (medianRoll * 0.4);
-
-            //System.Diagnostics.Trace.WriteLine($"[DETECTOR] ts={ts} absRoll: {absRoll} _smoothRoll: {_smoothRoll:F2} ");
+            //System.Diagnostics.Trace.WriteLine($"[DETECTOR] ts={ts} absRoll: {absRoll} absRoll: {absRoll:F2} ");
             if (!_isCurrentlyTurning)
             {
                 // Posso iniziare solo se sono sopra la soglia E non sono in fase di rientro
-                if (_smoothRoll > StartThreshold)
+                if (absRoll > StartThreshold)
                 {
                     _isCurrentlyTurning = true;
-                    _maxRollInCurrentTurn = _smoothRoll;
+                    _maxRollInCurrentTurn = absRoll;
                     _turnStartTime = ts;
-                    //System.Diagnostics.Trace.WriteLine($"[DETECTOR] START: ts={ts}, roll={_smoothRoll:F2}");
+                    System.Diagnostics.Trace.WriteLine($"[DETECTOR] START: ts={ts}, roll={absRoll:F2}");
                 }
             }
             else if (_isCurrentlyTurning)
             {
                 // Aggiorna picco
-                if (_smoothRoll > _maxRollInCurrentTurn) _maxRollInCurrentTurn = _smoothRoll;
+                if (absRoll > _maxRollInCurrentTurn) _maxRollInCurrentTurn = absRoll;
 
                 // Condizioni di chiusura
-                bool dropFromPeak = _smoothRoll < (_maxRollInCurrentTurn - GapToConfirmPeak);
-                bool dropBelowExit = _smoothRoll < ExitThreshold;
+                bool dropFromPeak = absRoll < (_maxRollInCurrentTurn - GapToConfirmPeak);
+                bool dropBelowExit = absRoll < ExitThreshold;
                 if (dropFromPeak)
                 {
                     _isPeakReached = true;
@@ -592,7 +615,7 @@
                     {
                         
                     }
-                    //System.Diagnostics.Trace.WriteLine($"[DETECTOR] FINE: durata={duration}ms, max={_maxRollInCurrentTurn:F2}");
+                    System.Diagnostics.Trace.WriteLine($"[DETECTOR] FINE: durata={duration}ms, max={_maxRollInCurrentTurn:F2}");
                     _isCurrentlyTurning = false;
                     
                 }
@@ -615,8 +638,7 @@
             // EDGE ANGLE
             _maxRollInCurrentTurn = 0;
             _isPeakReached = false;
-            _smoothRoll = 0;
-            _medianWindow.Clear();
+            
 
 
 
@@ -650,8 +672,8 @@
             _apexSampleIndex = 0;
             _currentTurnSampleCount = 0;
 
-            // FOOT
-            _accumulatedRightLeftDiff = 0;
+            // foot
+            _foot = null;
 
             // proprietà della curva (da inserire nell'oggetto SkiTurn)
             _turnEdgeAngle = 0;

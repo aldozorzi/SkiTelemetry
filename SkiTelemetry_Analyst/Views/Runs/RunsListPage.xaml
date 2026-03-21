@@ -38,7 +38,7 @@
 
                             <BoxView HeightRequest="1" Color="#444" Margin="0,5" />
 
-                            <Grid ColumnDefinitions="*, *, *, *" ColumnSpacing="10">
+                            <Grid ColumnDefinitions="*, *, *, *, *" ColumnSpacing="10">
                                 <Button Grid.Column="0" Text="👁" Command="{Binding BindingContext.ViewCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="#555"/>
 
                                 <Button Grid.Column="1" Text="✎" Command="{Binding BindingContext.EditNotesCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="Goldenrod"/>
@@ -47,6 +47,8 @@
 
                                 <Button Grid.Column="3" Text="☁" Command="{Binding BindingContext.SyncCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" IsVisible="{Binding IsLocal}" BackgroundColor="CornflowerBlue"/>
                                 <Label Grid.Column="3" Text="☁"  TextColor="CornflowerBlue" VerticalOptions="Center" HorizontalOptions="Fill" IsVisible="{Binding IsLocal, Converter={StaticResource InvertBoolConverter}}" HorizontalTextAlignment="Center"/>
+
+                                <Button Grid.Column="4" Text="📄" TextColor="DarkSlateGray" Command="{Binding BindingContext.ExportCsvCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="DarkSeaGreen"/>
                             </Grid>
                         </VerticalStackLayout>
                     </Border>
