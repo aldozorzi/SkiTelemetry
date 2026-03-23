@@ -5,6 +5,10 @@
         public uint StartTimestamp { get; set; }
         public uint EndTimestamp { get; set; }
 
+        public double Duration => EndTimestamp >= StartTimestamp
+        ? (double)(EndTimestamp - StartTimestamp)/1000
+        : 0; // Gestione errore se End è prima di Start
+
         // Metriche opzionali (nulle se non richieste)
         public double? EdgeAngle { get; set; }
         public double? EdgeSimilarity { get; set; }

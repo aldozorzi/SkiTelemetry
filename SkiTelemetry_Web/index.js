@@ -196,7 +196,9 @@ app.post('/api/auth/refresh', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ accessToken: newAccessToken });
+    res.json(
+      { accessToken: newAccessToken }
+    );
 
   } catch (error) {
     console.error(error);

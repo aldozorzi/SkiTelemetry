@@ -56,7 +56,7 @@
                     <Border Padding="15" Margin="5,5" Stroke="#333" BackgroundColor="#121212" StrokeShape="RoundRectangle 10">
                         <VerticalStackLayout Spacing="12">
 
-                            <Grid ColumnDefinitions="*, auto, auto">
+                            <Grid ColumnDefinitions="*, auto">
                                 <Label Text="{Binding EdgeAngle, StringFormat='MAX ROLL: {0:F1}°'}" 
                                        FontAttributes="Bold" 
                                        TextColor="Cyan" 
@@ -65,12 +65,9 @@
                                    Text="{Binding Foot, StringFormat='FOOT: {0}'}" 
                                    TextColor="White" 
                                    FontSize="12" 
-                                   VerticalOptions="Center" />          
-                                <Label Grid.Column="2" 
-                                       Text="{Binding Shape, StringFormat='SHAPE: {0:F0}%'}" 
-                                       TextColor="White" 
-                                       FontSize="12" 
-                                       VerticalOptions="Center" />
+                                   VerticalOptions="Center" 
+                                   Margin="20,0"/>          
+                                
                             </Grid>
 
                             <ProgressBar Progress="{Binding EdgeAngle, Converter={StaticResource AngleToPercentConverter}}" 
@@ -89,6 +86,19 @@
 
                                 <Label Grid.Row="0" Grid.Column="3" Text="CARVING" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
                                 <Label Grid.Row="1" Grid.Column="3" Text="{Binding CarvingIndex, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="*, *, *, *" RowDefinitions="Auto, Auto" RowSpacing="2">
+                                <Label Grid.Row="0" Grid.Column="0" Text="SIMIL" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="0" Text="{Binding EdgeSimilarity, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+
+                                <Label Grid.Row="0" Grid.Column="1" Text="EARLY" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="1" Text="{Binding EarlyEdging, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+
+                                <Label Grid.Row="0" Grid.Column="2" Text="SHAPE" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="2" Text="{Binding Shape, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+
+                                <Label Grid.Row="0" Grid.Column="3" Text="DURATION" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Grid.Row="1" Grid.Column="3" Text="{Binding Duration, StringFormat='{0:F2}s'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
                             </Grid>
 
                         </VerticalStackLayout>

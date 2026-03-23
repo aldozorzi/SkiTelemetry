@@ -1,0 +1,245 @@
+﻿using System.Drawing;
+using System.Reflection.Metadata.Ecma335;
+
+namespace SkiTelemetry_Core
+{
+    [System.Runtime.Versioning.SupportedOSPlatform("ios15.0")]
+    [System.Runtime.Versioning.SupportedOSPlatform("maccatalyst15.0")]
+    [System.Runtime.Versioning.SupportedOSPlatform("android21.0")]
+    [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
+    public class SkiDataProcessor
+    {
+        public event EventHandler<SkiTurn>? OnNewTurn;
+
+        private readonly TurnDetector _turnDetector = new();
+        private SkiDataPoint? _rightDataPoint;
+        private SkiDataPoint? _leftDataPoint;
+
+        // Stato della calibrazione
+        private bool _isCalibrated = false;
+        private int _leftSampleCount = 0;
+        private int _rightSampleCount = 0;
+        private const int SamplesRequired = 60; // ~3 secondi a 20Hz, both point are calibrated singularly
+        private readonly SensorBias _leftBias = new();
+        private readonly SensorBias _rightBias = new();
+        private double _leftGyroStdDev = 0;
+        private double _rightGyroStdDev = 0;
+        private double _leftGyroGain = 0;
+        private double _rightGyroGain = 0;
+        private double _leftGain = 0;
+        private double _rightGain = 0;
+        private List<double> _leftSamples = new();
+        private List<double> _rightSamples = new();
+
+        // Smoothing ROLL
+        private double _RightRoll = 0;
+        private double _LeftRoll = 0;
+        private long _lastLeftTimestamp = 0;
+        private long _lastRightTimestamp = 0;
+        private List<double> _leftAccBuffer = new List<double>();
+        private List<double> _rightAccBuffer = new List<double>();
+        private const int MedianWindowSize = 10;
+
+        // Smoothing ACC e Gyro
+        // Buffer per ogni asse (2 sensori x 3 assi = 6 liste)
+        private List<double> _lAccX = new(), _lAccY = new(), _lAccZ = new(), _lGyroZ = new();
+        private List<double> _rAccX = new(), _rAccY = new(), _rAccZ = new(), _rGyroZ = new();
+        private const int PreSmoothWindow = 5;
+
+        // Stato del filtro per ogni asse (6 assi)
+        private double _leftAccX, _leftAccY, _leftAccZ;
+        private double _rightAccX, _rightAccY, _rightAccZ;
+        private double _leftRoll, _rightRoll;
+        public bool IsInitialized = false;
+        private const double Alpha = 0.2;
+
+
+        public SkiDataProcessor()
+        {
+            _turnDetector.OnTurnCompleted += OnTurnCompleted;
+        }
+
+        private void CalculateCalibration(SkiDataPoint point) {
+            if (!_isCalibrated)
+            {
+                //ref SensorBias bias = ref ((point.Side == SensorSide.Left) ? ref _leftBias : ref _rightBias);
+                SensorBias bias = point.Side == SensorSide.Left ? _leftBias : _rightBias;
+                List<double> samples = point.Side == SensorSide.Left ? _leftSamples : _rightSamples;
+
+                bias.AccX += point.AccX;
+                bias.AccY += point.AccY;
+                bias.AccZ += point.AccZ;
+                bias.GyroZ += point.GyroZ;
+
+                samples.Add(point.GyroZ);
+                //System.Diagnostics.Trace.WriteLine($"Adding Calibrating point: {left.ToString()} ");
+                //System.Diagnostics.Trace.WriteLine($"Adding Calibrating point: {right.ToString()} ");
+                if (point.Side == SensorSide.Left) _leftSampleCount++; else _rightSampleCount++;
+
+                if (_leftSampleCount >= SamplesRequired && _rightSampleCount >= SamplesRequired)
+                {
+                    // 1. Medie Accelerometro (Offset reale)
+                    _leftBias.AccX /= SamplesRequired;
+                    _leftBias.AccY /= SamplesRequired;
+                    _leftBias.AccZ /= SamplesRequired;
+                    // 2. MEDIA GIROSCOPIO (Fondamentale per lo zero del Roll)
+                    _leftBias.GyroZ /= SamplesRequired;
+
+                    _rightBias.AccX /= SamplesRequired;
+                    _rightBias.AccY /= SamplesRequired;
+                    _rightBias.AccZ /= SamplesRequired;
+                    _rightBias.GyroZ /= SamplesRequired;
+
+                    // 3. Calcolo dei Gain (opzionale se usi solo la sottrazione nel Calibrate)
+                    double magL = Math.Sqrt(_leftBias.AccX * _leftBias.AccX + _leftBias.AccY * _leftBias.AccY + _leftBias.AccZ * _leftBias.AccZ);
+                    double magR = Math.Sqrt(_rightBias.AccX * _rightBias.AccX + _rightBias.AccY * _rightBias.AccY + _rightBias.AccZ * _rightBias.AccZ);
+
+                    _leftGain = 1.0 / magL;
+                    _rightGain = 1.0 / magR;
+
+                    _isCalibrated = true;
+                }
+            }
+        }
+
+        public void Process(SkiDataPoint point)
+        {
+            /*if (!_isCalibrated)
+            {
+                CalculateCalibration(point);
+                return;
+            }
+            point = Calibrate(point);*/
+            point = Smooth(point);
+
+            if (point.Side == SensorSide.Left)
+            {
+                _leftDataPoint = point; 
+            }
+            else if (point.Side == SensorSide.Right)
+            {
+                _rightDataPoint = point;
+            }
+
+            // 2. Controllo: se manca uno dei due, esci con null (SENZA RESETTARE)
+            if (_leftDataPoint == null || _rightDataPoint == null) return;
+
+            // Aggiungiamo la metrica attualmente selezionata nella UI
+            //System.Diagnostics.Trace.WriteLine($"Adding point: {point.ToString()} ");
+            _turnDetector.AddPoints(_leftDataPoint, _rightDataPoint);
+
+            _leftDataPoint = null;
+            _rightDataPoint = null;
+        }
+
+        public SkiDataPoint Calibrate(SkiDataPoint point)
+        {
+            SensorBias bias = point.Side == SensorSide.Left ? _leftBias : _rightBias;
+
+            // Sottraiamo l'offset medio misurato a riposo
+            point.AccX = (float)(point.AccX - bias.AccX);
+            point.AccY = (float)(point.AccY - bias.AccY);
+            // Z: togliamo il bias e ridiamo 1.0 (gravità)
+            point.AccZ = (float)(point.AccZ - bias.AccZ + 1.0);
+
+            // Giroscopio: usiamo Z per il Roll
+            point.GyroZ = (float)(point.GyroZ - bias.GyroZ);
+
+            return point;
+        }
+
+        private void UpdateBuffer(List<double> b, double newValue, double sensitivityMultiplier = 1.5, double minThreshold = 0.2)
+        {
+            if (b.Count > 0)
+            {
+                // Ordiniamo e prendiamo la mediana attuale
+                double currentMedian = b.OrderBy(x => x).ElementAt(b.Count / 2);
+
+                // La soglia è: il doppio della mediana (o multiplier), 
+                // ma MAI inferiore a minThreshold.
+                double maxAllowedDiff = Math.Max(minThreshold, Math.Abs(currentMedian) * (sensitivityMultiplier - 1));
+
+                if (Math.Abs(newValue - currentMedian) > maxAllowedDiff)
+                {
+                    // Se è un'allucinazione (il famoso 10G), inseriamo la mediana nel buffer
+                    b.Add(currentMedian);
+                }
+                else
+                {
+                    b.Add(newValue);
+                }
+            }
+            else
+            {
+                b.Add(newValue);
+            }
+
+            if (b.Count > PreSmoothWindow) b.RemoveAt(0);
+        }
+
+        private SkiDataPoint Smooth(SkiDataPoint point)
+        {
+            ref double AccX = ref point.Side == SensorSide.Left ? ref _leftAccX : ref _rightAccX;
+            ref double AccY= ref point.Side == SensorSide.Left ? ref _leftAccY : ref _rightAccY;
+            ref double AccZ = ref point.Side == SensorSide.Left ? ref _leftAccZ : ref _rightAccZ;
+            ref double Roll = ref point.Side == SensorSide.Left ? ref _leftRoll : ref _rightRoll;
+
+            if (!IsInitialized)
+            {
+                AccX = point.AccX; AccY = point.AccY; AccZ = point.AccZ;
+                Roll = point.Roll;
+                IsInitialized = true;
+            }
+
+            // Applicazione del filtro su tutti gli assi simultaneamente
+            point.SmoothAccX = AccX + Alpha * (point.AccX - AccX);
+            point.SmoothAccY = AccY + Alpha * (point.AccY - AccY);
+            point.SmoothAccZ = AccZ + Alpha * (point.AccZ - AccZ);
+            point.SmoothRoll = Roll + Alpha * (point.Roll - Roll);
+            //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Point: {point.Timestamp} - {point.Side} - RawGyroz:{point.GyroZ}");
+
+            return point;
+
+            /*bool isLeft = point.Side == SensorSide.Left;
+            ref double roll = ref (isLeft ? ref _LeftRoll : ref _RightRoll);
+            ref long lastTS = ref (isLeft ? ref _lastLeftTimestamp : ref _lastRightTimestamp);
+
+            // 1. Calcolo del tempo reale tra i pacchetti (fondamentale per l'integrazione)
+            double dt = (point.Timestamp - lastTS) / 1000.0;
+            if (lastTS == 0 || dt <= 0 || dt > 0.1) dt = 0.025;
+            lastTS = point.Timestamp;
+
+            // 2. Angolo dall'accelerometro (Riferimento di gravità)
+            // Usiamo i dati grezzi qui, la mediana la usiamo solo per l'output visuale se serve
+            double accelRoll = Math.Atan2(point.AccX, point.AccY) * (180.0 / Math.PI);
+
+            // 3. Filtro Complementare - Reattività 0.98 / 0.02
+            // Questo garantisce che il giroscopio guidi il movimento veloce, 
+            // ma l'accelerometro tiri sempre l'angolo verso lo zero reale.
+            roll = 0.98 * (roll + point.GyroZ * dt) + 0.02 * accelRoll;
+
+            point.SmoothRoll = roll;
+            return point;*/
+        }
+
+        public void setMetrics(HashSet<MonitorMode> metrics)
+        {
+
+            _turnDetector.RequestedMetrics.Clear();
+            foreach (MonitorMode metric in metrics )
+            {
+
+                _turnDetector.RequestedMetrics.Add(metric);
+            }
+        }
+
+        private void OnTurnCompleted(object? sender, SkiTurn turn)
+        {
+            OnNewTurn?.Invoke(this, turn);
+        }
+
+
+
+       
+    }
+}

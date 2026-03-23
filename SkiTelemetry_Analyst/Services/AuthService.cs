@@ -32,7 +32,7 @@ namespace SkiTelemetry_Analyst.Services
                 {
                     System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] trying to refresh");
                     var refreshedResponse = await RefreshTokenAsync(refreshToken);
-                    System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] refreshedResponse: {refreshedResponse}");
+                    
                     if (refreshedResponse != null) return refreshedResponse;
                 }
             }
@@ -81,15 +81,19 @@ namespace SkiTelemetry_Analyst.Services
 
         private async Task<AuthResponse?> ProcessAuthResponse(HttpResponseMessage response)
         {
+            System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] auth response: {response}");
             if (!response.IsSuccessStatusCode) return null;
 
             var result = await response.Content.ReadFromJsonAsync<AuthResponse>();
+            System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] auth response result: {result}");
             if (result == null || string.IsNullOrEmpty(result.AccessToken)) return null;
 
             // Salvataggio persistente
             System.Diagnostics.Trace.WriteLine($"[AUTH SERVICE] saving refresh_token: {result.RefreshToken}");
-            await SecureStorage.Default.SetAsync("access_token", result.AccessToken);
-            await SecureStorage.Default.SetAsync("refresh_token", result.RefreshToken);
+            if(!string.IsNullOrEmpty(result.AccessToken))
+                await SecureStorage.Default.SetAsync("access_token", result.AccessToken);
+            if (!string.IsNullOrEmpty(result.RefreshToken))
+                await SecureStorage.Default.SetAsync("refresh_token", result.RefreshToken);
             Preferences.Default.Set("HasAccount", true);
 
             return result; // <--- RITORNA L'OGGETTO COMPLETO
@@ -125,6 +129,11 @@ namespace SkiTelemetry_Analyst.Services
         [JsonPropertyName("accessToken")] public string AccessToken { get; set; } = string.Empty;
         [JsonPropertyName("refreshToken")] public string RefreshToken { get; set; } = string.Empty;
         [JsonPropertyName("user")] public UserData? User { get; set; }
+
+        public override string ToString()
+        {
+            return $"[AuthResponse] accessToken: {AccessToken}, refreshToken: {RefreshToken}, user:{User})";
+        }
     }
 
     public class UserData
