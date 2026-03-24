@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿# if false
+using System.Drawing;
 using System.Reflection.Metadata.Ecma335;
 
 namespace SkiTelemetry_Core

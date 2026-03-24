@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualBasic;
+﻿# if false
+using Microsoft.VisualBasic;
 using System.Drawing;
 
 namespace SkiTelemetry_Core

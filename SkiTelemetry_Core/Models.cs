@@ -1,4 +1,6 @@
-﻿namespace SkiTelemetry_Core;
+﻿using System.Security.AccessControl;
+
+namespace SkiTelemetry_Core;
 
 public enum MonitorMode
 {
@@ -86,9 +88,15 @@ public class SkiDataPoint
 
 public class SkiFrame
 {
-    public SkiDataPoint? Left { get; set; }
-    public SkiDataPoint? Right { get; set; }
+    public SkiDataPoint Left { get; set; }
+    public SkiDataPoint Right { get; set; }
     public double? CombinedGyroZ => (Left?.GyroZ + Right?.GyroZ) / 2.0;
+
+    public SkiFrame(SkiDataPoint left, SkiDataPoint right)
+    {
+        Left = left;
+        Right = right;
+    }
 }
 
 public class SensorBias

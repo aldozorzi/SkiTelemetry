@@ -38,7 +38,7 @@ public class TurnDetector
 
     public void ProcessFrame(SkiDataPoint left, SkiDataPoint right)
     {
-        var frame = new SkiFrame { Left = left, Right = right };
+        var frame = new SkiFrame(left, right);
         double absMeanZ = Math.Abs(frame.CombinedGyroZ ?? 0);
 
         switch (_currentState)
