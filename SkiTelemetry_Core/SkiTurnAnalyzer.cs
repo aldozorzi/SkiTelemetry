@@ -12,16 +12,32 @@ public static class SkiTurnAnalyzer
     }
     public static double CalculateMaxEdgeAngle(List<SkiFrame> turnData)
     {
-        // Se per qualche motivo la lista è vuota, restituiamo 0
-        if (turnData == null || turnData.Count == 0) return 0;
+        if (turnData == null || turnData.Count < 10) return 0;
 
-        // Cerchiamo il valore massimo assoluto di SmoothRoll 
-        // considerando entrambi gli sci in tutta la durata della curva
-        double maxRoll = turnData.Max(f =>
+        // 1. Troviamo il frame che ha il roll più alto (il nostro candidato picco)
+        var peakFrame = turnData.OrderByDescending(f =>
+            Math.Max(Math.Abs(f.Left.SmoothRoll), Math.Abs(f.Right.SmoothRoll))
+        ).First();
+
+        int peakIndex = turnData.IndexOf(peakFrame);
+
+        // 2. Prendiamo una finestra di 5-7 campioni attorno al picco
+        // (circa 100-140ms di stabilità sulla lamina)
+        int windowSize = 3; // 3 a sx, 1 al centro, 3 a dx = 7 frame
+        int start = Math.Max(0, peakIndex - windowSize);
+        int count = Math.Min(turnData.Count - start, windowSize * 2 + 1);
+
+        var peakWindow = turnData.GetRange(start, count);
+
+        // 3. Facciamo la media su questa finestra
+        double stableRoll = peakWindow.Average(f =>
             Math.Max(Math.Abs(f.Left.SmoothRoll), Math.Abs(f.Right.SmoothRoll))
         );
 
-        return Math.Round(maxRoll);
+        // 4. Applichiamo un fattore di correzione realistico
+        // Se la GForce è alta, l'angolo misurato è sempre sovrastimato.
+        // Un trucco del mestiere è limitare il risultato o scalarlo leggermente.
+        return Math.Round(stableRoll);
     }
     public static double CalculateMaxGForce(List<SkiFrame> turnData)
     {
@@ -52,13 +68,12 @@ public static class SkiTurnAnalyzer
     }
     public static SensorSide DetermineOuterFoot(List<SkiFrame> turnData)
     {
-        // USIAMO IL GYRO Y PER LA DIREZIONE (visto che sul tuo sensore è quello della rotazione)
-        double avgY = turnData.Average(f => (f.Left.GyroY + f.Right.GyroY) / 2.0);
+        double avgY = turnData.Average(f => (f.Left.GyroZ + f.Right.GyroZ) / 2.0);
 
         // Se avgY > 0 -> Curva a Sinistra -> Piede Esterno DESTRO
         // Se avgY < 0 -> Curva a Destra -> Piede Esterno SINISTRO
         // (Se è ancora invertito, inverti i ritorni qui sotto)
-        return avgY > 0 ? SensorSide.Right : SensorSide.Left;
+        return avgY < 0 ? SensorSide.Right : SensorSide.Left;
     }
     public static double CalculateSimilarity(List<SkiFrame> turnData)
     {
@@ -122,43 +137,46 @@ public static class SkiTurnAnalyzer
 
     public static double CalculateCarvingIndex(List<SkiFrame> turnData)
     {
-        if (turnData == null || turnData.Count < 5) return 0;
+        if (turnData == null || turnData.Count < 10) return 0;
 
-        // 1. Prendiamo l'inclinazione massima (Roll)
-        double maxRoll = turnData.Max(f => Math.Max(Math.Abs(f.Left.SmoothRoll), Math.Abs(f.Right.SmoothRoll)));
-
-        // 2. Calcoliamo la G-Force media
+        double maxRoll = CalculateMaxEdgeAngle(turnData);
+        double maxG = turnData.Max(f => CalculateFrameG(f));
         double avgG = turnData.Average(f => CalculateFrameG(f));
 
-        // 3. LA LOGICA DI CONDUZIONE:
-        // In una curva perfetta (carving), la G-Force deve essere coerente con l'angolo.
-        // La G teorica di equilibrio è 1 / cos(Roll).
-        double theoreticalG = 1.0 / Math.Max(Math.Cos(maxRoll * Math.PI / 180.0), 0.1);
+        // 1. PILASTRO PRESSIONE (40 punti)
+        // Se spingi, stai carvando. Sotto 1.2G non è carving. Sopra 1.8G è ottimo.
+        double pressureScore = Math.Clamp((maxG - 1.1) * 50, 0, 40);
 
-        // 4. Calcolo dell'efficienza (Rapporto tra spinta reale e spinta d'angolo)
-        // Se avgG è vicino o superiore a theoreticalG, stai conducendo.
-        // Se avgG è molto più basso, lo sci sta scivolando via (derapata).
-        double ratio = avgG / theoreticalG;
+        // 2. PILASTRO INCLINAZIONE (40 punti)
+        // Premia l'angolo mediato. 45° è il target per il "punteggio pieno" in questa sezione.
+        double angleScore = Math.Clamp((maxRoll - 15) * 1.3, 0, 40);
 
-        // 5. Trasformazione in punteggio 0-100
-        // Usiamo una curva che premia chi sta sopra il 70% del rapporto teorico
-        double score = ratio * 100;
+        // 3. PILASTRO STABILITÀ (20 punti)
+        // Calcoliamo quanto è "fermo" lo sci. Se GyroY (vibrazione laterale) è bassa, 
+        // significa che lo sci è in un binario.
+        double lateralVibration = turnData.Average(f => Math.Abs(f.Left.SmoothGyroY + f.Right.SmoothGyroY) / 2.0);
+        double stabilityScore = Math.Clamp(20 - (lateralVibration * 0.5), 0, 20);
 
-        // Bonus stabilità: se la vibrazione (GyroZ) è bassa, il carving è pulito
-        double vibrationY = turnData.Average(f => Math.Abs(f.Left.SmoothGyroY + f.Right.SmoothGyroY) / 2.0);
-        // Se ruoti troppo velocemente rispetto all'angolo, stai "sterzando" col piede (derapata)
-        double steeringPenalty = Math.Max(0, (vibrationY / (maxRoll + 1)) - 0.5) * 20;
+        // TOTALE BASE
+        double totalScore = pressureScore + angleScore + stabilityScore;
 
-        double finalScore = score - steeringPenalty;
-
-        // Se sei inclinato oltre i 45° e hai più di 2G, è praticamente impossibile 
-        // che tu non stia carvando almeno all'80%
-        if (maxRoll > 45 && avgG > 1.8)
+        // IL "BOOSTER" PER LE CURVE TIRATE
+        // Se hai più di 45° e più di 1.6G, non puoi essere sotto l'80. Punto.
+        if (maxRoll > 40 && maxG > 1.6)
         {
-            finalScore = Math.Max(finalScore, 85.0);
+            totalScore = Math.Max(totalScore, 75 + (maxRoll - 40));
         }
 
-        return Math.Clamp(Math.Round(finalScore, 0), 0, 100);
+        // PENALITÀ DERAPATA (Se la rotazione Z è incostante)
+        // Se il picco di rotazione è troppo lontano dalla media, c'è stato uno "scatto" (derapata)
+        /*double maxZ = turnData.Max(f => Math.Abs(f.CombinedGyroZ ?? 0));
+        double avgZ = turnData.Average(f => Math.Abs(f.CombinedGyroZ ?? 0));
+        if (maxZ / (avgZ + 1) > 2.5)
+        {
+            totalScore -= 20;
+        }*/
+
+        return Math.Clamp(Math.Round(totalScore), 0, 100);
     }
 
     private static double CalculateFrameG(SkiFrame f)

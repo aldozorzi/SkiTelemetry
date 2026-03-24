@@ -52,7 +52,8 @@ public partial class RunDetailPage : ContentPage
             {
                 processor.Process(p);
             }
-
+            // aggiunti tutti i punti
+            SkiGraphGenerator.GenerateHtmlReport(points, detectedTurns);
 
             MainThread.BeginInvokeOnMainThread(() => {
                 string fileName = Path.GetFileNameWithoutExtension(path);

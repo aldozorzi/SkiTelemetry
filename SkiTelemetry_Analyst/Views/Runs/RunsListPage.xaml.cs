@@ -211,6 +211,8 @@ namespace SkiTelemetry_Analyst.Views.Runs
         private async Task ExportRunToCsv(VisualRunItem runItem)
         {
             string? dataFilePath = await _runService.GetDownloadPathAsync(runItem);
+            SkiDataProcessor processor = new SkiDataProcessor();
+
             if (dataFilePath == null) return;
             try
             {
@@ -222,14 +224,17 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
                 StringBuilder csv = new StringBuilder();
                 // Header (usiamo ; per Excel italiano)
-                csv.AppendLine("Timestamp;Side;AccX;AccY;AccZ;GyroX;GyroY;GyroZ");
+                csv.AppendLine("Timestamp;Side;AccX;AccY;AccZ;GyroX;GyroY;GyroZ;SmoothAccX;SmoothAccY;SmoothAccZ;SmoothGyroX;SmoothGyroY;SmoothGyroZ");
 
                 foreach (var p in points)
                 {
+                    processor.Process(p);
                     IFormatProvider provider = CultureInfo.InvariantCulture;
 
                     csv.AppendLine($"{p.Timestamp};{p.Side};{p.AccX.ToString(provider)};{p.AccY.ToString(provider)};{p.AccZ.ToString(provider)};" +
-                                     $"{p.GyroX.ToString(provider)};{p.GyroY.ToString(provider)};{p.GyroZ.ToString(provider)};");
+                                     $"{p.GyroX.ToString(provider)};{p.GyroY.ToString(provider)};{p.GyroZ.ToString(provider)};" +
+                                     $"{p.SmoothAccX.ToString(provider)};{p.SmoothAccY.ToString(provider)};{p.SmoothAccZ.ToString(provider)};" +
+                                     $"{p.SmoothGyroX.ToString(provider)};{p.SmoothGyroY.ToString(provider)};{p.SmoothGyroZ.ToString(provider)};");
                 }
 
                 // Definiamo il percorso di salvataggio (cartella Downloads o documenti pubblica)
