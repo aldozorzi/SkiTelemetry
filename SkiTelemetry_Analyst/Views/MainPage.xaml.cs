@@ -1,6 +1,6 @@
-﻿using SkiTelemetry_Core;
+﻿using Plugin.BLE.Abstractions.Contracts;
 using SkiTelemetry_Analyst.Helpers;
-
+using SkiTelemetry_Core;
 namespace SkiTelemetry_Analyst.Views
 {
     [Microsoft.Maui.Controls.Internals.Preserve(AllMembers = true)]
@@ -57,7 +57,12 @@ namespace SkiTelemetry_Analyst.Views
 
         private async void OnScanClicked(object? sender, EventArgs e)
         {
-            
+            if (_bleService.State() == BluetoothState.Off)
+            {
+                StatusLabel.Text = "BlueTooth disattivato.";
+                _ = SpeechHelper.SpeakAsync($"BlueTooth disattivato.");
+            }
+
             StatusLabel.Text = "Connessione...";
             BtnScan.IsEnabled = false; // Disabilita per evitare click multipli
 
@@ -74,10 +79,12 @@ namespace SkiTelemetry_Analyst.Views
             {
                 // SE FALLISCE: Notifica l'utente e resta in attesa
                 StatusLabel.Text = "Sensori non trovati.";
+                _ = SpeechHelper.SpeakAsync($"Sensori non trovati.");
 
                 BtnScan.IsEnabled = true;
                 BtnScan.IsVisible = true;
-                DataContainer.IsVisible = false;
+                //DataContainer.IsVisible = false;
+                BtnStopContainer.IsVisible = false;
             }
         }
 
@@ -223,7 +230,8 @@ namespace SkiTelemetry_Analyst.Views
                 ActiveView.IsVisible = true;
                 BtnScan.IsVisible = false;
                 BtnHistoryContainer.IsVisible = false;
-                DataContainer.IsVisible = true;
+                //DataContainer.IsVisible = true;
+                BtnStopContainer.IsVisible = true;
                 StatusLabel.Text = "Stato: Sessione Attiva";
                 if (ModePicker.SelectedIndex == -1) ModePicker.SelectedIndex = 14;
                 bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
@@ -240,11 +248,12 @@ namespace SkiTelemetry_Analyst.Views
             System.Diagnostics.Debug.WriteLine("OnStopClicked");
             StopLogging();
             // 2. Reset dell'interfaccia
-            DataContainer.IsVisible = false;
+            //DataContainer.IsVisible = false;
+            BtnStopContainer.IsVisible = false;
             BtnScan.IsVisible = true;
             BtnScan.IsEnabled = true;
             BtnHistoryContainer.IsVisible = true;
-
+            ResetDisplayValues();
             // 3. Reset dello stato
             StatusLabel.Text = "Disconnessione in corso...";
 
@@ -262,6 +271,17 @@ namespace SkiTelemetry_Analyst.Views
 
             System.Diagnostics.Debug.WriteLine("Sessione fermata dall'utente.");
         }
+        private void ResetDisplayValues() {
+            LblEdgeAngle.Text = $"0°";
+            LblEdgeSimilarity.Text = $"0%";
+            LblGForce.Text = $"0";
+            LblRadius.Text = $"0m";
+            LblEarlyEdging.Text = $"0%";
+            LblProgressiveBuild.Text = $"0%";
+            LblTurnShape.Text = $"0%";
+            LblCarvingIndex.Text = $"0%";
+        }
+
         private void OnModeChanged(object? sender, EventArgs e)
         {
             var picker = sender as Picker;

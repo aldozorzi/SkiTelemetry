@@ -18,17 +18,7 @@
             </VerticalStackLayout>
 
             <VerticalStackLayout x:Name="ActiveView" IsVisible="False">
-
-                <VerticalStackLayout Spacing="15" VerticalOptions="Center">
-                    <Label x:Name="StatusLabel" Text="Stato: pronto per la sessione" HorizontalOptions="Center" />
-                    <Button x:Name="BtnScan"
-                            
-                            Text="AVVIA SESSIONE"
-                            Clicked="OnScanClicked"
-                            BackgroundColor="DeepSkyBlue" HeightRequest="60" /> 
-                </VerticalStackLayout>
-
-                <VerticalStackLayout x:Name="DataContainer" IsVisible="False" Spacing="10" >
+                <VerticalStackLayout x:Name="DataContainer" IsVisible="True" Spacing="10" >
                     <Picker x:Name="ModePicker" 
                         SelectedIndexChanged="OnModeChanged"
                         Title="Seleziona cosa monitorare">
@@ -147,27 +137,40 @@
                             </VerticalStackLayout>
                         </Grid>
                     </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="15" VerticalOptions="Center">
+                        <Label x:Name="StatusLabel" Text="Stato: pronto per la sessione" HorizontalOptions="Center" />
+                        <Button x:Name="BtnScan"
+            
+                        Text="AVVIA SESSIONE"
+                        Clicked="OnScanClicked"
+                        BackgroundColor="DeepSkyBlue" HeightRequest="60" /> 
+                    </VerticalStackLayout>
+
                     
+                </VerticalStackLayout>
+                <VerticalStackLayout x:Name="BtnStopContainer" IsVisible="false" VerticalOptions="Center" Margin="0,30,0,0">
                     <Button x:Name="BtnStop" 
-                        Text="STOP SESSIONE" 
-                        Clicked="OnStopClicked" 
-                        BackgroundColor="Red" 
-                        TextColor="White"
-                        HeightRequest="60"
-                        Margin="0,30,0,0" />
+                    Text="STOP SESSIONE" 
+                    Clicked="OnStopClicked" 
+                    BackgroundColor="Red" 
+                    TextColor="White"
+                    HeightRequest="60"
+                     />
                 </VerticalStackLayout>
 
-            </VerticalStackLayout>
-            <VerticalStackLayout x:Name="BtnHistoryContainer" VerticalOptions="Center">
+                <VerticalStackLayout x:Name="BtnHistoryContainer" VerticalOptions="Center" Margin="0,30,0,0">
 
                 <Button x:Name="BtnHistory"
         
                     Text="VISUALIZZA SESSIONI"
                     Clicked="OnHistoryClicked"
                     BackgroundColor="DarkMagenta" HeightRequest="60" 
+                        
                         TextColor="White"/>
 
             </VerticalStackLayout>
+            </VerticalStackLayout>
+            
         </VerticalStackLayout>
     </ScrollView>
 

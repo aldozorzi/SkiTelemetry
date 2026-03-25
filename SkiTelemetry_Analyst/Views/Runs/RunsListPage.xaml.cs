@@ -22,6 +22,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
         private RunService _runService = new();
 
         private bool _isLoading;
+        private bool _firstLoad = true;
         public bool IsLoading
         {
             get => _isLoading;
@@ -49,7 +50,9 @@ namespace SkiTelemetry_Analyst.Views.Runs
         {
             IsLoading = false;
             base.OnAppearing();
-            LoadFiles();
+            if(_firstLoad)
+                LoadFiles();
+            _firstLoad = false;
         }
 
         private async Task OpenRun(VisualRunItem run)
@@ -60,17 +63,18 @@ namespace SkiTelemetry_Analyst.Views.Runs
             // IsBusy = true; 
             IsLoading = true;
             
-            string? pathPerDettaglio = await _runService.GetDownloadPathAsync(run);
+            string? detailPath = await _runService.GetDownloadPathAsync(run);
 
             // IsBusy = false;
 
-            if (!string.IsNullOrEmpty(pathPerDettaglio))
+            if (!string.IsNullOrEmpty(detailPath))
             {
                 // 2. Navighiamo verso la pagina di dettaglio passando il percorso del file locale (originale o cache)
-                await Shell.Current.GoToAsync($"RunDetailPage?path={Uri.EscapeDataString(pathPerDettaglio)}");
+                await Shell.Current.GoToAsync($"RunDetailPage?path={Uri.EscapeDataString(detailPath)}");
             }
             else
             {
+                IsLoading = false;
                 await DisplayAlertAsync("Errore", "Impossibile recuperare i dati della sessione.", "OK");
             }
         }

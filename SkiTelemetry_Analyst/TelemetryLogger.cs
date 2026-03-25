@@ -85,7 +85,7 @@ public class TelemetryLogger : IDisposable
         Preferences.Default.Set("LastRunDate", dateToday);
         Preferences.Default.Set("LastRunNumber", currentRunNumber);
 
-        return Path.Combine(folder, $"{dateToday}_RUN_{currentRunNumber}.bin");
+        return Path.Combine(folder, $"{dateToday}_RUN_{currentRunNumber:D2}.bin");
     }
     public void Dispose() => StopLogging();
 }

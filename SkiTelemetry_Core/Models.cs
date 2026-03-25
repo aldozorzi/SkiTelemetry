@@ -88,9 +88,10 @@ public class SkiDataPoint
 
 public class SkiFrame
 {
+
     public SkiDataPoint Left { get; set; }
     public SkiDataPoint Right { get; set; }
-    public double? CombinedGyroZ => (Left?.GyroZ + Right?.GyroZ) / 2.0;
+    public double? CombinedGyro => (Left?.SmoothGyroZ + Right?.SmoothGyroZ) / 2.0;
 
     public SkiFrame(SkiDataPoint left, SkiDataPoint right)
     {

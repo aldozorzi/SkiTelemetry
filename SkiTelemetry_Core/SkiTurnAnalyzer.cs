@@ -10,66 +10,44 @@ public static class SkiTurnAnalyzer
 
         return metrics;
     }
+
+
     public static double CalculateMaxEdgeAngle(List<SkiFrame> turnData)
     {
         if (turnData == null || turnData.Count < 10) return 0;
 
-        // 1. Troviamo il frame che ha il roll più alto (il nostro candidato picco)
-        var peakFrame = turnData.OrderByDescending(f =>
-            Math.Max(Math.Abs(f.Left.SmoothRoll), Math.Abs(f.Right.SmoothRoll))
-        ).First();
+        // 1. Identifichiamo il piede esterno (come prima, basandoci sul segno del Gyro)
+        double avgGyro = turnData.Average(f => f.CombinedGyro ?? 0);
+        bool isTurnToLeft = avgGyro > 0;
 
-        int peakIndex = turnData.IndexOf(peakFrame);
+        // 2. Prendiamo TUTTI i valori di rollio dello sci esterno nella curva
+        var rollValues = turnData.Select(f =>
+            isTurnToLeft ? Math.Abs(f.Right.SmoothRoll) : Math.Abs(f.Left.SmoothRoll)
+        ).OrderByDescending(v => v).ToList();
+        //System.Diagnostics.Debug.WriteLine($"[ANALYZER] ____________________________________________CURVA");
+        //System.Diagnostics.Debug.WriteLine($"[ANALYZER] rollValues: {string.Join(", ", rollValues)}");
 
-        // 2. Prendiamo una finestra di 5-7 campioni attorno al picco
-        // (circa 100-140ms di stabilità sulla lamina)
-        int windowSize = 3; // 3 a sx, 1 al centro, 3 a dx = 7 frame
-        int start = Math.Max(0, peakIndex - windowSize);
-        int count = Math.Min(turnData.Count - start, windowSize * 2 + 1);
+        // 3. IL TRUCCO: Invece del Max (il primo della lista), prendiamo il 90° percentile
+        // Questo scarta i picchi di rumore isolati (i famosi 64°) e prende il valore 
+        // che lo sciatore ha effettivamente "tenuto" per una parte significativa della curva.
+        double stableMaxRoll = rollValues.First();
 
-        var peakWindow = turnData.GetRange(start, count);
-
-        // 3. Facciamo la media su questa finestra
-        double stableRoll = peakWindow.Average(f =>
-            Math.Max(Math.Abs(f.Left.SmoothRoll), Math.Abs(f.Right.SmoothRoll))
-        );
-
-        // 4. Applichiamo un fattore di correzione realistico
-        // Se la GForce è alta, l'angolo misurato è sempre sovrastimato.
-        // Un trucco del mestiere è limitare il risultato o scalarlo leggermente.
-        return Math.Round(stableRoll);
+        return Math.Round(stableMaxRoll, 1);
     }
     public static double CalculateMaxGForce(List<SkiFrame> turnData)
     {
-        if (turnData == null || turnData.Count == 0) return 0;
+        var peak = GetPeakData(turnData);
+        double g = GetAverageGInWindow(turnData, peak.Index);
 
-        // Calcoliamo la Magnitude (Risultante) per ogni istante e prendiamo il massimo
-        double maxG = turnData.Max(f => {
-            // Sci Sinistro
-            double gLeft = Math.Sqrt(
-                Math.Pow(f.Left.SmoothAccX, 2) +
-                Math.Pow(f.Left.SmoothAccY, 2) +
-                Math.Pow(f.Left.SmoothAccZ, 2)
-            );
+        // Reality Check per pendenza/offset
+        if (g < 1.0 && peak.MaxRoll > 15)
+            g = 1.0 + (peak.MaxRoll * 0.005);
 
-            // Sci Destro
-            double gRight = Math.Sqrt(
-                Math.Pow(f.Right.SmoothAccX, 2) +
-                Math.Pow(f.Right.SmoothAccY, 2) +
-                Math.Pow(f.Right.SmoothAccZ, 2)
-            );
-
-            // Media dei due sci per quell'istante
-            return (gLeft + gRight) / 2.0;
-        });
-
-        // Restituiamo il valore arrotondato (es. 2.15)
-        return Math.Round(maxG, 2);
+        return Math.Round(g, 1);
     }
     public static SensorSide DetermineOuterFoot(List<SkiFrame> turnData)
     {
-        double avgY = turnData.Average(f => (f.Left.GyroZ + f.Right.GyroZ) / 2.0);
-
+        double avgY = turnData.Average(f => (f.Left.GyroY + f.Right.GyroY) / 2.0);
         // Se avgY > 0 -> Curva a Sinistra -> Piede Esterno DESTRO
         // Se avgY < 0 -> Curva a Destra -> Piede Esterno SINISTRO
         // (Se è ancora invertito, inverti i ritorni qui sotto)
@@ -77,23 +55,34 @@ public static class SkiTurnAnalyzer
     }
     public static double CalculateSimilarity(List<SkiFrame> turnData)
     {
-        if (turnData == null || turnData.Count == 0) return 0;
+        if (turnData == null || turnData.Count < 3) return 0;
 
-        // Calcoliamo la differenza di inclinazione media tra i due sci
-        // Usiamo il valore assoluto della differenza tra i Roll assoluti
-        double avgDiff = turnData.Average(f =>
-            Math.Abs(Math.Abs(f.Left.SmoothRoll) - Math.Abs(f.Right.SmoothRoll))
-        );
+        // Prendiamo il picco di ogni sci separatamente nella curva
+        double maxRollL = 0;
+        double maxRollR = 0;
 
-        // LOGICA DI PUNTEGGIO:
-        // 0° diff -> 100%
-        // 5° diff -> 90% (accettabile, è quasi parallelo)
-        // 10° diff -> 75% (inizia a vedersi l'errore)
-        // 20° diff -> 40% (gambe decisamente non parallele)
+        foreach (var f in turnData)
+        {
+            maxRollL = Math.Max(maxRollL, Math.Abs(f.Left.SmoothRoll));
+            maxRollR = Math.Max(maxRollR, Math.Abs(f.Right.SmoothRoll));
+        }
 
-        double score = 100 * Math.Exp(-0.04 * avgDiff);
+        // Se uno dei due non ha nemmeno inclinato, il parallelismo è nullo
+        if (maxRollL < 5 || maxRollR < 5) return 0;
 
-        return Math.Clamp(Math.Round(score, 0), 0, 100);
+        // Calcoliamo la differenza relativa tra i due picchi
+        // Se sono identici, diff = 0. Se uno è il doppio dell'altro, diff è alta.
+        double rollDiff = Math.Abs(maxRollL - maxRollR);
+
+        // Applichiamo una curva di punteggio più "umana"
+        // Lo 0% lo diamo solo se c'è una differenza di oltre 35 gradi (praticamente uno sci dritto e uno a terra)
+        double score = 100 * (1.0 - (rollDiff / 35.0));
+
+        // Bonus/Malus dinamico: se gli angoli sono entrambi alti, siamo più tolleranti
+        // (Nel corto è normale avere qualche grado di differenza se si spinge)
+        if (maxRollL > 30 && maxRollR > 30) score += 5;
+
+        return Math.Round(Math.Clamp(score, 0, 100), 1);
     }
     public static double CalculateEstimatedRadius(List<SkiFrame> turnData)
     {
@@ -134,64 +123,152 @@ public static class SkiTurnAnalyzer
 
         return Math.Clamp(Math.Round(finalRadius, 1), 7.0, 40.0);
     }
-
     public static double CalculateCarvingIndex(List<SkiFrame> turnData)
+    {
+        var peak = GetPeakData(turnData);
+        if (peak.MaxRoll < 10) return 0;
+
+        // Usiamo la G media di tutta la curva per stabilità
+        double measuredG = GetStableGForTurn(turnData);
+
+        // G Teorica Ideale (il nostro 100%)
+        double theoreticalG = 1.0 / Math.Cos(peak.MaxRoll * Math.PI / 180.0);
+
+        // Calcoliamo l'efficienza grezza
+        double rawEfficiency = (measuredG / theoreticalG);
+
+        // APPLICHIAMO LA COMPRESSIONE (Logaritmica o Sigmoide)
+        // L'obiettivo è che se rawEfficiency è 1.0 (teorico perfetto), l'indice sia circa 80-85.
+        // Se è 1.5 (aggressivo), l'indice salga verso 95 ma non esploda.
+        double compressedIndex = 100 * (1.0 - Math.Exp(-1.5 * rawEfficiency));
+
+        // Ulteriore correzione per spalmare tra 0 e 100
+        // Se lo sci "derapa", measuredG sarà vicino a 1.0 anche con angoli alti -> Index basso.
+        return Math.Round(compressedIndex, 1);
+    }
+    public static double CalculateEdgeBuild(List<SkiFrame> turnData)
     {
         if (turnData == null || turnData.Count < 10) return 0;
 
-        double maxRoll = CalculateMaxEdgeAngle(turnData);
-        double maxG = turnData.Max(f => CalculateFrameG(f));
-        double avgG = turnData.Average(f => CalculateFrameG(f));
+        // 1. Troviamo l'Apex (Picco di inclinazione)
+        // GetPeakData deve usare Math.Abs internamente per trovare il massimo modulo
+        var peak = GetPeakData(turnData);
+        double maxRoll = peak.MaxRoll;
+        int peakIdx = peak.Index;
 
-        // 1. PILASTRO PRESSIONE (40 punti)
-        // Se spingi, stai carvando. Sotto 1.2G non è carving. Sopra 1.8G è ottimo.
-        double pressureScore = Math.Clamp((maxG - 1.1) * 50, 0, 40);
+        // 2. Troviamo il punto di partenza REALE (lo zero della lamina)
+        // Non ci fidiamo del primo frame, cerchiamo il minimo assoluto PRIMA del picco
+        double startRoll = double.MaxValue;
+        int startIdx = 0;
 
-        // 2. PILASTRO INCLINAZIONE (40 punti)
-        // Premia l'angolo mediato. 45° è il target per il "punteggio pieno" in questa sezione.
-        double angleScore = Math.Clamp((maxRoll - 15) * 1.3, 0, 40);
-
-        // 3. PILASTRO STABILITÀ (20 punti)
-        // Calcoliamo quanto è "fermo" lo sci. Se GyroY (vibrazione laterale) è bassa, 
-        // significa che lo sci è in un binario.
-        double lateralVibration = turnData.Average(f => Math.Abs(f.Left.SmoothGyroY + f.Right.SmoothGyroY) / 2.0);
-        double stabilityScore = Math.Clamp(20 - (lateralVibration * 0.5), 0, 20);
-
-        // TOTALE BASE
-        double totalScore = pressureScore + angleScore + stabilityScore;
-
-        // IL "BOOSTER" PER LE CURVE TIRATE
-        // Se hai più di 45° e più di 1.6G, non puoi essere sotto l'80. Punto.
-        if (maxRoll > 40 && maxG > 1.6)
+        for (int i = 0; i <= peakIdx; i++)
         {
-            totalScore = Math.Max(totalScore, 75 + (maxRoll - 40));
+            double r = Math.Max(Math.Abs(turnData[i].Left.SmoothRoll), Math.Abs(turnData[i].Right.SmoothRoll));
+            if (r < startRoll)
+            {
+                startRoll = r;
+                startIdx = i;
+            }
         }
 
-        // PENALITÀ DERAPATA (Se la rotazione Z è incostante)
-        // Se il picco di rotazione è troppo lontano dalla media, c'è stato uno "scatto" (derapata)
-        /*double maxZ = turnData.Max(f => Math.Abs(f.CombinedGyroZ ?? 0));
-        double avgZ = turnData.Average(f => Math.Abs(f.CombinedGyroZ ?? 0));
-        if (maxZ / (avgZ + 1) > 2.5)
+        // 3. Calcoliamo la crescita (Delta)
+        double deltaRoll = maxRoll - startRoll;
+        int duration = peakIdx - startIdx;
+
+        // Se la curva è troppo strozzata o non c'è pendenza, diamo un valore neutro
+        if (deltaRoll < 5 || duration < 4) return 70;
+
+        // 4. Calcolo delle Aree (Relative allo startRoll)
+        double realArea = 0;
+        for (int i = startIdx; i <= peakIdx; i++)
         {
-            totalScore -= 20;
-        }*/
+            double current = Math.Max(Math.Abs(turnData[i].Left.SmoothRoll), Math.Abs(turnData[i].Right.SmoothRoll));
+            realArea += (current - startRoll);
+        }
 
-        return Math.Clamp(Math.Round(totalScore), 0, 100);
+        // Area di un triangolo che cresce da 0 a deltaRoll in 'duration' frame
+        double linearArea = (deltaRoll * (duration + 1)) / 2.0;
+
+        if (linearArea <= 0) return 0;
+
+        double buildRatio = realArea / linearArea;
+
+        // 5. Mapping del punteggio
+        // Se Ratio < 1.0 -> Progressivo (Ease-In) -> Punteggio alto
+        // Se Ratio > 1.0 -> Impulsivo (Abrupt) -> Punteggio basso
+        double score;
+        if (buildRatio <= 1.0)
+        {
+            // Ottimo: premiamo la curva convessa (tipica del carving moderno)
+            score = 100.0 - (buildRatio * 30.0); // Da 70 a 100
+        }
+        else
+        {
+            // Penalizziamo chi sbatte subito lo spigolo a terra
+            score = 70.0 - ((buildRatio - 1.0) * 80.0);
+        }
+
+        return Math.Round(Math.Clamp(score, 0, 100), 1);
     }
 
-    private static double CalculateFrameG(SkiFrame f)
+    // UTILITIES
+    private static (int Index, double MaxRoll) GetPeakData(List<SkiFrame> data)
     {
-        // Calcoliamo la Magnitude dell'accelerazione per entrambi gli sci
-        // Usiamo la formula: sqrt(x² + y² + z²)
-        double gLeft = Math.Sqrt(Math.Pow(f.Left.SmoothAccX, 2) +
-                                 Math.Pow(f.Left.SmoothAccY, 2) +
-                                 Math.Pow(f.Left.SmoothAccZ, 2));
+        if (data == null || data.Count == 0) return (0, 0);
 
-        double gRight = Math.Sqrt(Math.Pow(f.Right.SmoothAccX, 2) +
-                                  Math.Pow(f.Right.SmoothAccY, 2) +
-                                  Math.Pow(f.Right.SmoothAccZ, 2));
+        int peakIdx = 0;
+        double maxR = -1;
 
-        // Restituiamo la media dei due sci per quel preciso istante
-        return (gLeft + gRight) / 2.0;
+        for (int i = 0; i < data.Count; i++)
+        {
+            double current = Math.Max(Math.Abs(data[i].Left.SmoothRoll), Math.Abs(data[i].Right.SmoothRoll));
+            if (current > maxR)
+            {
+                maxR = current;
+                peakIdx = i;
+            }
+        }
+        return (peakIdx, maxR);
     }
+
+    private static double GetAverageGInWindow(List<SkiFrame> data, int peakIndex)
+    {
+        int windowSize = 4;
+        int start = Math.Max(0, peakIndex - windowSize);
+        int end = Math.Min(data.Count - 1, peakIndex + windowSize);
+
+        double sumG = 0;
+        int count = 0;
+
+        for (int i = start; i <= end; i++)
+        {
+            var f = data[i];
+            double gL = Math.Sqrt(Math.Pow(f.Left.SmoothAccX, 2) + Math.Pow(f.Left.SmoothAccY, 2) + Math.Pow(f.Left.SmoothAccZ, 2));
+            double gR = Math.Sqrt(Math.Pow(f.Right.SmoothAccX, 2) + Math.Pow(f.Right.SmoothAccY, 2) + Math.Pow(f.Right.SmoothAccZ, 2));
+            sumG += (gL + gR) / 2.0;
+            count++;
+        }
+        return sumG / count;
+    }
+
+    private static double GetStableGForTurn(List<SkiFrame> data)
+    {
+        // Invece di una finestra piccola sul picco, 
+        // prendiamo il valore medio di TUTTA la parte centrale della curva (es. il 60% centrale)
+        int skip = (int)(data.Count * 0.2); // Salta l'entrata
+        int take = data.Count - (skip * 2); // Salta l'uscita
+
+        if (take <= 0) return 1.0;
+
+        double sumG = 0;
+        for (int i = skip; i < skip + take; i++)
+        {
+            var f = data[i];
+            double gL = Math.Sqrt(Math.Pow(f.Left.SmoothAccX, 2) + Math.Pow(f.Left.SmoothAccY, 2) + Math.Pow(f.Left.SmoothAccZ, 2));
+            double gR = Math.Sqrt(Math.Pow(f.Right.SmoothAccX, 2) + Math.Pow(f.Right.SmoothAccY, 2) + Math.Pow(f.Right.SmoothAccZ, 2));
+            sumG += (gL + gR) / 2.0;
+        }
+        return sumG / take;
+    }
+   
 }

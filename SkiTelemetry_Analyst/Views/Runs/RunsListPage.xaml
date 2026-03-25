@@ -55,17 +55,29 @@
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
-        <VerticalStackLayout Grid.Row="0" Grid.RowSpan="3" 
-                         VerticalOptions="Center" 
-                         HorizontalOptions="Center"
-                         IsVisible="{Binding IsLoading}">
-            <ActivityIndicator IsRunning="{Binding IsLoading}" 
-                           Color="DeepSkyBlue" 
-                           WidthRequest="50" 
-                           HeightRequest="50" />
-            <Label Text="Caricamento sessione..." 
+
+        <Border StrokeThickness="0" 
+                BackgroundColor="{AppThemeBinding Dark={StaticResource Gray900}, Light={StaticResource Gray200}}" 
+                Padding="20" 
+                VerticalOptions="Center" 
+                IsVisible="{Binding IsLoading}"
+                Grid.RowSpan="3"
+                HorizontalOptions="Center"
+                >
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Grid.Row="0" Grid.RowSpan="3" >
+                <ActivityIndicator IsRunning="{Binding IsLoading}" 
+                   Color="DeepSkyBlue" 
+                   WidthRequest="50" 
+                   HeightRequest="50" />
+                <Label Text="Caricamento sessione..." 
                TextColor="White" 
                HorizontalOptions="Center" />
-        </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Border>
+
     </Grid>
 </ContentPage>

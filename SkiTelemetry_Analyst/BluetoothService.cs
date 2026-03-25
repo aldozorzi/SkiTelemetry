@@ -35,6 +35,7 @@ namespace SkiTelemetry_Analyst
         // Questo dizionario tiene traccia dei sensori connessi per lato
         public IDevice? ConnectedSensor { get; set; }
 
+        public BluetoothState State() {  return _ble.State; }
         public BluetoothService()
         {
             _ble = CrossBluetoothLE.Current;

@@ -18,7 +18,8 @@ public class SkiDataProcessor
     private readonly FilterState _fR = new();
 
     // Coefficiente di smoothing (0.0 a 1.0). Più è basso, più è filtrato.
-    private const double Alpha = 0.2;
+    private const double AccAlpha = 0.05;
+    private const double GyroAlpha = 0.05;
 
     public SkiDataProcessor()
     {
@@ -43,7 +44,7 @@ public class SkiDataProcessor
         if (_pendingLeft.TryGetValue(rawPoint.Timestamp, out var left) &&
             _pendingRight.TryGetValue(rawPoint.Timestamp, out var right))
         {
-            _detector.ProcessFrame(left, right);
+            _detector.ProcessFrame(new SkiFrame(left, right));
             _pendingLeft.Remove(rawPoint.Timestamp);
             _pendingRight.Remove(rawPoint.Timestamp);
         }
@@ -56,6 +57,8 @@ public class SkiDataProcessor
     private void ApplyFilters(SkiDataPoint p)
     {
         FilterState f = (p.Side == SensorSide.Left) ? _fL : _fR;
+        
+        double dt = 0.02;
 
         if (!f.IsInitialized)
         {
@@ -66,15 +69,16 @@ public class SkiDataProcessor
         }
 
         // Filtriamo e popoliamo le proprietà Smooth
-        p.SmoothAccX = f.AccX = f.AccX + Alpha * (p.AccX - f.AccX);
-        p.SmoothAccY = f.AccY = f.AccY + Alpha * (p.AccY - f.AccY);
-        p.SmoothAccZ = f.AccZ = f.AccZ + Alpha * (p.AccZ - f.AccZ);
+        p.SmoothAccX = f.AccX = f.AccX + AccAlpha * (p.AccX - f.AccX);
+        p.SmoothAccY = f.AccY = f.AccY + AccAlpha * (p.AccY - f.AccY);
+        p.SmoothAccZ = f.AccZ = f.AccZ + AccAlpha * (p.AccZ - f.AccZ);
 
-        p.SmoothGyroX = f.GyroX = f.GyroX + Alpha * (p.GyroX - f.GyroX);
-        p.SmoothGyroY = f.GyroY = f.GyroY + Alpha * (p.GyroY - f.GyroY);
-        p.SmoothGyroZ = f.GyroZ = f.GyroZ + Alpha * (p.GyroZ - f.GyroZ);
+        p.SmoothGyroX = f.GyroX = f.GyroX + GyroAlpha * (p.GyroX - f.GyroX);
+        p.SmoothGyroY = f.GyroY = f.GyroY + GyroAlpha * (p.GyroY - f.GyroY);
+        p.SmoothGyroZ = f.GyroZ = f.GyroZ + GyroAlpha * (p.GyroZ - f.GyroZ);
+        f.Roll = 0.98 * (f.Roll + p.GyroZ * dt) + 0.02 * p.Roll; // 98% gyro, 2% roll statico
 
-        p.SmoothRoll = f.Roll = f.Roll + Alpha * (p.Roll - f.Roll);
+        p.SmoothRoll = f.Roll;
     }
     private void OnTurnCompleted(object? sender, SkiTurn turn)
     {

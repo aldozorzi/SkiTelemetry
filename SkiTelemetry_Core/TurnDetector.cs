@@ -7,129 +7,98 @@ public class TurnDetector
     public HashSet<MonitorMode> RequestedMetrics { get; } = new();
 
     private enum State { Searching, PendingExit }
-    private State _currentState = State.Searching;
+    private int _lowSignalCounter = 0;
+    private const int MIN_SILENCE_SAMPLES = 10;
+    private double _minThreshold = 8;
 
     // Buffer per il passato (Pre-Trigger): contiene circa 400ms di storia
-    private List<SkiFrame> _historyBuffer = new List<SkiFrame>();
-    private List<SkiFrame> _currentTurnSamples = new List<SkiFrame>();
 
-    private double _lastValidSign = 0;
-    private double _pendingPeakValue = 0;
-    private const int HistorySize = 60; // 400ms a 50Hz per catturare l'inizio curva
+    private List<SkiFrame> _currentAccumulator = new List<SkiFrame>();
 
-    public void ProcessFrame(SkiDataPoint left, SkiDataPoint right)
+
+    public void ProcessFrame(SkiFrame frame)
     {
-        var frame = new SkiFrame(left, right);
-        double val = frame.CombinedGyroZ ?? 0;
+        double val = frame.CombinedGyro ?? 0;
         double absVal = Math.Abs(val);
 
-        _historyBuffer.Add(frame);
-        if (_historyBuffer.Count > HistorySize) _historyBuffer.RemoveAt(0);
-
-        switch (_currentState)
+        if (absVal < _minThreshold)
         {
-            case State.Searching:
-                // 1. Cerchiamo un picco locale nel buffer di storia
-                if (IsLocalPeak(out double peakVal))
-                {
-                    double currentSign = Math.Sign(peakVal);
-                    // 2. Validazione: segno alternato e magnitudo minima
-                    if (currentSign != _lastValidSign && Math.Abs(peakVal) > 30)
-                    {
-                        _currentState = State.PendingExit;
-                        _pendingPeakValue = peakVal;
-                        _currentTurnSamples.Clear();
+            if (_currentAccumulator.Count > 0)
+            {
+                _lowSignalCounter++;
+                // Aggiungiamo comunque il frame per non avere buchi nel grafico della curva
+                _currentAccumulator.Add(frame);
 
-                        // 3. RECUPERO INIZIO: Prendiamo tutta la storia precedente al picco
-                        // che appartiene alla stessa "collina" (stesso segno)
-                        _currentTurnSamples.AddRange(_historyBuffer.Where(f => Math.Sign(f.CombinedGyroZ ?? 0) == currentSign || Math.Abs(f.CombinedGyroZ ?? 0) < 5));
-                    }
-                }
-                break;
-
-            case State.PendingExit:
-                _currentTurnSamples.Add(frame);
-
-                // 4. RECUPERO FINE: Usciamo quando il segnale attraversa lo zero o torna piatto
-                if (absVal < 8.0 || Math.Sign(val) != Math.Sign(_pendingPeakValue))
+                if (_lowSignalCounter >= MIN_SILENCE_SAMPLES)
                 {
                     FinalizeTurn();
-                    _currentState = State.Searching;
                 }
-                break;
+            }
+            return;
         }
-    }
 
-    private bool IsLocalPeak(out double peakVal)
-    {
-        peakVal = 0;
-        if (_historyBuffer.Count < 11) return false;
+        // Segnale forte: resettiamo il counter del silenzio
+        _lowSignalCounter = 0;
 
-        int mid = _historyBuffer.Count / 2;
-        double midVal = Math.Abs(_historyBuffer[mid].CombinedGyroZ ?? 0);
-
-        // Verifica che il centro sia il massimo assoluto della finestra attuale
-        for (int i = 0; i < _historyBuffer.Count; i++)
+        if (_currentAccumulator.Count > 0)
         {
-            if (i == mid) continue;
-            if (Math.Abs(_historyBuffer[i].CombinedGyroZ ?? 0) >= midVal) return false;
+            // Rimuovere rumore iniziale su Combette
+            // Su finale 1 Indagare perché apra l'ultima curva visto che il segno non è cambiato rispetto alla curva precedente
+            double startSign = Math.Sign(_currentAccumulator[0].CombinedGyro ?? 0);
+            if (Math.Sign(val) != startSign)
+            {
+                FinalizeTurn();
+            }
         }
 
-        peakVal = _historyBuffer[mid].CombinedGyroZ ?? 0;
-        return true;
+        _currentAccumulator.Add(frame);
     }
 
     private void FinalizeTurn()
     {
-        TrimSamples(); // Pulizia bordi < 10 deg/s
-
-        if (_currentTurnSamples.Count < 20) return;
-
-        double peakVal = Math.Abs(_pendingPeakValue);
-        double energy = _currentTurnSamples.Sum(f => Math.Abs(f.CombinedGyroZ ?? 0));
-        double averageVal = _currentTurnSamples.Average(f => Math.Abs(f.CombinedGyroZ ?? 0));
-        double shapeRatio = peakVal / averageVal;
-
-        // LOGICA DINAMICA:
-        // Se non abbiamo ancora trovato la prima curva, siamo severissimi (Anti-Ghost).
-        // Una volta partiti, abbassiamo la guardia per non perdere le curve blande.
-        bool isFirstTurn = _lastValidSign == 0;
-
-        double minEnergy = isFirstTurn ? 1500 : 800; // Recupera le curve "leggere" medie
-        double minShape = isFirstTurn ? 1.8 : 1.4;   // Accetta forme meno perfette una volta in movimento
-        double minPeak = isFirstTurn ? 45 : 25;      // Accetta picchi più bassi nella run blanda
-
-        if (peakVal > minPeak && energy > minEnergy && shapeRatio > minShape)
+        if (_currentAccumulator.Count > 0)
         {
-            _lastValidSign = Math.Sign(_pendingPeakValue);
-            AnalyzeTurn(new List<SkiFrame>(_currentTurnSamples));
-            System.Diagnostics.Debug.WriteLine($"[OK] Validata: E={energy:F0}, S={shapeRatio:F1}");
+            // Calcoliamo il picco massimo della pancia prima di decidere se è una curva
+            double maxAbs = _currentAccumulator.Max(f => Math.Abs(f.CombinedGyro ?? 0));
+
+            // SOGLIA DI DIGNITÀ: Se la pancia non arriva almeno a 25 deg/s, 
+            // è rumore, non è una curva.
+            if (maxAbs > 15 && _currentAccumulator.Count > 15)
+            {
+                AnalyzeAndEmitTurn(new List<SkiFrame>(_currentAccumulator));
+            }
         }
-        else
-        {
-            System.Diagnostics.Debug.WriteLine($"[REJECT] E={energy:F0}, S={shapeRatio:F1}");
-        }
+        _currentAccumulator.Clear();
+        _lowSignalCounter = 0;
     }
 
-    private void TrimSamples()
+    private void AnalyzeAndEmitTurn(List<SkiFrame> turnData)
     {
-        // Rimuove il "silenzio" ai bordi per centrare il rettangolo sulla parte attiva
-        while (_currentTurnSamples.Count > 0 && Math.Abs(_currentTurnSamples.First().CombinedGyroZ ?? 0) < 10)
-            _currentTurnSamples.RemoveAt(0);
+        // turnData è la lista di frame tra due passaggi per lo zero
+        if (turnData.Count < 10) return;
 
-        while (_currentTurnSamples.Count > 0 && Math.Abs(_currentTurnSamples.Last().CombinedGyroZ ?? 0) < 10)
-            _currentTurnSamples.RemoveAt(_currentTurnSamples.Count - 1);
-    }
+        // 1. Trova il frame con il valore massimo (assoluto)
+        // Uso il nome che hai usato tu nei log: CombinedGyro
+        var peakFrame = turnData[0];
+        double maxAbs = 0;
 
-    private void AnalyzeTurn(List<SkiFrame> turnData)
-    {
-        // ESEMPIO DI COSA PUOI FARE ORA:
-        var t0Frame = turnData.FirstOrDefault(f => Math.Abs(f.CombinedGyroZ ?? 0) > 5.0);
-        uint startTime = t0Frame?.Left?.Timestamp ?? turnData[0].Left.Timestamp;
-        uint endTime = turnData.Last().Left.Timestamp;
+        foreach (var f in turnData)
+        {
+            double currentAbs = Math.Abs(f.CombinedGyro ?? 0);
+            if (currentAbs > maxAbs)
+            {
+                maxAbs = currentAbs;
+                peakFrame = f;
+            }
+        }
 
-
-        var turn = new SkiTurn();
+        // 2. Crea il turno usando i timestamp dei DataPoint originali
+        // (Assumo che SkiFrame abbia i riferimenti Left/Right come mostrato all'inizio)
+        var turn = new SkiTurn
+        {
+            StartTimestamp = turnData.First().Left.Timestamp,
+            EndTimestamp = turnData.Last().Left.Timestamp,
+        };
         turn.EdgeAngle = SkiTurnAnalyzer.CalculateMaxEdgeAngle(turnData);
         turn.EdgeSimilarity = SkiTurnAnalyzer.CalculateSimilarity(turnData);
         turn.EarlyEdging = 0;
@@ -139,11 +108,12 @@ public class TurnDetector
         turn.ProgressiveEdgeBuild = 0;
         turn.CarvingIndex = SkiTurnAnalyzer.CalculateCarvingIndex(turnData);
         turn.Foot = SkiTurnAnalyzer.DetermineOuterFoot(turnData);
-        turn.StartTimestamp = startTime;
-        turn.EndTimestamp = endTime;
-        OnTurnCompleted?.Invoke(this, turn);
+        // 3. Calcolo basilare del piede (se positivo è un lato, se negativo è l'altro)
+        // turn.Foot = turn.MaxGyro > 0 ? Foot.Right : Foot.Left;
 
-        System.Diagnostics.Debug.WriteLine($"[DETECTOR] Curva analizzata: {startTime}-{endTime}");
+        System.Diagnostics.Debug.WriteLine($"[OK] Curva: {turn.StartTimestamp} -> {turn.EndTimestamp}");
+
+        OnTurnCompleted?.Invoke(this, turn);
     }
 
 }
