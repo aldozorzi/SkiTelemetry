@@ -147,48 +147,48 @@ namespace SkiTelemetry_Analyst.Views
                 if (EdgeAngleDisplay.IsVisible)
                 {
                     LblEdgeAngle.Text = $"{turn.EdgeAngle:0}°";
-                    _ = SpeechHelper.SpeakAsync($"{turn.EdgeAngle}");
+                    _ = SpeechHelper.SpeakAsync($"{turn.EdgeAngle:F0}");
                 }
                     
                 else if (EdgeSimilarityDisplay.IsVisible) {
                     LblEdgeSimilarity.Text = $"{turn.EdgeSimilarity:0}%";
-                    _ = SpeechHelper.SpeakAsync($"{turn.EdgeSimilarity}");
+                    _ = SpeechHelper.SpeakAsync($"{turn.EdgeSimilarity:F0}");
                 }
                     
                 else if (GForceDisplay.IsVisible)
                 {
                     LblGForce.Text = $"{turn.GForce:0.0}";
-                    _ = SpeechHelper.SpeakAsync($"{turn.GForce}");
+                    _ = SpeechHelper.SpeakAsync($"{turn.GForce:F1}");
                 }
                     
                 else if (RadiusDisplay.IsVisible)
                 {
                     LblRadius.Text = $"{turn.Radius:0.0}m";
-                    _ = SpeechHelper.SpeakAsync($"{turn.Radius}");
+                    _ = SpeechHelper.SpeakAsync($"{turn.Radius:F1}");
                 }
                     
                 else if (EarlyEdgingDisplay.IsVisible)
                 {
                     LblEarlyEdging.Text = $"{turn.EarlyEdging:0}%";
-                    _ = SpeechHelper.SpeakAsync($"{turn.EarlyEdging}");
+                    _ = SpeechHelper.SpeakAsync($"{turn.EarlyEdging:F0}");
                 }
                     
                 else if (ProgressiveBuildDisplay.IsVisible)
                 {
                     LblProgressiveBuild.Text = $"{turn.ProgressiveEdgeBuild:0}%";
-                    _ = SpeechHelper.SpeakAsync($"{turn.ProgressiveEdgeBuild}");
+                    _ = SpeechHelper.SpeakAsync($"{turn.ProgressiveEdgeBuild:F0}");
                 }
                     
                 else if (TurnShapeDisplay.IsVisible)
                 {
                     LblTurnShape.Text = $"{turn.Shape}%";
-                    _ = SpeechHelper.SpeakAsync($"{turn.Shape}");
+                    _ = SpeechHelper.SpeakAsync($"{turn.Shape:F0}");
                 }
                     
                 else if (CarvingIndexDisplay.IsVisible)
                 {
                     LblCarvingIndex.Text = $"{turn.CarvingIndex}%";
-                    _ = SpeechHelper.SpeakAsync($"{turn.CarvingIndex}");
+                    _ = SpeechHelper.SpeakAsync($"{turn.CarvingIndex:F0}");
                 }
                     
 

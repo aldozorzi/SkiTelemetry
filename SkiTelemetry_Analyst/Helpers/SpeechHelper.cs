@@ -2,18 +2,27 @@
 {
     public static class SpeechHelper
     {
-        private static bool _isSpeaking = false;
+        private const string SpeechRateKey = "SpeechRate";
+        // Gestisce la cancellazione del task in corso
+        private static CancellationTokenSource _cts = new();
 
-        public static async Task SpeakAsync(string text, double pitch = 1.0, double rate = 0.8)
+        public static async Task SpeakAsync(string text, double? rate = null, double pitch = 1.0)
         {
+            if (rate == null)
+                rate = Preferences.Default.Get(SpeechRateKey, 1.0);
             try
             {
-                // Evitiamo sovrapposizioni fastidiose se parla troppo velocemente
-                if (_isSpeaking) return;
+                /*
+                // Se c'è già una riproduzione, invia il segnale di cancellazione
+                if (_cts != null && !_cts.IsCancellationRequested)
+                {
+                    _cts.Cancel();
+                }
 
-                _isSpeaking = true;
-
-                // Recupera la lingua italiana
+                // Crea un nuovo token per la chiamata attuale
+                _cts = new CancellationTokenSource();
+                var token = _cts.Token;
+                */
                 var locales = await TextToSpeech.Default.GetLocalesAsync();
                 var locale = locales.FirstOrDefault(l => l.Language == "it" || l.Name.Contains("Italian"));
 
@@ -25,15 +34,17 @@
                     Locale = locale
                 };
 
-                await TextToSpeech.Default.SpeakAsync(text, options);
+                // Passiamo il token al metodo SpeakAsync
+                await TextToSpeech.Default.SpeakAsync(text, options/*, cancelToken: token*/);
+            }
+            catch (OperationCanceledException)
+            {
+                // È normale che venga lanciata questa eccezione quando interrompiamo il messaggio
+                System.Diagnostics.Debug.WriteLine("Riproduzione vocale interrotta per nuovo messaggio.");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Errore TTS: {ex.Message}");
-            }
-            finally
-            {
-                _isSpeaking = false;
             }
         }
     }

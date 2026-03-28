@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using SkiTelemetry_Core;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -11,17 +12,17 @@ namespace SkiTelemetry_Analyst.Services
         private readonly HttpClient _httpClient = new HttpClient { BaseAddress = new Uri(App.ApiBaseUrl) };
         private readonly AuthService _authService = new();
 
-        public async Task<bool> SyncFileAsync(string filePath)
+        public async Task<UploadUrlResponse?> SyncFileAsync(string filePath)
         {
             try
             {
                 // 1. Otteniamo l'URL di upload e la S3Key
                 var uploadInfo = await GetUploadUrlAsync(filePath);
-                if (uploadInfo == null) return false;
+                if (uploadInfo == null) return null;
                 //System.Diagnostics.Trace.WriteLine($"uploadInfo recuperate, UploadUrl:{uploadInfo.UploadUrl}");
                 // 2. Upload fisico su R2
                 var uploadSuccess = await UploadToR2Async(filePath, uploadInfo.UploadUrl);
-                if (!uploadSuccess) return false;
+                if (!uploadSuccess) return null;
                 //System.Diagnostics.Trace.WriteLine($"uploadSuccess:{uploadSuccess}, {uploadInfo.S3Key}");
                 // 3. Conferma al backend
                 var confirmedFileName = await ConfirmSaveAsync(filePath, uploadInfo.S3Key);
@@ -39,14 +40,14 @@ namespace SkiTelemetry_Analyst.Services
                             File.Delete(jsonPath);
                         }
                     }
-                    return true;
+                    return uploadInfo;
                 }
-                return false;
+                return null;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Trace.WriteLine($"Errore Sync & Delete: {ex.Message}");
-                return false;
+                return null;
             }
         }
 
@@ -199,6 +200,7 @@ namespace SkiTelemetry_Analyst.Services
                 // 1. Se è locale, restituiamo direttamente il suo FullPath
                 if (run.IsLocal && File.Exists(run.FullPath))
                 {
+                    System.Diagnostics.Debug.WriteLine($"[RUNSERVICE] run.IsLocal && File.Exists({run.FullPath})");
                     return run.FullPath;
                 }
 
@@ -213,23 +215,26 @@ namespace SkiTelemetry_Analyst.Services
 
                 // 3. Recuperiamo l'URL di download dal Backend
                 var authData = await _authService.GetAuthStatusAsync();
+                System.Diagnostics.Debug.WriteLine($"[RUNSERVICE] authData({authData})");
                 if (authData == null) return null;
 
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authData.AccessToken);
 
                 // Usiamo la S3Key che dovrai aggiungere al modello VisualRunItem
                 var response = await _httpClient.PostAsJsonAsync("api/run/get-download-url", new { s3Key = run.S3Key });
-
+                System.Diagnostics.Debug.WriteLine($"[RUNSERVICE] response({response})");
                 if (response.IsSuccessStatusCode)
                 {
                     var downloadData = await response.Content.ReadFromJsonAsync<DownloadUrlResponse>();
+                    System.Diagnostics.Debug.WriteLine($"[RUNSERVICE] downloadData({downloadData})");
                     if (downloadData != null)
                     {
+                        System.Diagnostics.Debug.WriteLine($"[RUNSERVICE] start download({downloadData})");
                         // 4. Scarichiamo il file fisicamente
                         using var downloadClient = new HttpClient();
                         var fileBytes = await downloadClient.GetByteArrayAsync(downloadData.DownloadUrl);
                         await File.WriteAllBytesAsync(localCachePath, fileBytes);
-
+                        System.Diagnostics.Debug.WriteLine($"[RUNSERVICE] file cached({downloadData})");
                         return localCachePath;
                     }
                 }

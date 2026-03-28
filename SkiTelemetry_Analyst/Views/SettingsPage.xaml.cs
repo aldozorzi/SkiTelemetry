@@ -4,6 +4,7 @@ namespace SkiTelemetry_Analyst;
 public partial class SettingsPage : ContentPage
 {
     private const string LoggingKey = "IsLoggingEnabled";
+    private const string SpeechRateKey = "SpeechRate";
 
     private bool _isMainPageBusy;
     public bool IsMainPageBusy
@@ -19,8 +20,12 @@ public partial class SettingsPage : ContentPage
 
     public SettingsPage()
 	{
-		InitializeComponent();
+        InitializeComponent();
         SwitchLogging.IsToggled = Preferences.Default.Get(LoggingKey, false);
+        double savedRate = Preferences.Default.Get(SpeechRateKey, 1.0);
+        System.Diagnostics.Debug.WriteLine($"[SettingsPage] savedRate: {savedRate}");
+        SliderSpeechRate.Value = savedRate;
+        LblSpeechRateValue.Text = $"Valore: {savedRate:F1}";
     }
 
     private void ApplyBusinessLogic()
@@ -76,5 +81,17 @@ public partial class SettingsPage : ContentPage
             await DisplayAlertAsync("Fatto", "Dati server cancellati.", "OK");
             await Shell.Current.GoToAsync("..");
         }
+    }
+
+    private void OnSpeechRateChanged(object? sender, ValueChangedEventArgs e)
+    {
+        // Arrotondiamo a un decimale per pulizia
+        double roundedValue = Math.Round(e.NewValue, 1);
+
+        // Aggiorna la UI
+        LblSpeechRateValue.Text = $"Valore: {roundedValue:F1}";
+        System.Diagnostics.Debug.WriteLine($"[SettingsPage] saving SpeechRateKey: {roundedValue}");
+        // Salvataggio persistente
+        Preferences.Default.Set(SpeechRateKey, roundedValue);
     }
 }

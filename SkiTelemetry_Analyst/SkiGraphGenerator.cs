@@ -8,7 +8,7 @@ using System.Text;
 public static class SkiGraphGenerator
 {
     // DETECTING CURVE
-    public static void GenerateHtmlReport(List<SkiDataPoint> allPoints, List<SkiTurn> detectedTurns, string filePath = "SkiDebugGraph.html")
+    /*public static void GenerateHtmlReport(List<SkiDataPoint> allPoints, List<SkiTurn> detectedTurns, string filePath = "SkiDebugGraph.html")
     {
         // Sincronizziamo i dati per timestamp per calcolare la media reale (CombinedGyro)
         var combinedData = allPoints
@@ -72,35 +72,32 @@ public static class SkiGraphGenerator
     </html>");
 
         File.WriteAllText(filePath, sb.ToString());
-    }
-    /* 
+    }*/
+
     //ANALISI ROLL E G_FORCE
     public static void GenerateHtmlReport(List<SkiDataPoint> allPoints, List<SkiTurn> detectedTurns, string filePath = "SkiPhysicsAnalysis.html")
     {
         var leftData = allPoints.Where(p => p.Side == SensorSide.Left).ToList();
         var rightData = allPoints.Where(p => p.Side == SensorSide.Right).ToList();
 
-        // 1. Dati Inclinazione (Roll)
-        string leftRoll = string.Join(",", leftData.Select(p => p.SmoothRoll.ToString().Replace(",", ".")));
-        string rightRoll = string.Join(",", rightData.Select(p => p.SmoothRoll.ToString().Replace(",", ".")));
+        // Estrazione dati con cultura invariante (punto per i decimali)
+        string leftRoll = string.Join(",", leftData.Select(p => p.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRoll = string.Join(",", rightData.Select(p => p.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
-        // 2. Dati G-Force (Magnitudo calcolata dai dati Smooth)
-        string leftG = string.Join(",", leftData.Select(p => {
-            double g = Math.Sqrt(Math.Pow(p.SmoothAccX, 2) + Math.Pow(p.SmoothAccY, 2) + Math.Pow(p.SmoothAccZ, 2));
-            return g.ToString("F2").Replace(",", ".");
-        }));
-        string rightG = string.Join(",", rightData.Select(p => {
-            double g = Math.Sqrt(Math.Pow(p.SmoothAccX, 2) + Math.Pow(p.SmoothAccY, 2) + Math.Pow(p.SmoothAccZ, 2));
-            return g.ToString("F2").Replace(",", ".");
-        }));
+        string leftG = string.Join(",", leftData.Select(p => p.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightG = string.Join(",", rightData.Select(p => p.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+
+        string leftGyroY = string.Join(",", leftData.Select(p => p.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightGyroY = string.Join(",", rightData.Select(p => p.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftGyroX = string.Join(",", leftData.Select(p => p.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightGyroX = string.Join(",", rightData.Select(p => p.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
         string timestamps = string.Join(",", leftData.Select(p => p.Timestamp));
 
-        // Zone per le curve
         var turnShapes = new StringBuilder();
         foreach (var turn in detectedTurns)
         {
-            turnShapes.AppendLine($"{{ type: 'rect', xref: 'x', yref: 'paper', x0: {turn.StartTimestamp}, x1: {turn.EndTimestamp}, y0: 0, y1: 1, fillcolor: 'rgba(255, 0, 0, 0.1)', line: {{ width: 0 }} }},");
+            turnShapes.AppendLine($"{{ type: 'rect', xref: 'x', yref: 'paper', x0: {turn.StartTimestamp}, x1: {turn.EndTimestamp}, y0: 0, y1: 1, fillcolor: 'rgba(200, 200, 200, 0.2)', line: {{ width: 0 }} }},");
         }
 
         var html = $@"
@@ -110,19 +107,26 @@ public static class SkiGraphGenerator
         <div id='graph' style='width:100%; height:95vh;'></div>
         <script>
             var xData = [{timestamps}];
-            
-            // Tracce Inclinazione (Asse Y1)
-            var traceRollL = {{ x: xData, y: [{leftRoll}], name: 'Roll Left (deg)', line: {{color: 'rgba(255, 0, 0, 0.5)', width: 2}} }};
-            var traceRollR = {{ x: xData, y: [{rightRoll}], name: 'Roll Right (deg)', line: {{color: 'rgba(31, 119, 180, 0.5)', width: 2}} }};
 
-            // Tracce G-Force (Asse Y2 - tratteggiate)
-            var traceGL = {{ x: xData, y: [{leftG}], name: 'G-Force Left', yaxis: 'y2', line: {{color: 'red', width: 1, dash: 'dot'}} }};
-            var traceGR = {{ x: xData, y: [{rightG}], name: 'G-Force Right', yaxis: 'y2', line: {{color: '#1f77b4', width: 1, dash: 'dot'}} }};
+            // 1. ROLL (Asse Y principale - Sinistra)
+            var traceRollL = {{ x: xData, y: [{leftRoll}], name: 'Roll L (deg)', line: {{color: 'rgba(255, 0, 0, 0.4)', width: 2}} }};
+            var traceRollR = {{ x: xData, y: [{rightRoll}], name: 'Roll R (deg)', line: {{color: 'rgba(31, 119, 180, 0.4)', width: 2}} }};
+
+            // 2. G-FORCE (Asse Y2 - Destra interna)
+            var traceGL = {{ x: xData, y: [{leftG}], name: 'G-Force L', yaxis: 'y2', line: {{color: 'red', width: 1.5, dash: 'dot'}} }};
+            var traceGR = {{ x: xData, y: [{rightG}], name: 'G-Force R', yaxis: 'y2', line: {{color: '#1f77b4', width: 1.5, dash: 'dot'}} }};
+
+            // 3. GYRO Y (Asse Y3 - Destra esterna)
+            // Usiamo una linea continua sottile per distinguerla dalla G-Force
+            var traceGyroYL = {{ x: xData, y: [{leftGyroY}], name: 'GyroY L (deg/s)', yaxis: 'y3', line: {{color: 'rgba(0, 128, 0, 0.6)', width: 1}} }};
+            var traceGyroYR = {{ x: xData, y: [{rightGyroY}], name: 'GyroY R (deg/s)', yaxis: 'y3', line: {{color: 'rgba(139, 69, 19, 0.6)', width: 1}} }};
+            var traceGyroXL = {{ x: xData, y: [{leftGyroX}], name: 'GyroZ L (deg/s)', yaxis: 'y3', line: {{color: 'red', width: 1}} }};
+            var traceGyroXR = {{ x: xData, y: [{rightGyroX}], name: 'GyroZ R (deg/s)', yaxis: 'y3', line: {{color: 'blue', width: 1}} }};
 
             var layout = {{
-                title: 'Analisi Correlazione: Inclinazione vs Pressione',
+                title: 'Analisi Fisica Sci: Roll vs G-Force vs GyroY',
                 xaxis: {{ title: 'Timestamp' }},
-                yaxis: {{ title: 'Inclinazione (deg)', range: [-60, 60] }},
+                yaxis: {{ title: 'Roll (deg)', range: [-70, 70], zeroline: true }},
                 yaxis2: {{ 
                     title: 'G-Force', 
                     overlaying: 'y', 
@@ -130,15 +134,25 @@ public static class SkiGraphGenerator
                     range: [0, 4],
                     showgrid: false 
                 }},
+                yaxis3: {{
+                    title: 'GyroY (deg/s)',
+                    overlaying: 'y',
+                    side: 'right',
+                    anchor: 'free',
+                    position: 0.95,
+                    range: [-100, 100],
+                    showgrid: false
+                }},
+                margin: {{ r: 100 }}, // Spazio per il terzo asse
                 shapes: [{turnShapes}],
-                hovermode: 'x'
+                hovermode: 'x unified'
             }};
 
-            Plotly.newPlot('graph', [traceRollL, traceRollR, traceGL, traceGR], layout);
+            Plotly.newPlot('graph', [traceRollL, traceRollR, traceGL, traceGR, /*traceGyroYL, traceGyroYR,traceGyroXL, traceGyroXR*/], layout);
         </script>
     </body>
     </html>";
 
         File.WriteAllText(filePath, html);
-    }*/
+    }
 }

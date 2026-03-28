@@ -37,7 +37,7 @@ public partial class RunDetailPage : ContentPage
 
             metrics.Add(MonitorMode.EdgeAngle);
             metrics.Add(MonitorMode.GForce);
-            metrics.Add(MonitorMode.TurnRadius);
+            //metrics.Add(MonitorMode.TurnRadius);
             metrics.Add(MonitorMode.EarlyEdging);
             metrics.Add(MonitorMode.ProgressiveEdgeBuild);
             metrics.Add(MonitorMode.TurnShape);
@@ -74,7 +74,8 @@ public partial class RunDetailPage : ContentPage
 
                 if (detectedTurns.Any())
                 {
-                    LblAvgAngle.Text = $"{detectedTurns.Average(t => t.EdgeAngle):F1}°";
+                    LblCarvingIndex.Text = $"{detectedTurns.Average(t => t.CarvingIndex):F0}%";
+                    LblMaxAngle.Text = $"{detectedTurns.Max(t => t.EdgeAngle):F0}°";
                     LblMaxG.Text = $"{detectedTurns.Max(t => t.GForce):F2}";
                 }
 

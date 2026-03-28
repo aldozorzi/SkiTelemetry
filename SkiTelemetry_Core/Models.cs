@@ -26,6 +26,32 @@ public enum MonitorMode
 
 public enum SensorSide { Left, Right }
 
+public class SkiTurn
+{
+    public uint StartTimestamp { get; set; }
+    public uint EndTimestamp { get; set; }
+
+    public double Duration => EndTimestamp >= StartTimestamp
+    ? (double)(EndTimestamp - StartTimestamp) / 1000
+    : 0; // Gestione errore se End è prima di Start
+
+    // Metriche opzionali (nulle se non richieste)
+    public double? EdgeAngle { get; set; }
+    public double? EdgeSimilarity { get; set; }
+    public double? EarlyEdging { get; set; }
+    public double? GForce { get; set; }
+    public double? Radius { get; set; }
+    public double? Shape { get; set; }
+    public double? ProgressiveEdgeBuild { get; set; }
+    public double? CarvingIndex { get; set; }
+
+    public SensorSide? Foot { get; set; }
+    public override string ToString()
+    {
+        return $"[DATA] EdgeAngle: {EdgeAngle}, EdgeSimilarity: {EdgeSimilarity}, EarlyEdging:{EarlyEdging}, GForce:{GForce}, Radius{Radius}, Shape: {Shape}, ProgressiveEdgeBuild: {ProgressiveEdgeBuild}, CarvingIndex:{CarvingIndex}, Foot:{Foot})";
+    }
+}
+
 public class SkiRun
 {
     public int Id { get; set; }
@@ -80,6 +106,7 @@ public class SkiDataPoint
     public double SmoothGyroX { get; set; } // Dato filtrato
     public double SmoothGyroY { get; set; } // Dato filtrato
     public double SmoothGyroZ { get; set; } // Dato filtrato
+    public double AdjustedG { get; set; } // Dato filtrato
 
     public override string ToString()
     {
@@ -91,7 +118,7 @@ public class SkiFrame
 
     public SkiDataPoint Left { get; set; }
     public SkiDataPoint Right { get; set; }
-    public double? CombinedGyro => (Left?.SmoothGyroZ + Right?.SmoothGyroZ) / 2.0;
+    public double CombinedGyro => (Left.SmoothGyroZ + Right.SmoothGyroZ) / 2.0;
 
     public SkiFrame(SkiDataPoint left, SkiDataPoint right)
     {

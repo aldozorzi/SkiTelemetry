@@ -98,6 +98,46 @@
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
+            <VerticalStackLayout Padding="30" Spacing="25">
+                <Label Text="FEEDBACK VOCALE" 
+   FontSize="20" 
+   FontAttributes="Bold" 
+   HorizontalOptions="Center" />
+
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="15"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="Velocità Voce" 
+           FontAttributes="Bold" 
+           FontSize="16" 
+           TextColor="#666666"/>
+
+                        <Slider x:Name="SliderSpeechRate"
+            Minimum="0.1"
+            Maximum="2"
+            Value="1.5"
+            ValueChanged="OnSpeechRateChanged" 
+            BackgroundColor="LightGray"
+            MinimumTrackColor="DarkSlateGray"
+            />
+
+                        <Label x:Name="LblSpeechRateValue" 
+           Text="Valore: 0.0"
+           FontSize="13" 
+           TextColor="#666666" 
+           HorizontalOptions="End" />
+
+                        <Label Text="Regola il tono e la velocità degli avvisi vocali durante la sciata."
+           FontSize="13" 
+           TextColor="#666666" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
         </VerticalStackLayout>
+        
+        
     </ScrollView>
 </ContentPage>

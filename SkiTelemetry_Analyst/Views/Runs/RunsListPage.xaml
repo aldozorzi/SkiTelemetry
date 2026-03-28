@@ -11,8 +11,8 @@
     </ContentPage.Resources>
     <Grid RowDefinitions="Auto, Auto, *" Padding="30, 30">
 
-        <Label Grid.Row="0" Text="STORICO SESSIONI" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center" />
-
+        <Label Grid.Row="0" Text="STORICO SESSIONI" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center" Margin="0, 0, 0, 20" />
+        <!--
         <Button 
             x:Name="BtnSyncAll"
             Grid.Row="1" 
@@ -23,6 +23,29 @@
             Margin="0,10,0,20"
             HeightRequest="45" 
             IsVisible="false"/>
+        -->
+        <Border  Grid.Row="1" BackgroundColor="Firebrick" 
+            Padding="10" 
+            Margin="0,0,0,10"
+            IsVisible="{Binding IsOfflineMode}"
+            StrokeShape="RoundRectangle 5"> 
+
+            <Label HorizontalOptions="Center">
+                <Label.FormattedText>
+                    <FormattedString>
+                        <Span Text="Modalità offline attivata. " TextColor="White" />
+                        <Span Text="Torna online" 
+              TextColor="Yellow" 
+              FontAttributes="Bold" 
+              TextDecorations="Underline">
+                            <Span.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleOnlineCommand}" />
+                            </Span.GestureRecognizers>
+                        </Span>
+                    </FormattedString>
+                </Label.FormattedText>
+            </Label>
+        </Border>
 
         <CollectionView Grid.Row="2" x:Name="RunsCollection" SelectionMode="None" ItemsSource="{Binding Runs}">
             <CollectionView.ItemTemplate>

@@ -6,6 +6,7 @@ namespace SkiTelemetry_Analyst.Views
     {
         private readonly AuthService _authService = new AuthService();
         private bool _isLoginMode;
+        private const string OfflineModeKey = "OfflineMode";
 
         public AuthPage(bool startInLogin)
         {
@@ -26,6 +27,7 @@ namespace SkiTelemetry_Analyst.Views
                 {
                     // Passiamo tutto l'oggetto al chiamante
                     Services.AuthService.AuthCompletionSource?.TrySetResult(authData);
+                    Preferences.Default.Set("OfflineMode", false);
                     await Navigation.PopModalAsync();
                 }
                 else
@@ -44,6 +46,10 @@ namespace SkiTelemetry_Analyst.Views
         {
             // Se annulla, sblocchiamo con null così la sincronizzazione non parte
             Services.AuthService.AuthCompletionSource?.TrySetResult(null);
+            // setto la variabile della modalità
+            Preferences.Default.Set(OfflineModeKey, true);
+
+
             await Navigation.PopModalAsync();
         }
 

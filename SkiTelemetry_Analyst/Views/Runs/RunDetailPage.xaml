@@ -8,6 +8,8 @@
     <ContentPage.Resources>
         <ResourceDictionary>
             <helpers:AngleToPercentConverter x:Key="AngleToPercentConverter" />
+            <helpers:PercentToRatioConverter x:Key="PercentToRatioConverter" />
+            <helpers:GForceToPercentConverter x:Key="GForceToPercentConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
 
@@ -17,32 +19,39 @@
             <Label x:Name="LblRunName" 
                    FontSize="24" 
                    FontAttributes="Bold" 
-                   TextColor="DeepSkyBlue" 
+                   TextColor="Gray" 
                    Text="CARICAMENTO..." />
             <Label x:Name="LblDate" 
                    FontSize="14" 
                    TextColor="Gray" />
         </VerticalStackLayout>
 
-        <Grid Grid.Row="1" ColumnDefinitions="*, *, *" ColumnSpacing="10" Margin="0,0,0,20">
-            <Border Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
+        <Grid Grid.Row="1" ColumnDefinitions="*, *" RowDefinitions="Auto,Auto" ColumnSpacing="10" Margin="0,0,0,20" RowSpacing="10">
+            <Border Grid.Row ="0"  Grid.Column="0" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
                 <VerticalStackLayout HorizontalOptions="Center">
-                    <Label Text="AVG ANGLE" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
-                    <Label x:Name="LblAvgAngle" FontSize="18" FontAttributes="Bold" TextColor="Cyan" Text="0°" />
+                    <Label Text="AVG CHARRET INDEX" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
+                    <Label x:Name="LblCarvingIndex" FontSize="18" FontAttributes="Bold" TextColor="Cyan" Text="0%" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
             </Border>
 
-            <Border Grid.Column="1" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
+            <Border Grid.Row ="0" Grid.Column="1" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
+                <VerticalStackLayout HorizontalOptions="Center">
+                    <Label Text="MAX ANGLE" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
+                    <Label x:Name="LblMaxAngle" FontSize="18" FontAttributes="Bold" TextColor="Salmon" Text="0°" HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Grid.Row ="1" Grid.Column="0" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
                 <VerticalStackLayout HorizontalOptions="Center">
                     <Label Text="MAX G" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
-                    <Label x:Name="LblMaxG" FontSize="18" FontAttributes="Bold" TextColor="Salmon" Text="0.0" />
+                    <Label x:Name="LblMaxG" FontSize="18" FontAttributes="Bold" TextColor="Orange" Text="0.0" HorizontalTextAlignment="Center"  />
                 </VerticalStackLayout>
             </Border>
 
-            <Border Grid.Column="2" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
+            <Border Grid.Row ="1" Grid.Column="1" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
                 <VerticalStackLayout HorizontalOptions="Center">
                     <Label Text="CURVE" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
-                    <Label x:Name="LblTurnCount" FontSize="18" FontAttributes="Bold" TextColor="Orange" Text="0" />
+                    <Label x:Name="LblTurnCount" FontSize="18" FontAttributes="Bold" TextColor="LawnGreen" Text="0" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
             </Border>
         </Grid>
@@ -54,53 +63,56 @@
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Border Padding="15" Margin="5,5" Stroke="#333" BackgroundColor="#121212" StrokeShape="RoundRectangle 10">
-                        <VerticalStackLayout Spacing="12">
+                        <VerticalStackLayout Spacing="8">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <Label Grid.Column="0" Text="{Binding CarvingIndex, StringFormat='CHARRET INDEX: {0:F0}%'}" 
+FontAttributes="Bold" TextColor="Cyan" FontSize="11" />
+                                <Label Grid.Column="1" Text="{Binding Foot, StringFormat='FOOT: {0}'}" 
+TextColor="White" FontSize="11" Opacity="0.7" />
+                            </Grid>
+                            <ProgressBar Progress="{Binding CarvingIndex, Converter={StaticResource PercentToRatioConverter}}" 
+  ProgressColor="Cyan" ScaleY="2" />
 
-                            <Grid ColumnDefinitions="*, auto">
-                                <Label Text="{Binding EdgeAngle, StringFormat='MAX ROLL: {0:F1}°'}" 
-                                       FontAttributes="Bold" 
-                                       TextColor="Cyan" 
-                                       FontSize="12" />
-                                <Label Grid.Column="1" 
-                                   Text="{Binding Foot, StringFormat='FOOT: {0}'}" 
-                                   TextColor="White" 
-                                   FontSize="12" 
-                                   VerticalOptions="Center" 
-                                   Margin="20,0"/>          
+                            <Grid ColumnDefinitions="*">
+                                <Label Text="{Binding EdgeAngle, StringFormat='MAX ROLL: {0:F0}°'}" 
+               FontAttributes="Bold" TextColor="Salmon" FontSize="11" />
                                 
                             </Grid>
-
                             <ProgressBar Progress="{Binding EdgeAngle, Converter={StaticResource AngleToPercentConverter}}" 
-                                         ProgressColor="Cyan" 
-                                         ScaleY="1.5" />
+                 ProgressColor="Salmon" ScaleY="2" />
 
-                            <Grid ColumnDefinitions="*, *, *, *" RowDefinitions="Auto, Auto" RowSpacing="2">
-                                <Label Grid.Row="0" Grid.Column="0" Text="RADIUS" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="0" Text="{Binding Radius, StringFormat='{0:F1}'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+                            
 
-                                <Label Grid.Row="0" Grid.Column="1" Text="G-FORCE" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="1" Text="{Binding GForce, StringFormat='{0:F1}'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
-
-                                <Label Grid.Row="0" Grid.Column="2" Text="BUILD" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="2" Text="{Binding ProgressiveEdgeBuild, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
-
-                                <Label Grid.Row="0" Grid.Column="3" Text="CARVING" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="3" Text="{Binding CarvingIndex, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+                            <Grid ColumnDefinitions="*">
+                                <Label Grid.Column="1" Text="{Binding GForce, StringFormat='G-FORCE LOAD: {0:F1} G'}" 
+               FontAttributes="Bold" TextColor="Orange" FontSize="11" />
                             </Grid>
-                            <Grid ColumnDefinitions="*, *, *, *" RowDefinitions="Auto, Auto" RowSpacing="2">
-                                <Label Grid.Row="0" Grid.Column="0" Text="SIMIL" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="0" Text="{Binding EdgeSimilarity, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+                            <ProgressBar Progress="{Binding GForce, Converter={StaticResource GForceToPercentConverter}}" 
+                 ProgressColor="Orange" ScaleY="2" />
 
-                                <Label Grid.Row="0" Grid.Column="1" Text="EARLY" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="1" Text="{Binding EarlyEdging, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+                        
 
-                                <Label Grid.Row="0" Grid.Column="2" Text="SHAPE" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="2" Text="{Binding Shape, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
+                        <Grid ColumnDefinitions="*, *, *, *" Margin="0,5,0,0">
+                            <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
+                                <Label Text="Shape" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                    <Label Text="{Binding Shape, StringFormat='{0:F1}%'}" FontSize="12" TextColor="White" />
+                            </VerticalStackLayout>
 
-                                <Label Grid.Row="0" Grid.Column="3" Text="DURATION" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="3" Text="{Binding Duration, StringFormat='{0:F2}s'}" FontSize="12" TextColor="White" HorizontalOptions="Center"/>
-                            </Grid>
+                            <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                                <Label Text="EARLY" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                    <Label Text="{Binding EarlyEdging, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" />
+                            </VerticalStackLayout>
 
+                            <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                                <Label Text="BUILD" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Text="{Binding ProgressiveEdgeBuild, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center">
+                                <Label Text="DURATION" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Text="{Binding Duration, StringFormat='{0:F2}s'}" FontSize="12" TextColor="White" />
+                            </VerticalStackLayout>
+                        </Grid>
                         </VerticalStackLayout>
                     </Border>
                 </DataTemplate>

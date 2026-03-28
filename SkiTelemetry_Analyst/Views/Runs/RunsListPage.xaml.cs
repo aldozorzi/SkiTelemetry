@@ -12,12 +12,19 @@ namespace SkiTelemetry_Analyst.Views.Runs
     public partial class RunsListPage : ContentPage
     {
         private readonly SkiDataProcessor _dataProcessor = new();
+        private bool _isOfflineMode = Preferences.Default.Get("OfflineMode", false);
         public ObservableCollection<VisualRunItem> Runs { get; set; } = new();
         public ICommand ViewCommand { get; }
         public ICommand SyncCommand { get; }
         public ICommand DeleteCommand { get; }
         public ICommand EditNotesCommand { get; }
         public ICommand ExportCsvCommand { get; }
+
+        public ICommand ToggleOnlineCommand => new Command(() =>
+        {
+            IsOfflineMode = false; // Riporta a false (Torna online)
+            LoadFiles();
+        });
 
         private RunService _runService = new();
 
@@ -46,6 +53,20 @@ namespace SkiTelemetry_Analyst.Views.Runs
             RunsCollection.ItemsSource = Runs;
         }
 
+        public bool IsOfflineMode
+        {
+            get => _isOfflineMode;
+            set
+            {
+                if (_isOfflineMode != value)
+                {
+                    _isOfflineMode = value;
+                    Preferences.Default.Set("OfflineMode", value);
+                    OnPropertyChanged(); // Notifica alla UI il cambiamento
+                }
+            }
+        }
+
         protected override void OnAppearing()
         {
             IsLoading = false;
@@ -53,6 +74,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
             if(_firstLoad)
                 LoadFiles();
             _firstLoad = false;
+            IsOfflineMode = Preferences.Default.Get("OfflineMode", false);
         }
 
         private async Task OpenRun(VisualRunItem run)
@@ -136,12 +158,13 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
             if(loginNow || hasAccount)
             {
-                bool success = await _runService.SyncFileAsync((string)run.FullPath);
+                UploadUrlResponse? uploadInfo = await _runService.SyncFileAsync((string)run.FullPath);
 
-                if (success)
+                if (uploadInfo != null)
                 {
                     run.IsLocal = false;
-                    BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
+                    run.S3Key = uploadInfo.S3Key;
+                    // BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
                     // LoadFiles();
                     // Qui potresti aggiornare la UI o segnare il file come "sincronizzato"
                 }
@@ -194,7 +217,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
                 if (success)
                 {
                     Runs.Remove(run);
-                    BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
+                    // BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
                     //LoadFiles();
                 }
                 else
@@ -325,8 +348,11 @@ namespace SkiTelemetry_Analyst.Views.Runs
                     FormattedDate = info.CreationTime.ToString("dd MMMM yyyy", new CultureInfo("it-IT"))
                 });
             }
+
+
+
             // Recupera le run dal server
-            if (Preferences.Default.Get("HasAccount", false))
+            if (Preferences.Default.Get("HasAccount", false) && !Preferences.Default.Get("OfflineMode", false))
             {
                 try
                 {
@@ -363,7 +389,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
                 {
                     Runs.Add(item);
                 }
-                BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
+                // BtnSyncAll.IsVisible = Runs.Any(x => x.IsLocal);
         }
 
         // Helper per il parsing del nome

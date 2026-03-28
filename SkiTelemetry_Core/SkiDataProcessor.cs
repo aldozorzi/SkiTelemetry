@@ -9,9 +9,11 @@ public class SkiDataProcessor
     private readonly Dictionary<uint, SkiDataPoint> _pendingLeft = new Dictionary<uint, SkiDataPoint>();
     private readonly Dictionary<uint, SkiDataPoint> _pendingRight = new Dictionary<uint, SkiDataPoint>();
 
+    private double _gAdjuster = 0;
+
     private class FilterState
     {
-        public double AccX, AccY, AccZ, GyroX, GyroY, GyroZ, Roll;
+        public double AccX, AccY, AccZ, GyroX, GyroY, GyroZ, Roll, AdjustedG;
         public bool IsInitialized = false;
     }
     private readonly FilterState _fL = new();
@@ -77,8 +79,24 @@ public class SkiDataProcessor
         p.SmoothGyroY = f.GyroY = f.GyroY + GyroAlpha * (p.GyroY - f.GyroY);
         p.SmoothGyroZ = f.GyroZ = f.GyroZ + GyroAlpha * (p.GyroZ - f.GyroZ);
         f.Roll = 0.98 * (f.Roll + p.GyroZ * dt) + 0.02 * p.Roll; // 98% gyro, 2% roll statico
-
         p.SmoothRoll = f.Roll;
+
+        double rawG = Math.Sqrt(Math.Pow(p.SmoothAccX, 2) + Math.Pow(p.SmoothAccY, 2) + Math.Pow(p.SmoothAccZ, 2));
+
+        if(rawG<1)
+        {
+            rawG = 1;
+            _gAdjuster = Math.Max(_gAdjuster, (1 - rawG));
+        }
+        else
+        {
+            rawG += _gAdjuster;
+        }
+        p.AdjustedG = rawG;
+        f.AdjustedG = p.AdjustedG = f.AdjustedG + GyroAlpha * (p.AdjustedG - f.AdjustedG);
+        
+
+
     }
     private void OnTurnCompleted(object? sender, SkiTurn turn)
     {
