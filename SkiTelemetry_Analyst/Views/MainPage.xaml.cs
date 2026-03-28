@@ -1,4 +1,5 @@
-﻿using Plugin.BLE.Abstractions.Contracts;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using Plugin.BLE.Abstractions.Contracts;
 using SkiTelemetry_Analyst.Helpers;
 using SkiTelemetry_Core;
 namespace SkiTelemetry_Analyst.Views
@@ -354,6 +355,23 @@ namespace SkiTelemetry_Analyst.Views
         {
             // nameof(SettingsPage) estrae la stringa "SettingsPage" in modo sicuro
             await Shell.Current.GoToAsync($"{nameof(SettingsPage)}?IsBusy={_isSessionActive}");
+        }
+
+        public void OnHeadsetHook()
+        {
+            if (BtnScan.IsVisible)
+            {
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    _ = SpeechHelper.SpeakAsync($"Avvio sessione, attendi");
+                    OnScanClicked(new object(), new EventArgs()); // [DEBUG] ?
+                });
+            }
+            else if (BtnStopContainer.IsVisible)
+            {
+                _ = SpeechHelper.SpeakAsync($"Sessione terminata");
+                OnStopClicked(new object(), new EventArgs());
+            }
         }
 
         protected override void OnAppearing()
