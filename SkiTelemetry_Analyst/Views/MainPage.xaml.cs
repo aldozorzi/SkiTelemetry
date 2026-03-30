@@ -69,9 +69,15 @@ namespace SkiTelemetry_Analyst.Views
 
             // 1. Tenta il pairing e la connessione reale
             // Il metodo nel Service deve restituire true solo se ConnectToDeviceAsync ha successo
-            bool paired = await _bleService.PairDevicesAsync();
+            var savedId = Preferences.Default.Get("MainSensorId", string.Empty);
+            bool connected = false;
 
-            if (paired)
+            if (!string.IsNullOrEmpty(savedId))
+                connected = await _bleService.ConnectToSavedSensorAsync();
+            else
+                connected = await _bleService.PairDevicesAsync();
+
+            if (connected)
             {
                 ActivateDashboard();
                 

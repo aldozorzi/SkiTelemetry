@@ -48,12 +48,12 @@ void sendCommandToSlave(Command cmd) {
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
         deviceConnected = true;
-        M5.Display.fillCircle(5, 5, 3, BLUE); 
+        M5.Display.fillCircle(10, 110, 3, BLUE); 
         sendCommandToSlave(CMD_START); // DICE ALLO SLAVE DI PARTIRE
     };
     void onDisconnect(BLEServer* pServer) {
     deviceConnected = false;
-    M5.Display.fillCircle(5, 5, 3, RED);
+    M5.Display.fillCircle(10, 110, 3, RED);
     sendCommandToSlave(CMD_STOP); // DICE ALLO SLAVE DI FERMARSI
     // Lasciamo un attimo di respiro allo smartphone per accorgersi della chiusura
     delay(200); 
@@ -142,7 +142,7 @@ void setup() {
     pServer->getAdvertising()->start();
 
     M5.Display.fillScreen(BLACK);
-    M5.Display.drawString("MASTER (R)", 10, 40);
+    M5.Display.drawString("MASTER (R)", 10, 120);
 
     esp_now_peer_info_t peerInfo = {};
     memcpy(peerInfo.peer_addr, slaveAddress, 6);
@@ -208,8 +208,8 @@ void loop() {
             int batPct = M5.Power.getBatteryLevel();
             
             // Puliamo solo l'area della scritta per non ridisegnare tutto lo schermo
-            M5.Display.fillRect(10, 100, 120, 20, BLACK); 
-            M5.Display.setCursor(10, 100);
+            M5.Display.fillRect(10, 140, 160, 20, BLACK); 
+            M5.Display.setCursor(10, 140);
             M5.Display.printf("BAT: %d%%", batPct);
             
             lastBatUpdate = millis();

@@ -218,5 +218,31 @@ namespace SkiTelemetry_Analyst
             }
             ConnectedSensor = null;
         }
+        public async Task<bool> ConnectToSavedSensorAsync()
+        {
+            var savedId = Preferences.Default.Get(SensorKey, string.Empty);
+            if (string.IsNullOrEmpty(savedId)) return false;
+
+            if (!Guid.TryParse(savedId, out var deviceId)) return false;
+
+            try
+            {
+                if (_adapter.IsScanning)
+                    await _adapter.StopScanningForDevicesAsync();
+
+                var tcs = new TaskCompletionSource<bool>();
+                var device = await _adapter.ConnectToKnownDeviceAsync(deviceId);
+
+                if (device == null) return false;
+
+                return await ConnectAndSetup(device, tcs);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[BLE] ConnectToSavedSensor fallito: {ex.Message}");
+                return false;
+            }
+        }
+
     }
 }

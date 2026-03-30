@@ -74,13 +74,13 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
             case CMD_START:
                 Serial.println("CMD_START");
                 masterWantsData = true;
-                M5.Display.fillCircle(5, 5, 3, GREEN);
+                M5.Display.fillCircle(10, 110, 3, GREEN);
                 break;
 
             case CMD_STOP:
                 Serial.println("CMD_STOP");
                 masterWantsData = false;
-                M5.Display.fillCircle(5, 5, 3, RED);
+                M5.Display.fillCircle(10, 110, 3, RED);
                 break;
 
             case CMD_SLEEP:
@@ -111,7 +111,7 @@ void setup() {
     M5.Speaker.tone(1500, 100);
 
     M5.Display.fillScreen(BLACK);
-    M5.Display.drawString("SLAVE (L)", 10, 30);
+    M5.Display.drawString("SLAVE (L)", 10, 120);
 
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
@@ -173,8 +173,8 @@ void loop() {
             int batPct = M5.Power.getBatteryLevel();
         
             // Puliamo solo l'area della scritta per non ridisegnare tutto lo schermo
-            M5.Display.fillRect(10, 100, 120, 20, BLACK); 
-            M5.Display.setCursor(10, 100);
+            M5.Display.fillRect(10, 140, 160, 20, BLACK); 
+            M5.Display.setCursor(10, 140);
             M5.Display.printf("BAT: %d%%", batPct);
             
             lastBatUpdate = millis();
