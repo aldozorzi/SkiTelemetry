@@ -1,3 +1,6 @@
+using SkiTelemetry_Analyst.Services;
+using SkiTelemetry_Core;
+
 namespace SkiTelemetry_Analyst;
 
 [QueryProperty(nameof(IsMainPageBusy), "IsBusy")]
@@ -5,6 +8,7 @@ public partial class SettingsPage : ContentPage
 {
     private const string LoggingKey = "IsLoggingEnabled";
     private const string SpeechRateKey = "SpeechRate";
+    public Action<CalibrationOffsets>? OnCalibrationUpdated { get; set; }
 
     private bool _isMainPageBusy;
     public bool IsMainPageBusy
@@ -26,6 +30,7 @@ public partial class SettingsPage : ContentPage
         System.Diagnostics.Debug.WriteLine($"[SettingsPage] savedRate: {savedRate}");
         SliderSpeechRate.Value = savedRate;
         LblSpeechRateValue.Text = $"Valore: {savedRate:F1}";
+        UpdateCalibrationUI();
     }
 
     private void ApplyBusinessLogic()
@@ -94,4 +99,75 @@ public partial class SettingsPage : ContentPage
         // Salvataggio persistente
         Preferences.Default.Set(SpeechRateKey, roundedValue);
     }
+    private async void OnCalibrateClicked(object? sender, EventArgs e)
+    {
+        // Usiamo la tua property passata da MainPage
+        if (IsMainPageBusy)
+        {
+            await DisplayAlertAsync("Errore", "Sessione attiva. Impossibile calibrare.", "OK");
+            return;
+        }
+
+        BtnCalibrate.IsEnabled = false;
+        BtnCalibrate.Text = "IN CORSO...";
+        var bleService = BluetoothService.Instance;
+
+
+        // Eseguiamo il flusso BLE isolato
+        bool success = await bleService.RunCalibrationAsync(50);
+
+        if (success)
+        {
+            var offsets = CalibrationService.Instance.GetOffsets();
+            // Chiamiamo il callback direttamente invece di usare MessagingCenter
+            OnCalibrationUpdated?.Invoke(offsets);
+            await DisplayAlertAsync("Calibrazione", "Sensori calibrati correttamente.", "OK");
+        }
+        else
+        {
+            await DisplayAlertAsync("Errore", "Impossibile ricevere dati dal sensore. Verifica che sia acceso.", "OK");
+        }
+
+        BtnCalibrate.IsEnabled = true;
+        BtnCalibrate.Text = "CALIBRA ORA";
+        UpdateCalibrationUI();
+    }
+
+    private async void OnResetCalibrationClicked(object? sender, EventArgs e)
+    {
+        bool confirm = await DisplayAlertAsync("Reset", "Vuoi cancellare gli offset salvati?", "Sì", "Annulla");
+        if (confirm)
+        {
+            // 1. Pulisce le Preferences e resetta i valori nel Service
+            CalibrationService.Instance.Reset();
+
+            // 2. Notifica il DataProcessor della MainPage (passando offset 0,0)
+            OnCalibrationUpdated?.Invoke(new SkiTelemetry_Core.CalibrationOffsets());
+
+            // 3. Aggiorna la scritta
+            UpdateCalibrationUI();
+
+            await DisplayAlertAsync("Reset", "Calibrazione reimpostata.", "OK");
+        }
+    }
+
+    private void UpdateCalibrationUI()
+    {
+        var offsets = CalibrationService.Instance.GetOffsets();
+
+        // Se entrambi sono a zero, consideriamo il sistema "pulito"
+        if (offsets.RollL == 0 && offsets.RollR == 0)
+        {
+            LblCalibrationStatus.Text = "Standard (Nessun offset)";
+            LblCalibrationStatus.TextColor = Colors.Gray;
+            BtnResetCalib.IsVisible = false; // Inutile mostrare reset se è già a zero
+        }
+        else
+        {
+            LblCalibrationStatus.Text = "ATTIVO (Sensori compensati)";
+            LblCalibrationStatus.TextColor = Colors.Green;
+            BtnResetCalib.IsVisible = true;
+        }
+    }
+
 }

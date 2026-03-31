@@ -140,10 +140,15 @@
                     <VerticalStackLayout Spacing="15" VerticalOptions="Center">
                         <Label x:Name="StatusLabel" Text="Stato: pronto per la sessione" HorizontalOptions="Center" />
                         <Button x:Name="BtnScan"
-            
                         Text="AVVIA SESSIONE"
                         Clicked="OnScanClicked"
-                        BackgroundColor="DeepSkyBlue" HeightRequest="60" /> 
+                        BackgroundColor="DeepSkyBlue" HeightRequest="60" />
+                        <Button 
+                            x:Name="BtnQuickCalibrate"
+                        Text="CALIBRA SENSORI" 
+                        Clicked="OnQuickCalibrateClicked" 
+                        BackgroundColor="#FB8C00" 
+                        TextColor="White" HeightRequest="60" />
                     </VerticalStackLayout>
 
                     

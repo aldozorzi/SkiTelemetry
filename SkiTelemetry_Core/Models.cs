@@ -1,4 +1,5 @@
-﻿using System.Security.AccessControl;
+﻿using System.Drawing;
+using System.Security.AccessControl;
 
 namespace SkiTelemetry_Core;
 
@@ -110,7 +111,8 @@ public class SkiDataPoint
 
     public override string ToString()
     {
-        return $"[DATA] Ts: {Timestamp} - Side: {Side} - Roll: {Roll:0.0} - SmoothRoll: {SmoothRoll} - AccX:{AccX:0.0} - SmoothAccX:{SmoothAccX} - AccY:{AccY:0.0} - SmoothAccY:{SmoothAccY} - AccZ:{AccZ:0.0} - SmoothAccZ:{SmoothAccZ} - GyroX:{GyroX:0.0} - GyroY:{GyroY:0.0} - GyroZ:{GyroZ:0.0}";    }
+        return $"[DATA] Ts: {Timestamp} - Side: {Side} - Roll: {Roll:0.0} - SmoothRoll: {SmoothRoll} - AccX:{AccX:0.0} - SmoothAccX:{SmoothAccX} - AccY:{AccY:0.0} - SmoothAccY:{SmoothAccY} - AccZ:{AccZ:0.0} - SmoothAccZ:{SmoothAccZ} - GyroX:{GyroX:0.0} - GyroY:{GyroY:0.0} - GyroZ:{GyroZ:0.0}";    
+    }
 }
 
 public class SkiFrame
@@ -144,4 +146,14 @@ public class TurnMetrics
     private double? _turnProgressiveEdgeBuild { get; set; }
     private double? _turnCarvingIndex { get; set; }
     private SensorSide? _foot { get; set; }
+}
+
+public class CalibrationOffsets
+{
+    public double RollL { get; set; }
+    public double RollR { get; set; }
+    public override string ToString()
+    {
+        return $"[CalibrationOffsets] RollL: {RollL} - RollR: {RollR}";
+    }
 }

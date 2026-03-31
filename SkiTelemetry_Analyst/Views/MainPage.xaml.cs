@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using Plugin.BLE.Abstractions.Contracts;
 using SkiTelemetry_Analyst.Helpers;
+using SkiTelemetry_Analyst.Services;
 using SkiTelemetry_Core;
 namespace SkiTelemetry_Analyst.Views
 {
@@ -15,7 +16,7 @@ namespace SkiTelemetry_Analyst.Views
         
 
         // Istanza del servizio
-        BluetoothService _bleService = new BluetoothService();
+        BluetoothService _bleService = BluetoothService.Instance;
         private readonly SkiDataProcessor _dataProcessor = new();
         private bool _isSessionActive = false;
         private HashSet<MonitorMode> _metrics = new();
@@ -25,6 +26,9 @@ namespace SkiTelemetry_Analyst.Views
         public MainPage()
         {
             InitializeComponent();
+
+            var savedOffsets = CalibrationService.Instance.GetOffsets();
+            _dataProcessor.SetCalibration(savedOffsets);
 
             // Ci iscriviamo all'evento che abbiamo creato prima
             _bleService.DataReceived -= OnTelemetryReceived;
@@ -97,7 +101,7 @@ namespace SkiTelemetry_Analyst.Views
 
         private void OnTelemetryReceived(object? sender, SkiDataPoint rawPoint)
         {
-            System.Diagnostics.Trace.WriteLine($"[MAinPage] rawPoint {rawPoint} ");
+            //System.Diagnostics.Trace.WriteLine($"[MAinPage] rawPoint {rawPoint} ");
             if (_logger.isLogging) _logger.LogData(rawPoint);
             _dataProcessor.Process(rawPoint);
 
@@ -131,7 +135,7 @@ namespace SkiTelemetry_Analyst.Views
                 LblGyrXL.Text = $"X: {rawPoint.GyroX:F1}";
                 LblGyrYL.Text = $"Y: {rawPoint.GyroY:F1}";
                 LblGyrZL.Text = $"Z: {rawPoint.GyroZ:F1}";
-                LblRollL.Text = $"{rawPoint.Roll:F1}°";
+                LblRollL.Text = $"{rawPoint.SmoothRoll:F1}°";
             }
             else
             {
@@ -141,7 +145,7 @@ namespace SkiTelemetry_Analyst.Views
                 LblGyrXR.Text = $"X: {rawPoint.GyroX:F1}";
                 LblGyrYR.Text = $"Y: {rawPoint.GyroY:F1}";
                 LblGyrZR.Text = $"Z: {rawPoint.GyroZ:F1}";
-                LblRollR.Text = $"{rawPoint.Roll:F1}°";
+                LblRollR.Text = $"{rawPoint.SmoothRoll:F1}°";
             }
  
         }
@@ -361,6 +365,14 @@ namespace SkiTelemetry_Analyst.Views
         {
             // nameof(SettingsPage) estrae la stringa "SettingsPage" in modo sicuro
             await Shell.Current.GoToAsync($"{nameof(SettingsPage)}?IsBusy={_isSessionActive}");
+            if (Shell.Current.CurrentPage is SettingsPage settings)
+            {
+                settings.OnCalibrationUpdated = (offsets) => {
+                    System.Diagnostics.Debug.WriteLine($"[MainPage OnCalibrationUpdated] offsets:{offsets}");
+                    _dataProcessor.SetCalibration(offsets);
+                    UpdateCalibrationWarning();
+                };
+            }
         }
 
         public void OnHeadsetHook()
@@ -386,7 +398,45 @@ namespace SkiTelemetry_Analyst.Views
 
             // Chiamiamo il metodo che controlla se ci sono sensori salvati
             CheckConfiguration();
+            UpdateCalibrationWarning();
         }
+        private void UpdateCalibrationWarning()
+        {
+            // Il frame è visibile se non abbiamo calibrato oggi E se non stiamo già sciando
+            BtnQuickCalibrate.IsVisible = !CalibrationService.Instance.IsCalibratedToday && !_isSessionActive;
+        }
+
+        private async void OnQuickCalibrateClicked(object sender, EventArgs e)
+        {
+
+            // 2. UI Feedback
+            BtnQuickCalibrate.Text = "ATTENDI...";
+            BtnQuickCalibrate.IsEnabled = false;
+            
+
+            // 3. Eseguiamo la calibrazione (i 50 campioni)
+            bool success = await BluetoothService.Instance.RunCalibrationAsync(50);
+
+            if (success)
+            {
+                // 4. Aggiorniamo il processor con i nuovi offset
+                var offsets = CalibrationService.Instance.GetOffsets();
+                _dataProcessor.SetCalibration(offsets);
+
+                // 5. Facciamo sparire l'avviso
+                UpdateCalibrationWarning();
+
+                await SpeechHelper.SpeakAsync("Calibrazione completata");
+            }
+            else
+            {
+                await DisplayAlertAsync("Errore", "Calibrazione fallita. Riprova.", "OK");
+            }
+
+            BtnQuickCalibrate.IsEnabled = true;
+            BtnQuickCalibrate.Text = "CALIBRA ORA";
+        }
+
 
         public void StartLogging()
         {

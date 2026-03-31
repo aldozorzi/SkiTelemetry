@@ -39,6 +39,33 @@
                            FontSize="20" 
                            FontAttributes="Bold" 
                            HorizontalOptions="Center" />
+                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="15"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="15">
+                        <Label Text="Calibrazione Orizzontale" FontAttributes="Bold" FontSize="16" />
+
+                        <HorizontalStackLayout Spacing="5">
+                            <Label Text="Stato:" FontSize="13" TextColor="#666666" />
+                            <Label x:Name="LblCalibrationStatus" Text="..." FontSize="13" FontAttributes="Bold" />
+                        </HorizontalStackLayout>
+
+                        <Button x:Name="BtnCalibrate"
+                Text="CALIBRA ORA"
+                BackgroundColor="#007AFF"
+                Clicked="OnCalibrateClicked" />
+
+                        <Button x:Name="BtnResetCalib"
+                Text="RESETTA AI VALORI DI FABBRICA"
+                BackgroundColor="Transparent"
+                TextColor="Red"
+                BorderColor="Red"
+                BorderWidth="1"
+                Clicked="OnResetCalibrationClicked" />
+                    </VerticalStackLayout>
+                </Border>
 
                 <Border Stroke="#E0E0E0"
                         StrokeThickness="1"

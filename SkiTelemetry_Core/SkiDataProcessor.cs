@@ -11,6 +11,8 @@ public class SkiDataProcessor
 
     private double _gAdjuster = 0;
 
+    private CalibrationOffsets _offsets = new();
+
     private class FilterState
     {
         public double AccX, AccY, AccZ, GyroX, GyroY, GyroZ, Roll, AdjustedG;
@@ -59,7 +61,8 @@ public class SkiDataProcessor
     private void ApplyFilters(SkiDataPoint p)
     {
         FilterState f = (p.Side == SensorSide.Left) ? _fL : _fR;
-        
+        double currentOffset = (p.Side == SensorSide.Left) ? _offsets.RollL : _offsets.RollR;
+
         double dt = 0.02;
 
         if (!f.IsInitialized)
@@ -78,7 +81,10 @@ public class SkiDataProcessor
         p.SmoothGyroX = f.GyroX = f.GyroX + GyroAlpha * (p.GyroX - f.GyroX);
         p.SmoothGyroY = f.GyroY = f.GyroY + GyroAlpha * (p.GyroY - f.GyroY);
         p.SmoothGyroZ = f.GyroZ = f.GyroZ + GyroAlpha * (p.GyroZ - f.GyroZ);
-        f.Roll = 0.98 * (f.Roll + p.GyroZ * dt) + 0.02 * p.Roll; // 98% gyro, 2% roll statico
+
+        double calibratedRoll = p.Roll - currentOffset;
+        //System.Diagnostics.Trace.WriteLine($"[PROCESSOR] currentOffset {currentOffset} ");
+        f.Roll = 0.98 * (f.Roll + p.GyroZ * dt) + 0.02 * calibratedRoll; // 98% gyro, 2% roll statico
         p.SmoothRoll = f.Roll;
 
         double rawG = Math.Sqrt(Math.Pow(p.SmoothAccX, 2) + Math.Pow(p.SmoothAccY, 2) + Math.Pow(p.SmoothAccZ, 2));
@@ -112,4 +118,10 @@ public class SkiDataProcessor
             _detector.RequestedMetrics.Add(metric);
         }
     }
+
+    public void SetCalibration(CalibrationOffsets offsets)
+    {
+        _offsets = offsets ?? new CalibrationOffsets();
+    }
+
 }

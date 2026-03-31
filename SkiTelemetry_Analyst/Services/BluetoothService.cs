@@ -7,7 +7,7 @@ using Plugin.BLE.Abstractions.Extensions;
 using SkiTelemetry_Core;
 using System.Diagnostics;
 
-namespace SkiTelemetry_Analyst
+namespace SkiTelemetry_Analyst.Services
 {
     [Microsoft.Maui.Controls.Internals.Preserve(AllMembers = true)]
     [System.Runtime.Versioning.SupportedOSPlatform("ios15.0")]
@@ -16,6 +16,9 @@ namespace SkiTelemetry_Analyst
     [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
     public class BluetoothService
     {
+        private static readonly Lazy<BluetoothService> _instance = new(() => new BluetoothService());
+        public static BluetoothService Instance => _instance.Value;
+
         private readonly IBluetoothLE _ble;
         private readonly IAdapter _adapter;
 
@@ -164,37 +167,11 @@ namespace SkiTelemetry_Analyst
                 return;
             }
 
-            uint ts = BitConverter.ToUInt32(data, 0);
-
-            // --- PIEDE SINISTRO (Offset 4) ---
-            var leftPoint = new SkiDataPoint
-            {
-                Timestamp = ts,
-                Side = SensorSide.Left,
-                AccX = BitConverter.ToSingle(data, 4),
-                AccY = BitConverter.ToSingle(data, 8),
-                AccZ = BitConverter.ToSingle(data, 12),
-                GyroX = BitConverter.ToSingle(data, 16),
-                GyroY = BitConverter.ToSingle(data, 20),
-                GyroZ = BitConverter.ToSingle(data, 24)
-            };
-
-            // --- PIEDE DESTRO (Offset 28) ---
-            var rightPoint = new SkiDataPoint
-            {
-                Timestamp = ts,
-                Side = SensorSide.Right,
-                AccX = BitConverter.ToSingle(data, 28),
-                AccY = BitConverter.ToSingle(data, 32),
-                AccZ = BitConverter.ToSingle(data, 36),
-                GyroX = BitConverter.ToSingle(data, 40),
-                GyroY = BitConverter.ToSingle(data, 44),
-                GyroZ = BitConverter.ToSingle(data, 48)
-            };
+            var frame = GetSkiFrameFromData(data);
 
             // Invia i punti uno dopo l'altro
-            DataReceived?.Invoke(this, leftPoint);
-            DataReceived?.Invoke(this, rightPoint);
+            DataReceived?.Invoke(this, frame.Left);
+            DataReceived?.Invoke(this, frame.Right);
 
         }
 
@@ -242,6 +219,84 @@ namespace SkiTelemetry_Analyst
                 Debug.WriteLine($"[BLE] ConnectToSavedSensor fallito: {ex.Message}");
                 return false;
             }
+        }
+
+        private SkiFrame GetSkiFrameFromData(byte[] data)
+        {
+            uint ts = BitConverter.ToUInt32(data, 0);
+
+            // --- PIEDE SINISTRO (Offset 4) ---
+            var leftPoint = new SkiDataPoint
+            {
+                Timestamp = ts,
+                Side = SensorSide.Left,
+                AccX = BitConverter.ToSingle(data, 4),
+                AccY = BitConverter.ToSingle(data, 8),
+                AccZ = BitConverter.ToSingle(data, 12),
+                GyroX = BitConverter.ToSingle(data, 16),
+                GyroY = BitConverter.ToSingle(data, 20),
+                GyroZ = BitConverter.ToSingle(data, 24)
+            };
+
+            // --- PIEDE DESTRO (Offset 28) ---
+            var rightPoint = new SkiDataPoint
+            {
+                Timestamp = ts,
+                Side = SensorSide.Right,
+                AccX = BitConverter.ToSingle(data, 28),
+                AccY = BitConverter.ToSingle(data, 32),
+                AccZ = BitConverter.ToSingle(data, 36),
+                GyroX = BitConverter.ToSingle(data, 40),
+                GyroY = BitConverter.ToSingle(data, 44),
+                GyroZ = BitConverter.ToSingle(data, 48)
+            };
+            return new SkiFrame(leftPoint, rightPoint);
+        }
+
+        public async Task<bool> RunCalibrationAsync(int samplesCount)
+        {
+            // Se non c'è il sensore, proviamo a connetterlo
+            if (ConnectedSensor == null)
+            {
+                var savedId = Preferences.Default.Get("MainSensorId", string.Empty);
+                bool connected;
+
+                if (!string.IsNullOrEmpty(savedId))
+                    connected = await ConnectToSavedSensorAsync();
+                else
+                    connected = await PairDevicesAsync();
+                if (!connected) return false;
+            }
+            if (ConnectedSensor == null) return false;
+            var service = await ConnectedSensor.GetServiceAsync(SkiServiceId);
+            var characteristic = await service.GetCharacteristicAsync(TelemetryCharacteristicId);
+
+            var lefts = new List<double>();
+            var rights = new List<double>();
+            var tcs = new TaskCompletionSource<bool>();
+
+            EventHandler<CharacteristicUpdatedEventArgs> handler = (s, e) =>
+            {
+                var frame = GetSkiFrameFromData(e.Characteristic.Value);
+                lefts.Add(frame.Left.Roll);
+                rights.Add(frame.Right.Roll);
+
+                if (lefts.Count >= samplesCount) tcs.TrySetResult(true);
+            };
+
+            characteristic.ValueUpdated += handler;
+            await characteristic.StartUpdatesAsync();
+
+            var result = await Task.WhenAny(tcs.Task, Task.Delay(5000));
+            await characteristic.StopUpdatesAsync();
+            characteristic.ValueUpdated -= handler;
+
+            if (result == tcs.Task)
+            {
+                CalibrationService.Instance.Save(lefts.Average(), rights.Average());
+                return true;
+            }
+            return false;
         }
 
     }
