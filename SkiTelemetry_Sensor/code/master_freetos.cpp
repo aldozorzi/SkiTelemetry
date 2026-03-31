@@ -23,7 +23,6 @@ struct __attribute__((packed)) SkiDataCombo {
 // Risorse FreeRTOS
 BLECharacteristic *pCharacteristic;
 volatile bool deviceConnected = false;
-volatile bool masterWantsData = false;
 
 // --- CALLBACK ESP-NOW ---
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
@@ -36,14 +35,12 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
         deviceConnected = true;
-        masterWantsData = true;
         // Invia comando di START allo slave
         uint8_t cmd = 1; 
         esp_now_send(slaveAddress, &cmd, 1);
     }
     void onDisconnect(BLEServer* pServer) {
         deviceConnected = false;
-        masterWantsData = false;
         // Invia comando di STOP allo slave
         uint8_t cmd = 0;
         esp_now_send(slaveAddress, &cmd, 1);
@@ -125,6 +122,13 @@ void taskSystem(void *pvParameters) {
 void setup() {
     auto cfg = M5.config();
     M5.begin(cfg);
+
+    M5.Speaker.setVolume(255);
+    M5.Speaker.tone(1000, 100); 
+    delay(150);
+    M5.Speaker.tone(1500, 100);
+    delay(200);
+
     M5.Imu.begin();
 
     // Risparmio Energetico
@@ -158,6 +162,8 @@ void setup() {
     pCharacteristic->addDescriptor(new BLE2902());
     pService->start();
     pServer->getAdvertising()->addServiceUUID(SERVICE_UUID);
+    pServer->getAdvertising()->setMinPreferred(0x10); // 20ms (16 * 1.25ms)
+    pServer->getAdvertising()->setMaxPreferred(0x20); // 40ms (32 * 1.25ms)
     pServer->getAdvertising()->start();
 
     M5.Display.setBrightness(0);

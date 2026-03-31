@@ -103,6 +103,11 @@ void taskSystem(void *pvParameters) {
 void setup() {
     auto cfg = M5.config();
     M5.begin(cfg);
+    M5.Speaker.setVolume(255);
+    M5.Speaker.tone(1000, 100); 
+    delay(150);
+    M5.Speaker.tone(1500, 100);
+    delay(200);
 
     // Inizializzazione IMU esplicita (fondamentale!)
     M5.Imu.begin();
