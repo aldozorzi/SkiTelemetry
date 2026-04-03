@@ -99,12 +99,15 @@ namespace SkiTelemetry_Analyst.Services
 
         private async Task<bool> ConnectAndSetup(IDevice device, TaskCompletionSource<bool> tcs)
         {
+
+            await DisconnectDevices();
+            await Task.Delay(300);
             try
             {
                 // TRUCCO: Se l'adattatore crede di essere già connesso, forza il distacco
                 if (device.State == DeviceState.Connected)
                 {
-                    await _adapter.DisconnectDeviceAsync(device);
+                    try { await _adapter.DisconnectDeviceAsync(device); } catch { }
                     await Task.Delay(500); // Un po' di respiro per il driver BT
                 }
                 await _adapter.ConnectToDeviceAsync(device);
@@ -175,12 +178,10 @@ namespace SkiTelemetry_Analyst.Services
 
         }
 
-        public async Task DisconnectDevices()
+        public async Task DisconnectDevices(bool dispose = true)
         {
             if (ConnectedSensor != null)
             {
-                // MOLTO IMPORTANTE: Sottoscrivi esplicitamente la rimozione qui
-                // prima di perdere il riferimento all'oggetto
                 var service = await ConnectedSensor.GetServiceAsync(SkiServiceId);
                 if (service != null)
                 {
@@ -191,7 +192,16 @@ namespace SkiTelemetry_Analyst.Services
                         await characteristic.StopUpdatesAsync();
                     }
                 }
-                await _adapter.DisconnectDeviceAsync(ConnectedSensor);
+                try { await _adapter.DisconnectDeviceAsync(ConnectedSensor); }
+                catch { }
+                finally
+                {
+                    if (dispose)
+                    {
+                        ConnectedSensor.Dispose();
+                        ConnectedSensor = null;
+                    }
+                }
             }
             ConnectedSensor = null;
         }
@@ -207,10 +217,19 @@ namespace SkiTelemetry_Analyst.Services
                 if (_adapter.IsScanning)
                     await _adapter.StopScanningForDevicesAsync();
 
+                await DisconnectDevices(dispose: false); // disconnette ma mantiene il riferimento
+                await Task.Delay(300);
+
                 var tcs = new TaskCompletionSource<bool>();
                 var device = await _adapter.ConnectToKnownDeviceAsync(deviceId);
 
-                if (device == null) return false;
+                if (device == null)
+                {
+                    // sensore non trovato → pulizia completa per la prossima volta
+                    await DisconnectDevices(dispose: true);
+                    Preferences.Default.Remove(SensorKey);
+                    return false;
+                }
 
                 return await ConnectAndSetup(device, tcs);
             }
@@ -255,9 +274,11 @@ namespace SkiTelemetry_Analyst.Services
 
         public async Task<bool> RunCalibrationAsync(int samplesCount)
         {
+            System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync]");
             // Se non c'è il sensore, proviamo a connetterlo
             if (ConnectedSensor == null)
             {
+                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] ConnectedSensor == null");
                 var savedId = Preferences.Default.Get("MainSensorId", string.Empty);
                 bool connected;
 
@@ -265,23 +286,41 @@ namespace SkiTelemetry_Analyst.Services
                     connected = await ConnectToSavedSensorAsync();
                 else
                     connected = await PairDevicesAsync();
+
+                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] connected == {connected}");
                 if (!connected) return false;
             }
-            if (ConnectedSensor == null) return false;
+            if (ConnectedSensor == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] ConnectedSensor still == null");
+                return false;
+            }
             var service = await ConnectedSensor.GetServiceAsync(SkiServiceId);
+            if(service == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] service == null");
+                return false;
+            }
             var characteristic = await service.GetCharacteristicAsync(TelemetryCharacteristicId);
+            if(characteristic == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] characteristic == null");
+                return false;
+            }
 
-            var lefts = new List<double>();
-            var rights = new List<double>();
+            int counter = 0;
+
             var tcs = new TaskCompletionSource<bool>();
 
             EventHandler<CharacteristicUpdatedEventArgs> handler = (s, e) =>
             {
+                counter++;
+                
                 var frame = GetSkiFrameFromData(e.Characteristic.Value);
-                lefts.Add(frame.Left.Roll);
-                rights.Add(frame.Right.Roll);
+                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] receiving sample{counter}/{samplesCount} ts:{frame.Left.Timestamp}");
+                CalibrationService.Instance.AddFrame(frame);
 
-                if (lefts.Count >= samplesCount) tcs.TrySetResult(true);
+                if (counter >= samplesCount) tcs.TrySetResult(true);
             };
 
             characteristic.ValueUpdated += handler;
@@ -293,9 +332,13 @@ namespace SkiTelemetry_Analyst.Services
 
             if (result == tcs.Task)
             {
-                CalibrationService.Instance.Save(lefts.Average(), rights.Average());
+                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] Task Complete");
+                CalibrationService.Instance.Save();
+                await DisconnectDevices(dispose: false);
                 return true;
             }
+            System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] Task NOT Complete");
+            await DisconnectDevices();
             return false;
         }
 

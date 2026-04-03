@@ -5,20 +5,24 @@ namespace SkiTelemetry_Core;
 
 public enum MonitorMode
 {
+    PerformanceIndex,
     EdgeAngle,
-    EdgeSimilarity,
-    EarlyEdging,
     GForce,
+    ProgressiveEdgeBuild,
+    EdgeSimilarity,
+    EarlyLoading,
+    TurnTime,
+    /*
     TurnRadius,
     TurnShape,
-    ProgressiveEdgeBuild,
-    CarvingIndex,
+    
+    
     AngleVsGForce,
     SmoothnesIndex,
     EdgeEngagement,
     LineChoice,
     LoadDistribution,
-    RaceEfficiencyIndex,
+    RaceEfficiencyIndex,*/
     DebugData,
     Foot
 }
@@ -32,24 +36,26 @@ public class SkiTurn
     public uint StartTimestamp { get; set; }
     public uint EndTimestamp { get; set; }
 
+    public uint? Index { get; set; }
+
     public double Duration => EndTimestamp >= StartTimestamp
-    ? (double)(EndTimestamp - StartTimestamp) / 1000
+    ? (double)(EndTimestamp - StartTimestamp) / 1000.0
     : 0; // Gestione errore se End è prima di Start
 
     // Metriche opzionali (nulle se non richieste)
     public double? EdgeAngle { get; set; }
     public double? EdgeSimilarity { get; set; }
-    public double? EarlyEdging { get; set; }
+    public double? EarlyLoading { get; set; }
     public double? GForce { get; set; }
     public double? Radius { get; set; }
     public double? Shape { get; set; }
     public double? ProgressiveEdgeBuild { get; set; }
-    public double? CarvingIndex { get; set; }
+    public double? PerformanceIndex { get; set; }
 
     public SensorSide? Foot { get; set; }
     public override string ToString()
     {
-        return $"[DATA] EdgeAngle: {EdgeAngle}, EdgeSimilarity: {EdgeSimilarity}, EarlyEdging:{EarlyEdging}, GForce:{GForce}, Radius{Radius}, Shape: {Shape}, ProgressiveEdgeBuild: {ProgressiveEdgeBuild}, CarvingIndex:{CarvingIndex}, Foot:{Foot})";
+        return $"[DATA] EdgeAngle: {EdgeAngle}, EdgeSimilarity: {EdgeSimilarity}, EarlyEdging:{EarlyLoading}, GForce:{GForce}, Radius{Radius}, Shape: {Shape}, ProgressiveEdgeBuild: {ProgressiveEdgeBuild}, CarvingIndex:{PerformanceIndex}, Foot:{Foot})";
     }
 }
 
@@ -150,10 +156,38 @@ public class TurnMetrics
 
 public class CalibrationOffsets
 {
-    public double RollL { get; set; }
-    public double RollR { get; set; }
+    public double AccX, AccY, AccZ;
+    public double GyroX, GyroY, GyroZ;
+
+    public bool isClean()
+    {
+        return AccX == 0 &&  AccY == 0 && AccZ == 0 && GyroX==0 && GyroY == 0 && GyroZ == 0;
+    }
     public override string ToString()
     {
-        return $"[CalibrationOffsets] RollL: {RollL} - RollR: {RollR}";
+        return $"[CalibrationOffsets] AccX: {AccX} - AccY: {AccY} - AccZ: {AccZ} - GyroX: {GyroX} - GyroY: {GyroY} - GyroZ: {GyroZ}";
+    }
+}
+
+public class RollingBuffer
+{
+    private readonly Queue<float> _queue = new();
+    private readonly int _maxSize;
+    public double Average { get; private set; }
+    private double _sum = 0;
+
+    public RollingBuffer(int maxSize) => _maxSize = maxSize;
+
+    public void Add(float value)
+    {
+        _queue.Enqueue(value);
+        _sum += value;
+
+        if (_queue.Count > _maxSize)
+        {
+            _sum -= _queue.Dequeue();
+        }
+
+        Average = _sum / _queue.Count;
     }
 }

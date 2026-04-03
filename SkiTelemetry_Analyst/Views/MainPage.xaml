@@ -24,38 +24,43 @@
                         Title="Seleziona cosa monitorare">
                         <Picker.ItemsSource>
                             <x:Array Type="{x:Type x:String}">
+                                <x:String>Performance Index</x:String>
                                 <x:String>Edge Angle</x:String>
-                                <x:String>Edge Similarity</x:String>
-                                
-                                <x:String>Early Edging</x:String>
                                 <x:String>G-Force</x:String>
-
-                                <x:String>Turn Radius</x:String>
-                                <x:String>Turn Shape</x:String>
                                 <x:String>Progressive Edge Build</x:String>
-                                <x:String>Carving Index</x:String>
+                                <x:String>Early Loading</x:String>
+                                <x:String>Edge Similarity</x:String>
+                                <x:String>Turn Time</x:String>
+                                
+                                
+                                
+
+                                <!--<x:String>Turn Radius</x:String>
+                                <x:String>Turn Shape</x:String>
+                                
+                                
 
                                 <x:String>Angle vs G-Force</x:String>
                                 <x:String>Smoothness Index</x:String>
                                 <x:String>Edge Engagement Rate</x:String>
                                 <x:String>Line Choice</x:String>
                                 <x:String>Load Distribution</x:String>
-                                <x:String>Race Efficiency Index</x:String>
+                                <x:String>Race Efficiency Index</x:String>-->
                                 <x:String>Debug Data</x:String>
 
                             </x:Array>
                         </Picker.ItemsSource>
                     </Picker>
-                    <HorizontalStackLayout x:Name="EdgeAngleDisplay" IsVisible="True" HorizontalOptions="Center" Spacing="40">
+                    <HorizontalStackLayout x:Name="EdgeAngleDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                         <VerticalStackLayout>
-                            <Label Text="PEAK EDGE ANGLE" FontAttributes="Bold" HorizontalOptions="Center"/>
+                            <Label Text="EDGE ANGLE" FontAttributes="Bold" HorizontalOptions="Center"/>
                             <Label x:Name="LblEdgeAngle" Text="0.0°" FontSize="24" HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                     <HorizontalStackLayout x:Name="EdgeSimilarityDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                         <VerticalStackLayout>
                             <Label Text="EDGE SIMILARITY" FontAttributes="Bold" HorizontalOptions="Center"/>
-                            <Label x:Name="LblEdgeSimilarity" Text="" FontSize="24" HorizontalOptions="Center"/>
+                            <Label x:Name="LblEdgeSimilarity" Text="0%" FontSize="24" HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                     <HorizontalStackLayout x:Name="GForceDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
@@ -70,28 +75,34 @@
                             <Label x:Name="LblRadius" Text="0 m" FontSize="24" HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
-                    <HorizontalStackLayout x:Name="EarlyEdgingDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
+                    <HorizontalStackLayout x:Name="EarlyLoadingDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                         <VerticalStackLayout>
-                            <Label Text="Early Edging" FontAttributes="Bold" HorizontalOptions="Center"/>
-                            <Label x:Name="LblEarlyEdging" Text="" FontSize="24" HorizontalOptions="Center"/>
+                            <Label Text="Early Loading" FontAttributes="Bold" HorizontalOptions="Center"/>
+                            <Label x:Name="LblEarlyLoading" Text="0%" FontSize="24" HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                     <HorizontalStackLayout x:Name="ProgressiveBuildDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                         <VerticalStackLayout>
                             <Label Text="Progressive Edge Build" FontAttributes="Bold" HorizontalOptions="Center"/>
-                            <Label x:Name="LblProgressiveBuild" Text="" FontSize="24" HorizontalOptions="Center"/>
+                            <Label x:Name="LblProgressiveBuild" Text="0%" FontSize="24" HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                     <HorizontalStackLayout x:Name="TurnShapeDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                         <VerticalStackLayout>
                             <Label Text="Turn Shape" FontAttributes="Bold" HorizontalOptions="Center"/>
-                            <Label x:Name="LblTurnShape" Text="" FontSize="24" HorizontalOptions="Center"/>
+                            <Label x:Name="LblTurnShape" Text="0%" FontSize="24" HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
-                    <HorizontalStackLayout x:Name="CarvingIndexDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
+                    <HorizontalStackLayout x:Name="PerformanceIndexDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                         <VerticalStackLayout>
-                            <Label Text="Carving Index" FontAttributes="Bold" HorizontalOptions="Center"/>
-                            <Label x:Name="LblCarvingIndex" Text="" FontSize="24" HorizontalOptions="Center"/>
+                            <Label Text="Performance Index" FontAttributes="Bold" HorizontalOptions="Center"/>
+                            <Label x:Name="LblPerformanceIndex" Text="0%" FontSize="24" HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout x:Name="TurnTimeDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
+                        <VerticalStackLayout>
+                            <Label Text="Turn Time" FontAttributes="Bold" HorizontalOptions="Center"/>
+                            <Label x:Name="LblTurnTime" Text="0s" FontSize="24" HorizontalOptions="Center"/>
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                     <VerticalStackLayout x:Name="DebugDataDisplay" IsVisible="False" Spacing="5" Padding="5">
@@ -137,7 +148,7 @@
                             </VerticalStackLayout>
                         </Grid>
                     </VerticalStackLayout>
-                    <VerticalStackLayout Spacing="15" VerticalOptions="Center">
+                    <VerticalStackLayout Spacing="20" VerticalOptions="Center" >
                         <Label x:Name="StatusLabel" Text="Stato: pronto per la sessione" HorizontalOptions="Center" />
                         <Button x:Name="BtnScan"
                         Text="AVVIA SESSIONE"
@@ -153,7 +164,7 @@
 
                     
                 </VerticalStackLayout>
-                <VerticalStackLayout x:Name="BtnStopContainer" IsVisible="false" VerticalOptions="Center" Margin="0,30,0,0">
+                <VerticalStackLayout x:Name="BtnStopContainer" IsVisible="false" VerticalOptions="Center" Margin="0,20,0,0">
                     <Button x:Name="BtnStop" 
                     Text="STOP SESSIONE" 
                     Clicked="OnStopClicked" 
@@ -163,7 +174,7 @@
                      />
                 </VerticalStackLayout>
 
-                <VerticalStackLayout x:Name="BtnHistoryContainer" VerticalOptions="Center" Margin="0,30,0,0">
+                <VerticalStackLayout x:Name="BtnHistoryContainer" VerticalOptions="Center" Margin="0,20,0,0">
 
                 <Button x:Name="BtnHistory"
         

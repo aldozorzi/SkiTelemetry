@@ -84,6 +84,9 @@ public static class SkiGraphGenerator
         string leftRoll = string.Join(",", leftData.Select(p => p.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
         string rightRoll = string.Join(",", rightData.Select(p => p.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
+        string leftAccX = string.Join(",", leftData.Select(p => p.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightAccX = string.Join(",", rightData.Select(p => p.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+
         string leftG = string.Join(",", leftData.Select(p => p.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
         string rightG = string.Join(",", rightData.Select(p => p.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
@@ -115,6 +118,9 @@ public static class SkiGraphGenerator
             // 2. G-FORCE (Asse Y2 - Destra interna)
             var traceGL = {{ x: xData, y: [{leftG}], name: 'G-Force L', yaxis: 'y2', line: {{color: 'red', width: 1.5, dash: 'dot'}} }};
             var traceGR = {{ x: xData, y: [{rightG}], name: 'G-Force R', yaxis: 'y2', line: {{color: '#1f77b4', width: 1.5, dash: 'dot'}} }};
+            // 2. AccX (Asse Y2 - Destra interna)
+            var traceAccXL = {{ x: xData, y: [{leftAccX}], name: 'AccX L', yaxis: 'y2', line: {{color: 'green', width: 1.5, dash: 'dot'}} }};
+            var traceAccXR = {{ x: xData, y: [{rightAccX}], name: 'AccX R', yaxis: 'y2', line: {{color: 'orange', width: 1.5, dash: 'dot'}} }};
 
             // 3. GYRO Y (Asse Y3 - Destra esterna)
             // Usiamo una linea continua sottile per distinguerla dalla G-Force
@@ -148,7 +154,7 @@ public static class SkiGraphGenerator
                 hovermode: 'x unified'
             }};
 
-            Plotly.newPlot('graph', [traceRollL, traceRollR, traceGL, traceGR, /*traceGyroYL, traceGyroYR,traceGyroXL, traceGyroXR*/], layout);
+            Plotly.newPlot('graph', [/*traceRollL, traceRollR,*/traceAccXL,traceAccXR, traceGL, traceGR, /*traceGyroYL, traceGyroYR,traceGyroXL, traceGyroXR*/], layout);
         </script>
     </body>
     </html>";

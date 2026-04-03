@@ -12,6 +12,8 @@ public class TurnDetector
     private List<SkiFrame> _currentAccumulator = new List<SkiFrame>();
     private double _prevTurnSign = 0;
 
+    private uint _turnCounter = 0;
+
 
     public void ProcessFrame(SkiFrame frame)
     {
@@ -58,7 +60,7 @@ public class TurnDetector
         if (_currentAccumulator.Count > 0)
         {
             // Calcoliamo il picco massimo della pancia prima di decidere se è una curva
-            double maxAbs = _currentAccumulator.Max(f => Math.Abs(f.CombinedGyro));
+            double maxAbs = SkiTurnAnalyzer.CalculateMaxEdgeAngle(_currentAccumulator);
 
             // Prendo un frame all'interno della curva per avere un segno pulito
             int mid = _currentAccumulator.Count / 2;
@@ -77,8 +79,8 @@ public class TurnDetector
 
     private void AnalyzeAndEmitTurn(List<SkiFrame> turnData)
     {
-        
-
+        _turnCounter++;
+        System.Diagnostics.Debug.WriteLine($"CURVA [{_turnCounter}] Frames:[{turnData.Count}]--------------------------------------------------");
         // 2. Crea il turno usando i timestamp dei DataPoint originali
         // (Assumo che SkiFrame abbia i riferimenti Left/Right come mostrato all'inizio)
         var turn = new SkiTurn
@@ -86,21 +88,22 @@ public class TurnDetector
             StartTimestamp = turnData.First().Left.Timestamp,
             EndTimestamp = turnData.Last().Left.Timestamp,
         };
+        turn.Index = _turnCounter;
         turn.EdgeAngle = SkiTurnAnalyzer.CalculateMaxEdgeAngle(turnData);
         turn.EdgeSimilarity = SkiTurnAnalyzer.CalculateSimilarity(turnData);
-        turn.EarlyEdging = 0;
-        turn.GForce = SkiTurnAnalyzer.CalculateMaxGForce(turnData); ;
+        turn.EarlyLoading = SkiTurnAnalyzer.CalculateEarlyLoading(turnData);
+        turn.GForce = SkiTurnAnalyzer.CalculateMaxGForce(turnData);
         //turn.Radius = SkiTurnAnalyzer.CalculateRadius(turnData);
         turn.Shape = 0;
-        turn.ProgressiveEdgeBuild = 0;
-        turn.CarvingIndex = SkiTurnAnalyzer.CalculateCarvingIndex(turnData);
+        turn.ProgressiveEdgeBuild = SkiTurnAnalyzer.CalculateEdgeBuild(turnData); ;
+        turn.PerformanceIndex = SkiTurnAnalyzer.CalculatePerformanceIndex(turnData);
         turn.Foot = SkiTurnAnalyzer.DetermineOuterFoot(turnData);
         // 3. Calcolo basilare del piede (se positivo è un lato, se negativo è l'altro)
         // turn.Foot = turn.MaxGyro > 0 ? Foot.Right : Foot.Left;
         // SkiTurnAnalyzer.DiagnosticTurnAnalysis(turnData);
-        System.Diagnostics.Debug.WriteLine($"[DETECTOR] Curva: {turn.StartTimestamp} -> {turn.EndTimestamp} - CarvingIndex: {turn.CarvingIndex} - EdgeAngle:{turn.EdgeAngle} - GForce:{turn.GForce}");
-
+        //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Curva: {turn.StartTimestamp} -> {turn.EndTimestamp} - CarvingIndex: {turn.PerformanceIndex} - EdgeAngle:{turn.EdgeAngle} - GForce:{turn.GForce}");
         OnTurnCompleted?.Invoke(this, turn);
+        System.Diagnostics.Debug.WriteLine($"-----------------------------------------------------------");
     }
 
 }

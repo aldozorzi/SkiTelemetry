@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.Mvvm.Messaging;
-using Plugin.BLE.Abstractions.Contracts;
+﻿using Plugin.BLE.Abstractions.Contracts;
 using SkiTelemetry_Analyst.Helpers;
 using SkiTelemetry_Analyst.Services;
 using SkiTelemetry_Core;
@@ -22,13 +21,15 @@ namespace SkiTelemetry_Analyst.Views
         private HashSet<MonitorMode> _metrics = new();
         private readonly TelemetryLogger _logger = new();
         private const string SensorKey = "MainSensorId";
+        private bool _isCalibrating = false;
 
         public MainPage()
         {
             InitializeComponent();
 
-            var savedOffsets = CalibrationService.Instance.GetOffsets();
-            _dataProcessor.SetCalibration(savedOffsets);
+            var leftOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Left);
+            var rightOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Right);
+            _dataProcessor.SetCalibration(leftOffsets, rightOffsets);
 
             // Ci iscriviamo all'evento che abbiamo creato prima
             _bleService.DataReceived -= OnTelemetryReceived;
@@ -83,6 +84,7 @@ namespace SkiTelemetry_Analyst.Views
 
             if (connected)
             {
+                _dataProcessor.Reset();
                 ActivateDashboard();
                 
             }
@@ -93,7 +95,8 @@ namespace SkiTelemetry_Analyst.Views
                 _ = SpeechHelper.SpeakAsync($"Sensori non trovati.");
 
                 BtnScan.IsEnabled = true;
-                BtnScan.IsVisible = true;
+                UpdateBtnScan();
+                UpdateCalibrationWarning();
                 //DataContainer.IsVisible = false;
                 BtnStopContainer.IsVisible = false;
             }
@@ -101,10 +104,10 @@ namespace SkiTelemetry_Analyst.Views
 
         private void OnTelemetryReceived(object? sender, SkiDataPoint rawPoint)
         {
+            if (_isCalibrating) return;
             //System.Diagnostics.Trace.WriteLine($"[MAinPage] rawPoint {rawPoint} ");
-            if (_logger.isLogging) _logger.LogData(rawPoint);
             _dataProcessor.Process(rawPoint);
-
+            if (_logger.isLogging) _logger.LogData(rawPoint);
             if (MainThread.IsMainThread)
             {
                 UpdateDebugUI(rawPoint);
@@ -135,7 +138,7 @@ namespace SkiTelemetry_Analyst.Views
                 LblGyrXL.Text = $"X: {rawPoint.GyroX:F1}";
                 LblGyrYL.Text = $"Y: {rawPoint.GyroY:F1}";
                 LblGyrZL.Text = $"Z: {rawPoint.GyroZ:F1}";
-                LblRollL.Text = $"{rawPoint.SmoothRoll:F1}°";
+                LblRollL.Text = $"{rawPoint.Roll:F1}°";
             }
             else
             {
@@ -145,7 +148,7 @@ namespace SkiTelemetry_Analyst.Views
                 LblGyrXR.Text = $"X: {rawPoint.GyroX:F1}";
                 LblGyrYR.Text = $"Y: {rawPoint.GyroY:F1}";
                 LblGyrZR.Text = $"Z: {rawPoint.GyroZ:F1}";
-                LblRollR.Text = $"{rawPoint.SmoothRoll:F1}°";
+                LblRollR.Text = $"{rawPoint.Roll:F1}°";
             }
  
         }
@@ -178,10 +181,10 @@ namespace SkiTelemetry_Analyst.Views
                     _ = SpeechHelper.SpeakAsync($"{turn.Radius:F1}");
                 }
                     
-                else if (EarlyEdgingDisplay.IsVisible)
+                else if (EarlyLoadingDisplay.IsVisible)
                 {
-                    LblEarlyEdging.Text = $"{turn.EarlyEdging:0}%";
-                    _ = SpeechHelper.SpeakAsync($"{turn.EarlyEdging:F0}");
+                    LblEarlyLoading.Text = $"{turn.EarlyLoading:0}%";
+                    _ = SpeechHelper.SpeakAsync($"{turn.EarlyLoading:F0}");
                 }
                     
                 else if (ProgressiveBuildDisplay.IsVisible)
@@ -196,12 +199,17 @@ namespace SkiTelemetry_Analyst.Views
                     _ = SpeechHelper.SpeakAsync($"{turn.Shape:F0}");
                 }
                     
-                else if (CarvingIndexDisplay.IsVisible)
+                else if (PerformanceIndexDisplay.IsVisible)
                 {
-                    LblCarvingIndex.Text = $"{turn.CarvingIndex}%";
-                    _ = SpeechHelper.SpeakAsync($"{turn.CarvingIndex:F0}");
+                    LblPerformanceIndex.Text = $"{turn.PerformanceIndex}%";
+                    _ = SpeechHelper.SpeakAsync($"{turn.PerformanceIndex:F0}");
                 }
-                    
+                else if (TurnTimeDisplay.IsVisible)
+                {
+                    LblTurnTime.Text = $"{turn.Duration:F1}s";
+                    _ = SpeechHelper.SpeakAsync($"{turn.Duration:F1}");
+                }
+
 
             });
         }
@@ -240,11 +248,12 @@ namespace SkiTelemetry_Analyst.Views
                 ConfigView.IsVisible = false;
                 ActiveView.IsVisible = true;
                 BtnScan.IsVisible = false;
+                BtnQuickCalibrate.IsVisible = false;
                 BtnHistoryContainer.IsVisible = false;
                 //DataContainer.IsVisible = true;
                 BtnStopContainer.IsVisible = true;
                 StatusLabel.Text = "Stato: Sessione Attiva";
-                if (ModePicker.SelectedIndex == -1) ModePicker.SelectedIndex = 14;
+                
                 bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
                 if (isSettingsLoggingEnabled)
                 {
@@ -261,7 +270,8 @@ namespace SkiTelemetry_Analyst.Views
             // 2. Reset dell'interfaccia
             //DataContainer.IsVisible = false;
             BtnStopContainer.IsVisible = false;
-            BtnScan.IsVisible = true;
+            UpdateBtnScan();
+            UpdateCalibrationWarning();
             BtnScan.IsEnabled = true;
             BtnHistoryContainer.IsVisible = true;
             ResetDisplayValues();
@@ -287,10 +297,11 @@ namespace SkiTelemetry_Analyst.Views
             LblEdgeSimilarity.Text = $"0%";
             LblGForce.Text = $"0";
             LblRadius.Text = $"0m";
-            LblEarlyEdging.Text = $"0%";
+            LblEarlyLoading.Text = $"0%";
             LblProgressiveBuild.Text = $"0%";
             LblTurnShape.Text = $"0%";
-            LblCarvingIndex.Text = $"0%";
+            LblPerformanceIndex.Text = $"0%";
+            LblTurnTime.Text = "0s";
         }
 
         private void OnModeChanged(object? sender, EventArgs e)
@@ -300,15 +311,16 @@ namespace SkiTelemetry_Analyst.Views
             if (picker == null) return; // Se per qualche motivo il sender non è un picker, usciamo
 
             int selectedIndex = picker.SelectedIndex;
+            System.Diagnostics.Debug.WriteLine($"[MainPage] Picker Selection: {selectedIndex}");
 
             EdgeAngleDisplay.IsVisible = false;
             EdgeSimilarityDisplay.IsVisible = false;
             GForceDisplay.IsVisible = false;
             RadiusDisplay.IsVisible = false;
-            EarlyEdgingDisplay.IsVisible = false;
+            EarlyLoadingDisplay.IsVisible = false;
             ProgressiveBuildDisplay.IsVisible = false;
             TurnShapeDisplay.IsVisible = false;
-            CarvingIndexDisplay.IsVisible =  false;
+            PerformanceIndexDisplay.IsVisible =  false;
             DebugDataDisplay.IsVisible = false;
 
             if (selectedIndex != -1)
@@ -334,24 +346,23 @@ namespace SkiTelemetry_Analyst.Views
                     case MonitorMode.GForce: 
                         GForceDisplay.IsVisible = true;
                     break;
-                    case MonitorMode.TurnRadius: 
-                        RadiusDisplay.IsVisible = true;
-                        break;
-                    case MonitorMode.EarlyEdging: 
-                        EarlyEdgingDisplay.IsVisible = true;
+                   
+                    case MonitorMode.EarlyLoading: 
+                        EarlyLoadingDisplay.IsVisible = true;
                         break;
                     case MonitorMode.ProgressiveEdgeBuild:
                         ProgressiveBuildDisplay.IsVisible = true;
                         break;
-                    case MonitorMode.TurnShape:
-                        TurnShapeDisplay.IsVisible = true;
-                        break;
-                    case MonitorMode.CarvingIndex:
-                        CarvingIndexDisplay.IsVisible = true;
+                    
+                    case MonitorMode.PerformanceIndex:
+                        PerformanceIndexDisplay.IsVisible = true;
                         break;
                     case MonitorMode.DebugData:
                         DebugDataDisplay.IsVisible = true;
                         break;
+                    /*case MonitorMode.TurnTime:
+                        TurnTimeDisplay.IsVisible = true;
+                        break;*/
                 }
             }
         }
@@ -367,24 +378,34 @@ namespace SkiTelemetry_Analyst.Views
             await Shell.Current.GoToAsync($"{nameof(SettingsPage)}?IsBusy={_isSessionActive}");
             if (Shell.Current.CurrentPage is SettingsPage settings)
             {
-                settings.OnCalibrationUpdated = (offsets) => {
-                    System.Diagnostics.Debug.WriteLine($"[MainPage OnCalibrationUpdated] offsets:{offsets}");
-                    _dataProcessor.SetCalibration(offsets);
+                settings.OnCalibrationUpdated = (leftOffsets, rightOffsets) => {
+                    System.Diagnostics.Debug.WriteLine($"[MainPage OnCalibrationUpdated] leftOffsets:{leftOffsets} - rightOffsets:{rightOffsets}");
+                    _dataProcessor.SetCalibration(leftOffsets, rightOffsets);
                     UpdateCalibrationWarning();
+                    UpdateBtnScan();
+                UpdateCalibrationWarning();
+                _isCalibrating = false;
+                _dataProcessor.Reset();
                 };
             }
         }
 
-        public void OnHeadsetHook()
+        public async void OnHeadsetHook()
         {
-            if (BtnScan.IsVisible)
+            if (BtnQuickCalibrate.IsVisible)
+            {
+                _ = SpeechHelper.SpeakAsync($"Avvio Calibrazione, non muoverti e attendi.");
+                await Task.Delay(1000);
+                OnQuickCalibrateClicked(new object(), new EventArgs());
+            }
+            else if (BtnScan.IsVisible)
             {
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
                     _ = SpeechHelper.SpeakAsync($"Avvio sessione, attendi");
                     OnScanClicked(new object(), new EventArgs()); // [DEBUG] ?
                 });
-            }
+            } 
             else if (BtnStopContainer.IsVisible)
             {
                 _ = SpeechHelper.SpeakAsync($"Sessione terminata");
@@ -395,10 +416,19 @@ namespace SkiTelemetry_Analyst.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-
+            if (ModePicker.SelectedIndex == -1)
+            {
+                ModePicker.SelectedIndex = 0;
+                OnModeChanged(ModePicker, new EventArgs());
+            }
             // Chiamiamo il metodo che controlla se ci sono sensori salvati
             CheckConfiguration();
+            UpdateBtnScan();
             UpdateCalibrationWarning();
+        }
+        private void UpdateBtnScan()
+        {
+            BtnScan.IsVisible = CalibrationService.Instance.IsCalibratedToday;
         }
         private void UpdateCalibrationWarning()
         {
@@ -408,7 +438,7 @@ namespace SkiTelemetry_Analyst.Views
 
         private async void OnQuickCalibrateClicked(object sender, EventArgs e)
         {
-
+            _isCalibrating = true;
             // 2. UI Feedback
             BtnQuickCalibrate.Text = "ATTENDI...";
             BtnQuickCalibrate.IsEnabled = false;
@@ -420,13 +450,16 @@ namespace SkiTelemetry_Analyst.Views
             if (success)
             {
                 // 4. Aggiorniamo il processor con i nuovi offset
-                var offsets = CalibrationService.Instance.GetOffsets();
-                _dataProcessor.SetCalibration(offsets);
+                var leftOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Left);
+                var rightOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Right);
+                _dataProcessor.SetCalibration(leftOffsets, rightOffsets);
 
                 // 5. Facciamo sparire l'avviso
+                UpdateBtnScan();
                 UpdateCalibrationWarning();
-
-                await SpeechHelper.SpeakAsync("Calibrazione completata");
+                _isCalibrating = false;
+                _dataProcessor.Reset();
+                _ = SpeechHelper.SpeakAsync("Calibrazione completata.");
             }
             else
             {

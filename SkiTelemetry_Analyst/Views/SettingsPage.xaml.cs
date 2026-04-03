@@ -8,7 +8,7 @@ public partial class SettingsPage : ContentPage
 {
     private const string LoggingKey = "IsLoggingEnabled";
     private const string SpeechRateKey = "SpeechRate";
-    public Action<CalibrationOffsets>? OnCalibrationUpdated { get; set; }
+    public Action<CalibrationOffsets, CalibrationOffsets>? OnCalibrationUpdated { get; set; }
 
     private bool _isMainPageBusy;
     public bool IsMainPageBusy
@@ -118,9 +118,11 @@ public partial class SettingsPage : ContentPage
 
         if (success)
         {
-            var offsets = CalibrationService.Instance.GetOffsets();
+            var leftOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Left);
+            var rightOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Right);
             // Chiamiamo il callback direttamente invece di usare MessagingCenter
-            OnCalibrationUpdated?.Invoke(offsets);
+            if(leftOffsets != null && rightOffsets != null) 
+                OnCalibrationUpdated?.Invoke(leftOffsets, rightOffsets);
             await DisplayAlertAsync("Calibrazione", "Sensori calibrati correttamente.", "OK");
         }
         else
@@ -142,7 +144,7 @@ public partial class SettingsPage : ContentPage
             CalibrationService.Instance.Reset();
 
             // 2. Notifica il DataProcessor della MainPage (passando offset 0,0)
-            OnCalibrationUpdated?.Invoke(new SkiTelemetry_Core.CalibrationOffsets());
+            OnCalibrationUpdated?.Invoke(new CalibrationOffsets(), new CalibrationOffsets());
 
             // 3. Aggiorna la scritta
             UpdateCalibrationUI();
@@ -153,10 +155,11 @@ public partial class SettingsPage : ContentPage
 
     private void UpdateCalibrationUI()
     {
-        var offsets = CalibrationService.Instance.GetOffsets();
+        var leftOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Left);
+        var rightOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Right);
 
         // Se entrambi sono a zero, consideriamo il sistema "pulito"
-        if (offsets.RollL == 0 && offsets.RollR == 0)
+        if ((leftOffsets == null || leftOffsets.isClean()) && (rightOffsets == null || rightOffsets.isClean()))
         {
             LblCalibrationStatus.Text = "Standard (Nessun offset)";
             LblCalibrationStatus.TextColor = Colors.Gray;

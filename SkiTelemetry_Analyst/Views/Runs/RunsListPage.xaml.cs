@@ -327,15 +327,15 @@ namespace SkiTelemetry_Analyst.Views.Runs
                 var fileName = Path.GetFileName(filePath);
 
                 string jsonPath = Path.ChangeExtension(filePath, ".json");
-                System.Diagnostics.Trace.WriteLine($"[RunsListPage] Searching for : {jsonPath}");
+                //System.Diagnostics.Trace.WriteLine($"[RunsListPage] Searching for : {jsonPath}");
                 string savedNotes = "";
                 if (File.Exists(jsonPath))
                 {
-                    System.Diagnostics.Trace.WriteLine($"[RunsListPage] File Exists! : {jsonPath}");
+                    //System.Diagnostics.Trace.WriteLine($"[RunsListPage] File Exists! : {jsonPath}");
                     var jsonContent = File.ReadAllText(jsonPath);
                     var data = System.Text.Json.JsonDocument.Parse(jsonContent);
                     savedNotes = data.RootElement.GetProperty("notes").GetString() ?? "";
-                    System.Diagnostics.Trace.WriteLine($"[RunsListPage] Saved Notes : {savedNotes}");
+                    //System.Diagnostics.Trace.WriteLine($"[RunsListPage] Saved Notes : {savedNotes}");
                 }
 
                 combinedList.Add(new VisualRunItem

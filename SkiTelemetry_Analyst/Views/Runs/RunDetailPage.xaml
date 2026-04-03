@@ -29,8 +29,8 @@
         <Grid Grid.Row="1" ColumnDefinitions="*, *" RowDefinitions="Auto,Auto" ColumnSpacing="10" Margin="0,0,0,20" RowSpacing="10">
             <Border Grid.Row ="0"  Grid.Column="0" Padding="10" Stroke="#333" StrokeShape="RoundRectangle 10" BackgroundColor="#121212">
                 <VerticalStackLayout HorizontalOptions="Center">
-                    <Label Text="AVG CHARRET INDEX" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
-                    <Label x:Name="LblCarvingIndex" FontSize="18" FontAttributes="Bold" TextColor="Cyan" Text="0%" HorizontalTextAlignment="Center" />
+                    <Label Text="AVG Performance INDEX" FontSize="10" TextColor="Gray" HorizontalOptions="Center" />
+                    <Label x:Name="LblPerformanceIndex" FontSize="18" FontAttributes="Bold" TextColor="Cyan" Text="0%" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
             </Border>
 
@@ -62,15 +62,17 @@
             </CollectionView.ItemsLayout>
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Border Padding="15" Margin="5,5" Stroke="#333" BackgroundColor="#121212" StrokeShape="RoundRectangle 10">
+                    <Border Padding="15" Stroke="#333" BackgroundColor="#121212" StrokeShape="RoundRectangle 10">
+                       
                         <VerticalStackLayout Spacing="8">
+                            <Label  Text="{Binding Index, StringFormat='# {0:F0}'}"  />
                             <Grid ColumnDefinitions="*, Auto">
-                                <Label Grid.Column="0" Text="{Binding CarvingIndex, StringFormat='CHARRET INDEX: {0:F0}%'}" 
+                                <Label Grid.Column="0" Text="{Binding PerformanceIndex, StringFormat='PERFORMANCE INDEX: {0:F0}%'}" 
 FontAttributes="Bold" TextColor="Cyan" FontSize="11" />
                                 <Label Grid.Column="1" Text="{Binding Foot, StringFormat='FOOT: {0}'}" 
 TextColor="White" FontSize="11" Opacity="0.7" />
                             </Grid>
-                            <ProgressBar Progress="{Binding CarvingIndex, Converter={StaticResource PercentToRatioConverter}}" 
+                            <ProgressBar Progress="{Binding PerformanceIndex, Converter={StaticResource PercentToRatioConverter}}" 
   ProgressColor="Cyan" ScaleY="2" />
 
                             <Grid ColumnDefinitions="*">
@@ -94,13 +96,13 @@ TextColor="White" FontSize="11" Opacity="0.7" />
 
                         <Grid ColumnDefinitions="*, *, *, *" Margin="0,5,0,0">
                             <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
-                                <Label Text="Shape" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                    <Label Text="{Binding Shape, StringFormat='{0:F1}%'}" FontSize="12" TextColor="White" />
+                                <Label Text="SIMIL" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                    <Label Text="{Binding EdgeSimilarity, StringFormat='{0:F1}%'}" FontSize="12" TextColor="White" />
                             </VerticalStackLayout>
 
                             <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
                                 <Label Text="EARLY" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                    <Label Text="{Binding EarlyEdging, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" />
+                                    <Label Text="{Binding EarlyLoading, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" />
                             </VerticalStackLayout>
 
                             <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
@@ -109,7 +111,7 @@ TextColor="White" FontSize="11" Opacity="0.7" />
                             </VerticalStackLayout>
 
                             <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center">
-                                <Label Text="DURATION" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                <Label Text="TIME" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
                                 <Label Text="{Binding Duration, StringFormat='{0:F2}s'}" FontSize="12" TextColor="White" />
                             </VerticalStackLayout>
                         </Grid>

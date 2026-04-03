@@ -1,4 +1,5 @@
-﻿using System.Reflection.Metadata;
+﻿using System.Diagnostics;
+using System.Reflection.Metadata;
 
 namespace SkiTelemetry_Core;
 
@@ -6,7 +7,7 @@ namespace SkiTelemetry_Core;
 
 public static class SkiTurnAnalyzer
 {
-
+    
     public static TurnMetrics Compute(List<SkiFrame> turnData)
     {
         var metrics = new TurnMetrics();
@@ -102,38 +103,7 @@ public static class SkiTurnAnalyzer
         // Limite di sanità per evitare asintoti (es. rettilinei con vibrazioni)
         return Math.Round(Math.Min(radius, 50.0), 1);
     }
-
-    public static void DiagnosticTurnAnalysis(List<SkiFrame> turnData)
-    {
-        if (turnData == null || turnData.Count < 5) return;
-
-        // 1. Parametri di picco (usando la logica Max per vedere il potenziale)
-        double maxG = CalculateMaxGForce(turnData);
-        double maxGyroY = turnData.Max(f => Math.Abs(f.Left.SmoothGyroY + f.Right.SmoothGyroY) / 2.0);
-        double avgRoll = turnData.Average(f => Math.Abs(f.Left.SmoothRoll + f.Right.SmoothRoll) / 2.0);
-
-        // 2. Calcolo Velocità Apparente (m/s e km/h) all'apice
-        double omegaRad = maxGyroY * (Math.PI / 180.0);
-        double accCentripetal = 9.80665 * Math.Sqrt(Math.Max(Math.Pow(maxG, 2) - 1.0, 0));
-
-        double vMS = (omegaRad > 0.1) ? (accCentripetal / omegaRad) : 0;
-        double vKmH = vMS * 3.6;
-
-        // 3. Rapporto di Efficienza (G-Force per unità di rotazione)
-        // Più è alto, più la curva è "carica" e condotta. 
-        // Se è basso, stai girando i piedi senza fare pressione (derapata/pivoting).
-        double efficiency = (maxGyroY > 0) ? (maxG / maxGyroY) * 100 : 0;
-
-        // 4. Calcolo Raggio Teorico con questa V
-        double radius = (omegaRad > 0.1) ? (vMS / omegaRad) : 0;
-
-        System.Diagnostics.Debug.WriteLine($"[DIAG] Curva");
-        System.Diagnostics.Debug.WriteLine($"      -> V-Apparente: {vKmH:F1} km/h | Raggio: {radius:F1}m");
-        System.Diagnostics.Debug.WriteLine($"      -> MaxG: {maxG:F2} | MaxGyroY: {maxGyroY:F1} deg/s");
-        System.Diagnostics.Debug.WriteLine($"      -> Efficienza (G/Gyro): {efficiency:F2} | Roll Medio: {avgRoll:F1}°");
-        System.Diagnostics.Debug.WriteLine("------------------------------------------------------------");
-    }
-    public static double CalculateCarvingIndex(List<SkiFrame> turnData)
+    public static double CalculatePerformanceIndex(List<SkiFrame> turnData)
     {
         if (turnData == null || turnData.Count < 5) return 0;
 
@@ -147,9 +117,13 @@ public static class SkiTurnAnalyzer
         double rollRad = maxRoll * (Math.PI / 180.0);
         double gBinario = 1.0 / Math.Cos(rollRad);
 
-        // 3. Calcolo soglia di "Deformazione Eccellente"
-        // Uno sciatore che deforma davvero aggiunge circa un 30-40% di carico extra
-        double gOttimale = gBinario * 1.4;
+        var start = turnData[0].Left.Timestamp;
+        var end = turnData[^1].Left.Timestamp;
+        var duration = (end - start) / 1000.0;
+
+        double boostRequired = GetDynamicMultiplier(maxRoll);
+
+        double gOttimale = gBinario * boostRequired;
 
         // 4. Mappatura dello Score
         double score = 0;
@@ -180,69 +154,186 @@ public static class SkiTurnAnalyzer
 
         return Math.Round(score, 1);
     }
+
+    private static double GetDynamicMultiplier(double currentRoll)
+    {
+        // Definiamo i nostri "pilastri" di taratura
+        const double MinRoll = 20.0;  // Sotto i 20° chiediamo il massimo
+        const double MaxRoll = 50.0;  // Sopra i 50° chiediamo il minimo
+
+        const double MaxMult = 2.0;   // Moltiplicatore per il corto raggio (cattivo)
+        const double MinMult = 1.6;   // Moltiplicatore per l'arco ampio (umano)
+
+        // 1. Appiattiamo l'angolo nei limiti dei pilastri
+        double clampedRoll = Math.Clamp(Math.Abs(currentRoll), MinRoll, MaxRoll);
+
+        // 2. Calcoliamo quanto siamo "avanti" nel range (da 0.0 a 1.0)
+        double t = (clampedRoll - MinRoll) / (MaxRoll - MinRoll);
+
+        // 3. Interpolazione lineare: più t cresce (più pieghi), più il moltiplicatore scende
+        return MaxMult - t * (MaxMult - MinMult);
+    }
+
     public static double CalculateEdgeBuild(List<SkiFrame> turnData)
+    {
+        if (turnData == null || turnData.Count < 5)
+            return 0.0;
+
+        var rolls = turnData
+            .Select(f => (f.Left.SmoothRoll + f.Right.SmoothRoll) / 2.0)
+            .ToList();
+
+        var timestamps = turnData
+            .Select(f => (double)f.Left.Timestamp)
+            .ToList();
+
+        int n = rolls.Count;
+
+        //Debug.WriteLine($"[EdgeBuild] Frame totali: {n}");
+        //Debug.WriteLine($"[EdgeBuild] Roll min: {rolls.Min():F2}° | max: {rolls.Max():F2}° | range: {rolls.Max() - rolls.Min():F2}°");
+
+        // Picco
+        int peakIndex = 0;
+        double peakAbs = 0;
+        for (int i = 0; i < n; i++)
+        {
+            double absRoll = Math.Abs(rolls[i]);
+            if (absRoll > peakAbs) { peakAbs = absRoll; peakIndex = i; }
+        }
+
+        //Debug.WriteLine($"[EdgeBuild] Picco: {rolls[peakIndex]:F2}° @ index {peakIndex} (timestamp {timestamps[peakIndex]:F0} ms)");
+
+        if (peakIndex < 3)
+            return 0.5;
+
+        var buildRolls = rolls.Take(peakIndex + 1).ToList();
+        var buildTimestamps = timestamps.Take(peakIndex + 1).ToList();
+        int bN = buildRolls.Count;
+
+        //Debug.WriteLine($"[EdgeBuild] Fase BUILD: {bN} frame | da {buildTimestamps.First():F0} ms a {buildTimestamps.Last():F0} ms");
+
+        // ── METRICA A – Jerk ──────────────────────────────────────────────────
+        var angularRates = new List<double>();
+        for (int i = 1; i < bN; i++)
+        {
+            double dt = buildTimestamps[i] - buildTimestamps[i - 1];
+            if (dt <= 0) continue;
+            angularRates.Add((buildRolls[i] - buildRolls[i - 1]) / dt);
+        }
+
+        var jerks = new List<double>();
+        for (int i = 1; i < angularRates.Count; i++)
+        {
+            double dt = buildTimestamps[i + 1] - buildTimestamps[i];
+            if (dt <= 0) continue;
+            jerks.Add(Math.Abs((angularRates[i] - angularRates[i - 1]) / dt));
+        }
+
+        double meanJerk = jerks.Count > 0 ? jerks.Average() : 0;
+        double maxJerk = jerks.Count > 0 ? jerks.Max() : 0;
+
+        //Debug.WriteLine($"[EdgeBuild] --- METRICA A: JERK ---");
+        //Debug.WriteLine($"[EdgeBuild]   meanJerk: {meanJerk:F6} °/ms²");
+        //Debug.WriteLine($"[EdgeBuild]   maxJerk:  {maxJerk:F6} °/ms²");
+
+        const double jerkFluidThreshold = 0.0008; 
+        const double jerkImpulseThreshold = 0.0030;
+        double jerkScore = 1.0 - Clamp01(
+            (meanJerk - jerkFluidThreshold) / (jerkImpulseThreshold - jerkFluidThreshold));
+
+        //Debug.WriteLine($"[EdgeBuild]   jerkScore: {jerkScore:F4}");
+
+        // ── METRICA B – Monotonicità ──────────────────────────────────────────
+        int sign = Math.Sign(buildRolls[peakIndex]);
+        int inversions = 0;
+        for (int i = 1; i < bN; i++)
+        {
+            double delta = (buildRolls[i] - buildRolls[i - 1]) * sign;
+            if (delta < -0.5) inversions++;
+        }
+
+        double inversionRatio = (double)inversions / (bN - 1);
+
+        //Debug.WriteLine($"[EdgeBuild] --- METRICA B: MONOTONICITÀ ---");
+        //Debug.WriteLine($"[EdgeBuild]   Inversioni: {inversions} su {bN - 1} step ({inversionRatio * 100:F1}%)");
+
+        double monotonicityScore = Clamp01(1.0 - inversionRatio * 3.0);
+
+        //Debug.WriteLine($"[EdgeBuild]   monotonicityScore: {monotonicityScore:F4}");
+
+        
+        // ── METRICA C – Progressività R² ─────────────────────────────────────
+        double rSquared = CalculateRSquared(buildTimestamps, buildRolls);
+
+        //Debug.WriteLine($"[EdgeBuild] --- METRICA D: PROGRESSIVITÀ ---");
+        //Debug.WriteLine($"[EdgeBuild]   R²: {rSquared:F4}");
+
+        double progressivityScore = Clamp01(rSquared);
+
+        //Debug.WriteLine($"[EdgeBuild]   progressivityScore: {progressivityScore:F4}");
+
+        // ── Score finale ──────────────────────────────────────────────────────
+        const double wJerk = 0.45;
+        const double wMonotonicity = 0.25;
+        const double wProgressivity = 0.30;
+
+        double finalScore =
+            wJerk * jerkScore +
+            wMonotonicity * monotonicityScore +
+            wProgressivity * progressivityScore;
+
+        //Debug.WriteLine($"[EdgeBuild] --- SCORE FINALE ---");
+        //Debug.WriteLine($"[EdgeBuild]   Jerk        ({wJerk * 100:F0}%): {jerkScore:F4} → contributo {wJerk * jerkScore:F4}");
+        //Debug.WriteLine($"[EdgeBuild]   Monotonicità({wMonotonicity * 100:F0}%): {monotonicityScore:F4} → contributo {wMonotonicity * monotonicityScore:F4}");
+        //Debug.WriteLine($"[EdgeBuild]   Progressività({wProgressivity * 100:F0}%): {progressivityScore:F4} → contributo {wProgressivity * progressivityScore:F4}");
+        //Debug.WriteLine($"[EdgeBuild]   *** FINAL SCORE: {finalScore:F4} ({finalScore * 100:F1}%) ***");
+
+        return Math.Round(finalScore*100);
+    }
+    
+    public static double CalculateEarlyLoading(List<SkiFrame> turnData)
     {
         if (turnData == null || turnData.Count < 10) return 0;
 
-        // 1. Troviamo l'Apex (Picco di inclinazione)
-        // GetPeakData deve usare Math.Abs internamente per trovare il massimo modulo
-        var peak = GetRollPeak(turnData);
-        double maxRoll = peak.MaxRoll;
-        int peakIdx = peak.Index;
+        double excellentThreshold = 0.25;  // entro il 30% → score 100
+        double midScore = 60.0;            // score a metà curva (0.5)
+        double minScore = 10.0;
 
-        // 2. Troviamo il punto di partenza REALE (lo zero della lamina)
-        // Non ci fidiamo del primo frame, cerchiamo il minimo assoluto PRIMA del picco
-        double startRoll = double.MaxValue;
-        int startIdx = 0;
+        int totalFrames = turnData.Count;
 
-        for (int i = 0; i <= peakIdx; i++)
-        {
-            double r = Math.Max(Math.Abs(turnData[i].Left.SmoothRoll), Math.Abs(turnData[i].Right.SmoothRoll));
-            if (r < startRoll)
-            {
-                startRoll = r;
-                startIdx = i;
-            }
-        }
+        var rollPeak = GetRollPeak(turnData);
+        var gPeak = GetGForcePeak(turnData);
 
-        // 3. Calcoliamo la crescita (Delta)
-        double deltaRoll = maxRoll - startRoll;
-        int duration = peakIdx - startIdx;
-
-        // Se la curva è troppo strozzata o non c'è pendenza, diamo un valore neutro
-        if (deltaRoll < 5 || duration < 4) return 70;
-
-        // 4. Calcolo delle Aree (Relative allo startRoll)
-        double realArea = 0;
-        for (int i = startIdx; i <= peakIdx; i++)
-        {
-            double current = Math.Max(Math.Abs(turnData[i].Left.SmoothRoll), Math.Abs(turnData[i].Right.SmoothRoll));
-            realArea += (current - startRoll);
-        }
-
-        // Area di un triangolo che cresce da 0 a deltaRoll in 'duration' frame
-        double linearArea = (deltaRoll * (duration + 1)) / 2.0;
-
-        if (linearArea <= 0) return 0;
-
-        double buildRatio = realArea / linearArea;
-
-        // 5. Mapping del punteggio
-        // Se Ratio < 1.0 -> Progressivo (Ease-In) -> Punteggio alto
-        // Se Ratio > 1.0 -> Impulsivo (Abrupt) -> Punteggio basso
+        double apexIndex = (rollPeak.Index * 0.0) + (gPeak.Index * 1.0);
+        double relativePosition = apexIndex / (totalFrames - 1);
+        Debug.WriteLine($"[EarlyLoading]   relativePosition: {relativePosition:F2} (apexIndex:{apexIndex} - totalFrames:{totalFrames} - gPeak:{gPeak.Index})");
         double score;
-        if (buildRatio <= 1.0)
+
+        if (relativePosition <= excellentThreshold)
         {
-            // Ottimo: premiamo la curva convessa (tipica del carving moderno)
-            score = 100.0 - (buildRatio * 30.0); // Da 70 a 100
+            // Zona eccellente: score pieno
+            score = 100.0;
         }
         else
         {
-            // Penalizziamo chi sbatte subito lo spigolo a terra
-            score = 70.0 - ((buildRatio - 1.0) * 80.0);
+            // Zona decrescente: interpolazione esponenziale da 100 a minScore
+            // Calibrata in modo che a relativePosition=0.5 si ottenga midScore
+            // Risolviamo: midScore = 100 - (100 - minScore) * t^k
+            // dove t = (pos - excellentThreshold) / (1.0 - excellentThreshold)
+            // e k è ricavato dalla condizione sul midScore a pos=0.5
+
+            double t50 = (0.5 - excellentThreshold) / (1.0 - excellentThreshold);
+            double k = Math.Log((100.0 - midScore) / (100.0 - minScore)) / Math.Log(t50);
+
+            double t = (relativePosition - excellentThreshold) / (1.0 - excellentThreshold);
+            score = 100.0 - (100.0 - minScore) * Math.Pow(t, k);
         }
 
-        return Math.Round(Math.Clamp(score, 0, 100), 1);
+        /*System.Diagnostics.Debug.WriteLine(
+            $"[ApexTiming] RollPeak@{rollPeak.Index} | GPeak@{gPeak.Index} | " +
+            $"ApexIdx:{apexIndex:F1} | RelPos:{relativePosition:P1} | Score:{score:F1}");*/
+
+        return Math.Round(Math.Clamp(score, minScore, 100.0), 1);
     }
 
     // UTILITIES
@@ -277,21 +368,42 @@ public static class SkiTurnAnalyzer
         double avgGyro = data.Average(f => f.CombinedGyro);
         bool isTurnToLeft = avgGyro < 0;
 
-
-        int peakIdx = 0;
-        double maxR = 0;
+        // 1. Trova il minimo di G nella curva (momento di scarico/transizione)
+        int minIndex = 0;
+        double minG = double.MaxValue;
 
         for (int i = 0; i < data.Count; i++)
         {
-            double current = isTurnToLeft ? Math.Abs(data[i].Right.AdjustedG) : Math.Abs(data[i].Left.AdjustedG);
-            //System.Diagnostics.Debug.WriteLine($"[ANALYZER] comparing {current} to {maxR}");
-            if (current > maxR)
+            double g = isTurnToLeft ? data[i].Right.AdjustedG : data[i].Left.AdjustedG;
+            if (g < minG)
             {
-                maxR = current;
-                peakIdx = i;
+                minG = g;
+                minIndex = i;
             }
         }
-        return (peakIdx, maxR);
+
+        // 2. Cerca il picco SOLO dopo il minimo
+        int windowSize = 10;
+        int bestIndex = minIndex;
+        double bestAvg = 0;
+
+        for (int i = minIndex + windowSize; i < data.Count - windowSize; i++)
+        {
+            double windowAvg = 0;
+            for (int j = i - windowSize; j <= i + windowSize; j++)
+            {
+                windowAvg += isTurnToLeft ? data[j].Right.AdjustedG : data[j].Left.AdjustedG;
+            }
+            windowAvg /= (windowSize * 2 + 1);
+
+            if (windowAvg > bestAvg)
+            {
+                bestAvg = windowAvg;
+                bestIndex = i;
+            }
+        }
+
+        return (bestIndex, bestAvg);
     }
 
     private static double GetAverageRollInWindow(List<SkiFrame> data, int peakIndex)
@@ -360,5 +472,24 @@ public static class SkiTurnAnalyzer
         //System.Diagnostics.Debug.WriteLine($"[ANALYZER] returning: {sumG} / {count} = {sumG/count}");
         return sumG / count;
     }
-   
+    private static double CalculateRSquared(List<double> x, List<double> y)
+    {
+        int n = x.Count;
+        if (n < 2) return 0;
+
+        double meanX = x.Average();
+        double meanY = y.Average();
+
+        double ssXY = x.Zip(y, (xi, yi) => (xi - meanX) * (yi - meanY)).Sum();
+        double ssXX = x.Sum(xi => (xi - meanX) * (xi - meanX));
+        double ssYY = y.Sum(yi => (yi - meanY) * (yi - meanY));
+
+        if (ssXX == 0 || ssYY == 0) return 0;
+
+        double r = ssXY / Math.Sqrt(ssXX * ssYY);
+        return r * r; // R²
+    }
+    private static double Clamp01(double value)
+        => Math.Max(0.0, Math.Min(1.0, value));
+
 }
