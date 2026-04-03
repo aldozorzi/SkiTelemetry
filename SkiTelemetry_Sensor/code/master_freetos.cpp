@@ -122,6 +122,9 @@ void taskSystem(void *pvParameters) {
 void setup() {
     auto cfg = M5.config();
     M5.begin(cfg);
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF); 
+    delay(100);
 
     M5.Speaker.setVolume(255);
     M5.Speaker.tone(1000, 100); 
@@ -131,16 +134,17 @@ void setup() {
 
     M5.Imu.begin();
 
+    setCpuFrequencyMhz(160);
     // Risparmio Energetico
-    esp_pm_config_esp32_t pm_config;
+    /*esp_pm_config_esp32_t pm_config;
     pm_config.max_freq_mhz = 80; 
     pm_config.min_freq_mhz = 10;
     pm_config.light_sleep_enable = true;
-    esp_pm_configure(&pm_config);
+    esp_pm_configure(&pm_config);*/
 
     // WiFi & ESP-NOW
     WiFi.mode(WIFI_STA);
-    WiFi.setSleep(true);
+    WiFi.setSleep(false);
     if (esp_now_init() == ESP_OK) {
         esp_now_register_recv_cb(esp_now_recv_cb_t(OnDataRecv));
         esp_now_peer_info_t peerInfo = {};
@@ -162,8 +166,8 @@ void setup() {
     pCharacteristic->addDescriptor(new BLE2902());
     pService->start();
     pServer->getAdvertising()->addServiceUUID(SERVICE_UUID);
-    pServer->getAdvertising()->setMinPreferred(0x10); // 20ms (16 * 1.25ms)
-    pServer->getAdvertising()->setMaxPreferred(0x20); // 40ms (32 * 1.25ms)
+    /*pServer->getAdvertising()->setMinPreferred(0x10); // 20ms (16 * 1.25ms)
+    pServer->getAdvertising()->setMaxPreferred(0x20); // 40ms (32 * 1.25ms)*/
     pServer->getAdvertising()->start();
 
     M5.Display.setBrightness(0);

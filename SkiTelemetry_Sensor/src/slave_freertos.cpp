@@ -112,12 +112,13 @@ void setup() {
     // Inizializzazione IMU esplicita (fondamentale!)
     M5.Imu.begin();
     
-    // Configurazione Power Management
-    esp_pm_config_esp32_t pm_config;
+    setCpuFrequencyMhz(160);
+    // Risparmio Energetico
+    /*esp_pm_config_esp32_t pm_config;
     pm_config.max_freq_mhz = 80; 
     pm_config.min_freq_mhz = 10;
     pm_config.light_sleep_enable = true;
-    esp_pm_configure(&pm_config);
+    esp_pm_configure(&pm_config);*/
 
     // Display setup iniziale
     M5.Display.setRotation(0); // Mette lo schermo in orizzontale
