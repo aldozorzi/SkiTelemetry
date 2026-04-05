@@ -148,6 +148,27 @@ void setup() {
 
     imuQueue = xQueueCreate(10, sizeof(SlaveData));
 
+    // Dopo M5.Imu.begin(), usa il bus interno di M5Unified
+    // M5StickC Plus 2: MPU6886 è su Wire1 (SDA=21, SCL=22 interni)
+    Wire1.begin(21, 22);
+    Wire1.beginTransmission(0x68);
+    Wire1.write(0x1C);
+    Wire1.write(0x08); // ±4g
+    Wire1.endTransmission();
+
+    // VERIFICA Scrittura registro
+    /*delay(10);
+    Wire1.beginTransmission(0x68);
+    Wire1.write(0x1C);
+    Wire1.endTransmission(false);
+    Wire1.requestFrom(0x68, 1);
+    if (Wire1.available()) {
+        uint8_t accelCfg = Wire1.read();
+        Serial.printf("[IMU] ACCEL_CONFIG: 0x%02X (atteso 0x08)\n", accelCfg);
+    } else {
+        Serial.println("[IMU] ERRORE: nessuna risposta su Wire1");
+    }*/
+
     xTaskCreatePinnedToCore(taskIMU, "IMU", 4096, NULL, 3, NULL, 1);
     xTaskCreatePinnedToCore(taskCommunication, "COMM", 4096, NULL, 2, NULL, 1);
     xTaskCreatePinnedToCore(taskSystem, "SYS", 4096, NULL, 1, NULL, 1);

@@ -49,6 +49,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
         // Invia comando di STOP allo slave
         uint8_t cmd = 0;
         esp_now_send(slaveAddress, &cmd, 1);
+        delay(100);
         pServer->getAdvertising()->start();
     }
 };
@@ -140,7 +141,7 @@ void setup() {
     M5.begin(cfg);
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF); 
-    delay(100);
+    delay(200);
 
     M5.Speaker.setVolume(255);
     M5.Speaker.tone(1000, 100); 
@@ -149,6 +150,8 @@ void setup() {
     delay(200);
 
     M5.Imu.begin();
+
+    
 
     setCpuFrequencyMhz(160);
     // Risparmio Energetico
@@ -189,7 +192,26 @@ void setup() {
     M5.Display.setBrightness(0);
     M5.Display.sleep();
     
-    
+    // Dopo M5.Imu.begin(), usa il bus interno di M5Unified
+    // M5StickC Plus 2: MPU6886 è su Wire1 (SDA=21, SCL=22 interni)
+    Wire1.begin(21, 22);
+    Wire1.beginTransmission(0x68);
+    Wire1.write(0x1C);
+    Wire1.write(0x08); // ±4g
+    Wire1.endTransmission();
+
+    // VERIFICA Scrittura registro
+    /*delay(10);
+    Wire1.beginTransmission(0x68);
+    Wire1.write(0x1C);
+    Wire1.endTransmission(false);
+    Wire1.requestFrom(0x68, 1);
+    if (Wire1.available()) {
+        uint8_t accelCfg = Wire1.read();
+        Serial.printf("[IMU] ACCEL_CONFIG: 0x%02X (atteso 0x08)\n", accelCfg);
+    } else {
+        Serial.println("[IMU] ERRORE: nessuna risposta su Wire1");
+    }*/
 
     // Task Creation
     xTaskCreatePinnedToCore(taskData, "DATA", 4096, NULL, 3, NULL, 1);
