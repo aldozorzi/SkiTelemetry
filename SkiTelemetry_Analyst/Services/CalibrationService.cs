@@ -7,48 +7,38 @@ public class CalibrationService
     private static readonly Lazy<CalibrationService> _instance = new(() => new CalibrationService());
     private const string LastCalibDateKey = "LastCalibrationDate";
 
-    RollingBuffer leftAccXList = new(200);
-    RollingBuffer leftAccYList = new(200);
-    RollingBuffer leftAccZList = new(200);
-    RollingBuffer leftGyroXList = new(200);
-    RollingBuffer leftGyroYList = new(200);
-    RollingBuffer leftGyroZList = new(200);
+    RollingBuffer leftAccXList = new(150);
+    RollingBuffer leftAccYList = new(150);
+    RollingBuffer leftAccZList = new(150);
+    RollingBuffer leftGyroXList = new(150);
+    RollingBuffer leftGyroYList = new(150);
+    RollingBuffer leftGyroZList = new(150);
 
-    RollingBuffer rightAccXList = new(200);
-    RollingBuffer rightAccYList = new(200);
-    RollingBuffer rightAccZList = new(200);
-    RollingBuffer rightGyroXList = new(200);
-    RollingBuffer rightGyroYList = new(200);
-    RollingBuffer rightGyroZList = new(200);
+    RollingBuffer rightAccXList = new(150);
+    RollingBuffer rightAccYList = new(150);
+    RollingBuffer rightAccZList = new(150);
+    RollingBuffer rightGyroXList = new(150);
+    RollingBuffer rightGyroYList = new(150);
+    RollingBuffer rightGyroZList = new(150);
 
     public static CalibrationService Instance => _instance.Value;
 
-    public CalibrationOffsets? OffsetL { get; private set; }
-    public CalibrationOffsets? OffsetR { get; private set; }
+    public CalibrationOffsets OffsetL { get; private set; }
+    public CalibrationOffsets OffsetR { get; private set; }
 
     private readonly TelemetryLogger _logger = new();
 
     private CalibrationService()
     {
-
+        OffsetL = new CalibrationOffsets();
+        OffsetR = new CalibrationOffsets();
         /*OffsetL = Preferences.Default.Get("CalibL", 0.0);
         OffsetR = Preferences.Default.Get("CalibR", 0.0);*/
     }
 
     public void AddFrame(SkiFrame frame)
     {
-        //bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
-        bool isSettingsLoggingEnabled = true; // forcing logging 
-        if (!_logger.isLogging && isSettingsLoggingEnabled)
-        {
-            _logger.StartLogging("Calibrations");
-        }else if(_logger.isLogging)
-        {
-            _logger.LogData(frame.Left);
-            _logger.LogData(frame.Right);
-        }
-        
-        
+                
         leftAccXList.Add(frame.Left.AccX);
         leftAccYList.Add(frame.Left.AccY);
         leftAccZList.Add(frame.Left.AccZ);
@@ -62,12 +52,69 @@ public class CalibrationService
         rightGyroXList.Add(frame.Right.GyroX);
         rightGyroYList.Add(frame.Right.GyroY);
         rightGyroZList.Add(frame.Right.GyroZ);
-        // Gestisci logica per autoSave: se i valori dei giroscopi sono coerenti con un utente fermo (std deviation?) li salva da solo. Così può essere chiamato mentre è in corso la sessione, e se un utnte è fermo (quindi gli ultimi 50?100?200? valori sono coerenti) salviamo la calibrazione dei giroscopi. Per gli accelerometri meglio di no percHé non possiamo sapere se è in piano.
+
+        CheckAndAutoCalibrate(frame);
+    }
+
+    private void CheckAndAutoCalibrate(SkiFrame frame)
+    {
+        // Calcola la magnitude dell'accelerometro
+        double leftGMag = Math.Sqrt(
+            Math.Pow(frame.Left.AccX, 2) +
+            Math.Pow(frame.Left.AccY, 2) +
+            Math.Pow(frame.Left.AccZ, 2));
+
+        double rightGMag = Math.Sqrt(
+            Math.Pow(frame.Right.AccX, 2) +
+            Math.Pow(frame.Right.AccY, 2) +
+            Math.Pow(frame.Right.AccZ, 2));
+
+        // SOGLIE per considerare "fermo":
+        bool isStationary =
+            leftAccXList.Count >= 150 &&  // Buffer pieno
+            rightAccXList.Count >= 150 &&
+
+            // 1. Gyro molto stabili (std dev < 1.5 deg/s)
+            leftGyroXList.StdDev < 1.5 && leftGyroYList.StdDev < 1.5 && leftGyroZList.StdDev < 1.5 &&
+            rightGyroXList.StdDev < 1.5 && rightGyroYList.StdDev < 1.5 && rightGyroZList.StdDev < 1.5 &&
+
+            // 2. Accelerometro stabile (std dev < 0.05G)
+            leftAccXList.StdDev < 0.05 && leftAccYList.StdDev < 0.05 && leftAccZList.StdDev < 0.05 &&
+            rightAccXList.StdDev < 0.05 && rightAccYList.StdDev < 0.05 && rightAccZList.StdDev < 0.05 &&
+
+            // 3. G-force vicina a 1G (±0.1G)
+            Math.Abs(leftGMag - 1.0) < 0.1 &&
+            Math.Abs(rightGMag - 1.0) < 0.1;
+
+        if (isStationary)
+        {
+            // Salva SOLO la calibrazione dei giroscopi
+            OffsetL.GyroX = (float)leftGyroXList.Average;
+            OffsetL.GyroY = (float)leftGyroYList.Average;
+            OffsetL.GyroZ = (float)leftGyroZList.Average;
+
+            OffsetR.GyroX = (float)rightGyroXList.Average;
+            OffsetR.GyroY = (float)rightGyroYList.Average;
+            OffsetR.GyroZ = (float)rightGyroZList.Average;
+
+            //bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
+            bool isSettingsLoggingEnabled = true; // forcing logging 
+
+            if (!_logger.IsLogging && isSettingsLoggingEnabled)
+            {
+                _logger.StartLogging("Calibrations_Auto"); // Prefisso diverso per distinguere
+            }
+            else if (_logger != null && _logger.IsLogging)
+            {
+                _logger.LogData(frame.Left);
+                _logger.LogData(frame.Right);
+            }
+        }
     }
 
     public void Save()
     {
-        _logger.StopLogging();
+        
         OffsetL = new CalibrationOffsets
         {
             // GIROSCOPI: Se sei fermo, dovrebbero segnare 0. 
@@ -104,8 +151,8 @@ public class CalibrationService
 
     public void Reset()
     {
-        OffsetL = null;
-        OffsetR = null;
+        OffsetL.GyroX = OffsetL.GyroY = OffsetL.GyroZ = OffsetR.GyroX = OffsetR.GyroY = OffsetR.GyroZ = 0;
+
         Preferences.Default.Remove("CalibL");
         Preferences.Default.Remove("CalibR");
         Preferences.Default.Remove(LastCalibDateKey);

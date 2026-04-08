@@ -117,20 +117,20 @@ public static class SkiGraphGenerator
             }};
 
             Plotly.newPlot('graph', [
-                traceRawAccXL,
+                /*traceRawAccXL,
                 traceRawAccXR,
                 traceRawAccYL,
                 traceRawAccYR,
                 traceRawAccZL,
                 traceRawAccZR,
-                /*traceRawGyroYL,
+                traceRawGyroYL,
                 traceRawGyroYR,
                 traceRawGyroXL,
                 traceRawGyroXR,
                 traceRawGyroZL,
                 traceRawGyroZR,*/
     
-                /*traceRollL, 
+                traceRollL, 
                 traceRollR,
                 traceSmoothAccXL,
                 traceSmoothAccXR, 
@@ -139,7 +139,7 @@ public static class SkiGraphGenerator
                 traceSmoothGyroYL, 
                 traceSmoothGyroYR, 
                 traceSmoothGyroXL,  
-                traceSmoothGyroXR*/
+                traceSmoothGyroXR
             ], layout);
         </script>
     </body>

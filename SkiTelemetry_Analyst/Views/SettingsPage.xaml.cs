@@ -119,7 +119,7 @@ public partial class SettingsPage : ContentPage
 
 
         // Eseguiamo il flusso BLE isolato
-        bool success = await bleService.RunCalibrationAsync(200);
+        bool success = await bleService.RunCalibrationAsync(150);
 
         if (success)
         {

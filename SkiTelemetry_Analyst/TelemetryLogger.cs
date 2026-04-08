@@ -9,7 +9,7 @@ public class TelemetryLogger : IDisposable
     private bool _useNameCounter = false;
     private FileStream? _fileStream;
     private BinaryWriter? _writer;
-    public bool isLogging = false;
+    public bool IsLogging = false;
 
     public void StartLogging( string? filefolder = null, string? filename = null)
     {
@@ -28,14 +28,14 @@ public class TelemetryLogger : IDisposable
         }
         _fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
         _writer = new BinaryWriter(_fileStream);
-        isLogging = true;
+        IsLogging = true;
 
         //System.Diagnostics.Debug.WriteLine($"[LOGGER] File binario creato: {filePath}");
     }
 
     public void LogData(SkiDataPoint point)
     {
-        if (!isLogging || _writer == null) return;
+        if (!IsLogging || _writer == null) return;
 
         // Scrittura binaria compatta (Esempio struttura: 104 byte per riga)
         // Timestamp (4) + Side (1) + Acc(4*3) + Gyro(4*3) + Roll(4) -> ripetuto per Left e Right
@@ -60,8 +60,8 @@ public class TelemetryLogger : IDisposable
 
     public void StopLogging()
     {
-        if (!isLogging) return;
-        isLogging = false;
+        if (!IsLogging) return;
+        IsLogging = false;
         _writer?.Flush();
         _writer?.Close();
         _fileStream?.Close();

@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.Extensions.Logging.Abstractions;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
@@ -39,6 +40,8 @@ namespace SkiTelemetry_Analyst.Services
         public IDevice? ConnectedSensor { get; set; }
 
         public BluetoothState State() {  return _ble.State; }
+        private readonly TelemetryLogger _logger = new();
+
         public BluetoothService()
         {
             _ble = CrossBluetoothLE.Current;
@@ -351,6 +354,19 @@ namespace SkiTelemetry_Analyst.Services
                 
                 var frame = GetSkiFrameFromData(e.Characteristic.Value);
                 //System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] receiving sample{counter}/{samplesCount} ts:{frame.Left.Timestamp}");
+                //bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
+                bool isSettingsLoggingEnabled = true; // forcing logging 
+                if (!_logger.IsLogging && isSettingsLoggingEnabled)
+                {
+                    _logger.StartLogging("Calibrations");
+                }
+                else if (_logger.IsLogging)
+                {
+                    _logger.LogData(frame.Left);
+                    _logger.LogData(frame.Right);
+                }
+
+
                 CalibrationService.Instance.AddFrame(frame);
 
                 if (counter >= samplesCount) tcs.TrySetResult(true);
@@ -368,18 +384,27 @@ namespace SkiTelemetry_Analyst.Services
                 }
             }catch(Exception ex)
             {
-
+                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] Error: {ex.Message}");
             }
-            
+
+
             characteristic.ValueUpdated -= handler;
             characteristic.ValueUpdated += OnCharacteristicValueChanged;
 
             if (result == tcs.Task)
             {
                 System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] Task Complete");
+                if ( _logger.IsLogging)
+                {
+                    _logger.StopLogging();
+                }
                 CalibrationService.Instance.Save();
                 await DisconnectDevices(dispose: false);
                 return true;
+            }
+            if (_logger.IsLogging)
+            {
+                _logger.StopLogging();
             }
             System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] Task NOT Complete");
             await DisconnectDevices();

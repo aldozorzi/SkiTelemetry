@@ -1,4 +1,5 @@
 ﻿using SkiTelemetry_Core;
+using System.Runtime.CompilerServices;
 
 public class SkiDataProcessor
 {
@@ -25,7 +26,10 @@ public class SkiDataProcessor
 
     // Coefficiente di smoothing (0.0 a 1.0). Più è basso, più è filtrato.
     private const double AccAlpha = 0.05;
-    private const double GyroAlpha = 0.5;
+    private const double GyroAlpha = 0.93;
+
+    private double _lastTimestampL = 0;
+    private double _lastTimestampR = 0;
 
     public SkiDataProcessor()
     {
@@ -60,17 +64,38 @@ public class SkiDataProcessor
         if (_pendingRight.Count > 100) _pendingRight.Clear();
     }
 
+    
+
     private void ApplyFilters(SkiDataPoint p)
     {
         FilterState f = (p.Side == SensorSide.Left) ? _fL : _fR;
         CalibrationOffsets currentOffset = (p.Side == SensorSide.Left) ? _leftOffsets : _rightOffsets;
-
-        //System.Diagnostics.Trace.WriteLine($"[PROCESSOR] currentOffset {p.Side} {currentOffset} ");
-
-        double dt = 0.02;
-
         p.AccX -= (float)currentOffset.AccX; p.AccY -= (float)currentOffset.AccY; p.AccZ -= (float)currentOffset.AccZ;
         p.GyroX -= (float)currentOffset.GyroX; p.GyroY -= (float)currentOffset.GyroY; p.GyroZ -= (float)currentOffset.GyroZ;
+
+        p.AccX = Math.Clamp(p.AccX, -4.5f, 4.5f);
+        p.AccY = Math.Clamp(p.AccY, -4.5f, 4.5f);
+        p.AccZ = Math.Clamp(p.AccZ, -4.5f, 4.5f);
+        p.GyroX = Math.Clamp(p.GyroX, -200f, 200f);
+        p.GyroY = Math.Clamp(p.GyroY, -200f, 200f);
+        p.GyroZ = Math.Clamp(p.GyroZ, -200f, 200f);
+
+        //double dt = 0.02;
+
+        double dt;
+        if (p.Side == SensorSide.Left)
+        {
+            dt = _lastTimestampL == 0 ? 0.02 : (p.Timestamp - _lastTimestampL) / 1000.0;
+            _lastTimestampL = p.Timestamp;
+        }
+        else
+        {
+            dt = _lastTimestampR == 0 ? 0.02 : (p.Timestamp - _lastTimestampR) / 1000.0;
+            _lastTimestampR = p.Timestamp;
+        }
+        dt = Math.Clamp(dt, 0.01, 0.05); // Safety clamp tra 10ms e 50ms
+
+
         if (!f.IsInitialized)
         {
             f.AccX = p.AccX; f.AccY = p.AccY; f.AccZ = p.AccZ ;
@@ -104,16 +129,20 @@ public class SkiDataProcessor
         p.SmoothGyroY = f.GyroY = f.GyroY + GyroAlpha * (p.GyroY - f.GyroY);
         p.SmoothGyroZ = f.GyroZ = f.GyroZ + GyroAlpha * (p.GyroZ - f.GyroZ);
 
-       // System.Diagnostics.Trace.WriteLine($"[PROCESSOR] f.Roll {f.Roll} - p.GyroZ: {p.GyroZ} ");
-        f.Roll = 0.90 * (f.Roll + p.GyroZ * dt) + 0.10 * p.Roll; // 90% gyro, 10% roll statico
-        //f.Roll = 0.0 * (f.Roll + p.GyroZ * dt) + 1.0 * p.Roll;
+        // 5. Filtro Complementare ADATTIVO (peso all'accelerometro ridotto durante le curve)
+        double gMagnitude = Math.Sqrt(p.SmoothAccX * p.SmoothAccX + p.SmoothAccY * p.SmoothAccY + p.SmoothAccZ * p.SmoothAccZ);
+        double gDeviation = Math.Abs(gMagnitude - 1.0);
+
+        // Se le G si discostano di >0.4G, riduci drasticamente il peso dell'accelerometro
+        double accWeight = gDeviation > 0.4 ? 0.00 : (1.0 - GyroAlpha);
+        double gyroWeight = 1.0 - accWeight;
+
+        double safeAccRoll = Math.Clamp(p.Roll, -75.0, 75.0);
+
+        f.Roll = gyroWeight * (f.Roll + p.GyroZ * dt) + accWeight * safeAccRoll;
         p.SmoothRoll = f.Roll;
 
-        double rawG = Math.Sqrt(
-        Math.Pow(p.SmoothAccX, 2) +
-        Math.Pow(p.SmoothAccY, 2) +
-        Math.Pow(p.SmoothAccZ, 2));
-
+        double rawG = Math.Sqrt(p.SmoothAccX * p.SmoothAccX + p.SmoothAccY * p.SmoothAccY + p.SmoothAccZ * p.SmoothAccZ);
         p.AdjustedG = rawG;
         //p.AdjustedG = f.AdjustedG = f.AdjustedG + 0.15 * (rawG - f.AdjustedG);
 
