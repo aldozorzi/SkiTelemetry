@@ -102,7 +102,7 @@ public class CalibrationService
 
             if (!_logger.IsLogging && isSettingsLoggingEnabled)
             {
-                _logger.StartLogging("Calibrations"); // Prefisso diverso per distinguere
+                _logger.StartLogging("Calibrations", $"{DateTime.Now.ToString("yyyy_MM_dd")}_{DateTime.Now.ToString("HH_mm")}_auto.bin");
             }
             else if (_logger != null && _logger.IsLogging)
             {
