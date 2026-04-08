@@ -7,34 +7,48 @@ public class CalibrationService
     private static readonly Lazy<CalibrationService> _instance = new(() => new CalibrationService());
     private const string LastCalibDateKey = "LastCalibrationDate";
 
-    RollingBuffer leftAccXList = new(50);
-    RollingBuffer leftAccYList = new(50);
-    RollingBuffer leftAccZList = new(50);
-    RollingBuffer leftGyroXList = new(50);
-    RollingBuffer leftGyroYList = new(50);
-    RollingBuffer leftGyroZList = new(50);
+    RollingBuffer leftAccXList = new(200);
+    RollingBuffer leftAccYList = new(200);
+    RollingBuffer leftAccZList = new(200);
+    RollingBuffer leftGyroXList = new(200);
+    RollingBuffer leftGyroYList = new(200);
+    RollingBuffer leftGyroZList = new(200);
 
-    RollingBuffer rightAccXList = new(50);
-    RollingBuffer rightAccYList = new(50);
-    RollingBuffer rightAccZList = new(50);
-    RollingBuffer rightGyroXList = new(50);
-    RollingBuffer rightGyroYList = new(50);
-    RollingBuffer rightGyroZList = new(50);
+    RollingBuffer rightAccXList = new(200);
+    RollingBuffer rightAccYList = new(200);
+    RollingBuffer rightAccZList = new(200);
+    RollingBuffer rightGyroXList = new(200);
+    RollingBuffer rightGyroYList = new(200);
+    RollingBuffer rightGyroZList = new(200);
 
     public static CalibrationService Instance => _instance.Value;
 
     public CalibrationOffsets? OffsetL { get; private set; }
     public CalibrationOffsets? OffsetR { get; private set; }
 
+    private readonly TelemetryLogger _logger = new();
+
     private CalibrationService()
     {
-        
+
         /*OffsetL = Preferences.Default.Get("CalibL", 0.0);
         OffsetR = Preferences.Default.Get("CalibR", 0.0);*/
     }
 
     public void AddFrame(SkiFrame frame)
     {
+        //bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
+        bool isSettingsLoggingEnabled = true; // forcing logging 
+        if (!_logger.isLogging && isSettingsLoggingEnabled)
+        {
+            _logger.StartLogging("Calibrations");
+        }else if(_logger.isLogging)
+        {
+            _logger.LogData(frame.Left);
+            _logger.LogData(frame.Right);
+        }
+        
+        
         leftAccXList.Add(frame.Left.AccX);
         leftAccYList.Add(frame.Left.AccY);
         leftAccZList.Add(frame.Left.AccZ);
@@ -48,11 +62,12 @@ public class CalibrationService
         rightGyroXList.Add(frame.Right.GyroX);
         rightGyroYList.Add(frame.Right.GyroY);
         rightGyroZList.Add(frame.Right.GyroZ);
-        // Gestisci logica per autoSave: se i valori dei giroscopi sono coerenti con un utente fermo (std deviation?) li salva da solo. Così può essere chiamato mentre è in corso la sessione, e se un utnte è fermo (quindi gli ultimi 50 valori sono coerenti) salviamo la calibrazione dei giroscopi. Per gli accelerometri meglio di no percHé non possiamo sapere se è in piano.
+        // Gestisci logica per autoSave: se i valori dei giroscopi sono coerenti con un utente fermo (std deviation?) li salva da solo. Così può essere chiamato mentre è in corso la sessione, e se un utnte è fermo (quindi gli ultimi 50?100?200? valori sono coerenti) salviamo la calibrazione dei giroscopi. Per gli accelerometri meglio di no percHé non possiamo sapere se è in piano.
     }
 
     public void Save()
     {
+        _logger.StopLogging();
         OffsetL = new CalibrationOffsets
         {
             // GIROSCOPI: Se sei fermo, dovrebbero segnare 0. 
@@ -94,6 +109,7 @@ public class CalibrationService
         Preferences.Default.Remove("CalibL");
         Preferences.Default.Remove("CalibR");
         Preferences.Default.Remove(LastCalibDateKey);
+        CalibrationService.Instance.IsCalibratedToday = false;
     }
     public bool IsCalibratedToday = false;
     /*{

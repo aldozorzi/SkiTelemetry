@@ -43,6 +43,15 @@ namespace SkiTelemetry_Analyst.Services
         {
             _ble = CrossBluetoothLE.Current;
             _adapter = CrossBluetoothLE.Current.Adapter;
+            /*_adapter.DeviceDisconnected += async (s, e) =>
+            {
+                if (e.Device.Id == ConnectedSensor?.Id)
+                {
+                    ConnectedSensor = null;
+                    await Task.Delay(2000); // attendi che il dispositivo sia pronto
+                    await ConnectToSavedSensorAsync();
+                }
+            };*/
         }
 
         public async Task StartScanning()
@@ -61,8 +70,9 @@ namespace SkiTelemetry_Analyst.Services
 
         public async Task<bool> PairDevicesAsync()
         {
+            System.Diagnostics.Debug.WriteLine($"[BlueToothService - PairDevicesAsync] PairDevicesAsync");
             if (_adapter.IsScanning) await _adapter.StopScanningForDevicesAsync();
-
+            System.Diagnostics.Debug.WriteLine($"[BlueToothService - PairDevicesAsync] StoppedScanningForDevicesAsync");
             var tcs = new TaskCompletionSource<bool>();
             var foundSensor = false;
 
@@ -87,7 +97,7 @@ namespace SkiTelemetry_Analyst.Services
                 // Aspettiamo il primo tra il successo del setup o il timeout
                 await Task.WhenAny(tcs.Task, Task.Delay(7000));
             }
-            catch (Exception ex) { Debug.WriteLine($"Errore: {ex.Message}"); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Errore: {ex.Message}"); }
             finally
             {
                 await _adapter.StopScanningForDevicesAsync();
@@ -99,7 +109,7 @@ namespace SkiTelemetry_Analyst.Services
 
         private async Task<bool> ConnectAndSetup(IDevice device, TaskCompletionSource<bool> tcs)
         {
-
+            System.Diagnostics.Debug.WriteLine($"[BlueToothService - ConnectAndSetup] ConnectAndSetup");
             await DisconnectDevices();
             await Task.Delay(300);
             try
@@ -119,9 +129,13 @@ namespace SkiTelemetry_Analyst.Services
                 ConnectedSensor = device;
 
                 Preferences.Default.Set(SensorKey, device.Id.ToString());
+
+                await Task.Delay(600); // lascia stabilizzare la connessione
                 
+
                 var services = await device.GetServicesAsync();
-                var service = await device.GetServiceAsync(SkiServiceId);
+                var service = services.FirstOrDefault(s => s.Id == SkiServiceId);
+                //var service = await device.GetServiceAsync(SkiServiceId);
                 if (service == null)
                 {
                     Debug.WriteLine($"[BLE] Errore: Servizio non trovato sul dispositivo");
@@ -180,6 +194,18 @@ namespace SkiTelemetry_Analyst.Services
 
         public async Task DisconnectDevices(bool dispose = true)
         {
+            if (ConnectedSensor == null) return;
+
+            // NON toccare i servizi/caratteristiche durante il disconnect,
+            // il driver BLE può andare in deadlock
+            try { await _adapter.DisconnectDeviceAsync(ConnectedSensor); }
+            catch { }
+            finally
+            {
+                if (dispose) { ConnectedSensor.Dispose(); }
+                ConnectedSensor = null;
+            }
+            /*
             if (ConnectedSensor != null)
             {
                 var service = await ConnectedSensor.GetServiceAsync(SkiServiceId);
@@ -204,37 +230,44 @@ namespace SkiTelemetry_Analyst.Services
                 }
             }
             ConnectedSensor = null;
+            */
         }
         public async Task<bool> ConnectToSavedSensorAsync()
         {
+            System.Diagnostics.Debug.WriteLine($"[BlueToothService - ConnectToSavedSensorAsync] ConnectToSavedSensorAsync");
             var savedId = Preferences.Default.Get(SensorKey, string.Empty);
+            System.Diagnostics.Debug.WriteLine($"[BlueToothService - ConnectToSavedSensorAsync] savedId: {savedId}");
             if (string.IsNullOrEmpty(savedId)) return false;
 
             if (!Guid.TryParse(savedId, out var deviceId)) return false;
-
+            System.Diagnostics.Debug.WriteLine($"[BlueToothService - ConnectToSavedSensorAsync] Guid parsed");
             try
             {
                 if (_adapter.IsScanning)
                     await _adapter.StopScanningForDevicesAsync();
 
-                await DisconnectDevices(dispose: false); // disconnette ma mantiene il riferimento
+                await DisconnectDevices(dispose: false);
                 await Task.Delay(300);
 
                 var tcs = new TaskCompletionSource<bool>();
-                var device = await _adapter.ConnectToKnownDeviceAsync(deviceId);
+                var cts = new CancellationTokenSource(8000);
+                var device = await _adapter.ConnectToKnownDeviceAsync(deviceId, new ConnectParameters(), cts.Token);
 
                 if (device == null)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[BlueToothService - ConnectToSavedSensorAsync] device null");
                     // sensore non trovato → pulizia completa per la prossima volta
                     await DisconnectDevices(dispose: true);
                     Preferences.Default.Remove(SensorKey);
                     return false;
                 }
-
+                
                 return await ConnectAndSetup(device, tcs);
             }
             catch (Exception ex)
             {
+                await DisconnectDevices(dispose:true); 
+                Preferences.Default.Remove(SensorKey);
                 Debug.WriteLine($"[BLE] ConnectToSavedSensor fallito: {ex.Message}");
                 return false;
             }
@@ -274,25 +307,25 @@ namespace SkiTelemetry_Analyst.Services
 
         public async Task<bool> RunCalibrationAsync(int samplesCount)
         {
-            System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync]");
+            System.Diagnostics.Debug.WriteLine($"[BlueToothService - RunCalibrationAsync]");
             // Se non c'è il sensore, proviamo a connetterlo
             if (ConnectedSensor == null)
             {
-                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] ConnectedSensor == null");
+                System.Diagnostics.Debug.WriteLine($"[BlueToothService - RunCalibrationAsync] ConnectedSensor == null");
                 var savedId = Preferences.Default.Get("MainSensorId", string.Empty);
                 bool connected;
-
+                System.Diagnostics.Debug.WriteLine($"[BlueToothService - RunCalibrationAsync] savedId ={savedId}");
                 if (!string.IsNullOrEmpty(savedId))
                     connected = await ConnectToSavedSensorAsync();
                 else
                     connected = await PairDevicesAsync();
 
-                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] connected == {connected}");
+                System.Diagnostics.Debug.WriteLine($"[BlueToothService - RunCalibrationAsync] connected == {connected}");
                 if (!connected) return false;
             }
             if (ConnectedSensor == null)
             {
-                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] ConnectedSensor still == null");
+                System.Diagnostics.Debug.WriteLine($"[BlueToothService - RunCalibrationAsync] ConnectedSensor still == null");
                 return false;
             }
             var service = await ConnectedSensor.GetServiceAsync(SkiServiceId);
@@ -317,18 +350,29 @@ namespace SkiTelemetry_Analyst.Services
                 counter++;
                 
                 var frame = GetSkiFrameFromData(e.Characteristic.Value);
-                System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] receiving sample{counter}/{samplesCount} ts:{frame.Left.Timestamp}");
+                //System.Diagnostics.Debug.WriteLine($"[RunCalibrationAsync] receiving sample{counter}/{samplesCount} ts:{frame.Left.Timestamp}");
                 CalibrationService.Instance.AddFrame(frame);
 
                 if (counter >= samplesCount) tcs.TrySetResult(true);
             };
-
+            characteristic.ValueUpdated -= OnCharacteristicValueChanged;
             characteristic.ValueUpdated += handler;
             await characteristic.StartUpdatesAsync();
 
             var result = await Task.WhenAny(tcs.Task, Task.Delay(5000));
-            await characteristic.StopUpdatesAsync();
+            try
+            {
+                if (ConnectedSensor.State == DeviceState.Connected)
+                {
+                    await characteristic.StopUpdatesAsync();
+                }
+            }catch(Exception ex)
+            {
+
+            }
+            
             characteristic.ValueUpdated -= handler;
+            characteristic.ValueUpdated += OnCharacteristicValueChanged;
 
             if (result == tcs.Task)
             {

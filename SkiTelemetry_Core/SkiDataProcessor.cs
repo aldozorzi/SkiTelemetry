@@ -15,6 +15,9 @@ public class SkiDataProcessor
     private class FilterState
     {
         public double AccX, AccY, AccZ, GyroX, GyroY, GyroZ, Roll, AdjustedG, GAdjuster;
+        public Queue<double> AccXBuf = new(5);
+        public Queue<double> AccYBuf = new(5);
+        public Queue<double> AccZBuf = new(5);
         public bool IsInitialized = false;
     }
     private readonly FilterState _fL = new();
@@ -73,6 +76,13 @@ public class SkiDataProcessor
             f.AccX = p.AccX; f.AccY = p.AccY; f.AccZ = p.AccZ ;
             f.GyroX = p.GyroX ; f.GyroY = p.GyroY ; f.GyroZ = p.GyroZ;
             f.Roll = p.Roll;
+            for (int i = 0; i < 5; i++)
+            {
+                f.AccXBuf.Enqueue(p.AccX);
+                f.AccYBuf.Enqueue(p.AccY);
+                f.AccZBuf.Enqueue(p.AccZ);
+            }
+
             double initialG = Math.Sqrt(Math.Pow(f.AccX, 2) + Math.Pow(f.AccY, 2) + Math.Pow(f.AccZ, 2));
             f.GAdjuster = (initialG < 1) ? (1 - initialG) : 0;
             f.AdjustedG = Math.Max(1.0, initialG+ f.GAdjuster);
@@ -83,16 +93,19 @@ public class SkiDataProcessor
         }
 
         // Filtriamo e popoliamo le proprietà Smooth
-        p.SmoothAccX = f.AccX = f.AccX + AccAlpha * (p.AccX - f.AccX);
-        p.SmoothAccY = f.AccY = f.AccY + AccAlpha * (p.AccY - f.AccY);
-        p.SmoothAccZ = f.AccZ = f.AccZ + AccAlpha * (p.AccZ - f.AccZ);
+        double maX = PushAndMedian(f.AccXBuf, p.AccX);
+        double maY = PushAndMedian(f.AccYBuf, p.AccY);
+        double maZ = PushAndMedian(f.AccZBuf, p.AccZ);
+        p.SmoothAccX = f.AccX = f.AccX + AccAlpha * (maX - f.AccX);
+        p.SmoothAccY = f.AccY = f.AccY + AccAlpha * (maY - f.AccY);
+        p.SmoothAccZ = f.AccZ = f.AccZ + AccAlpha * (maZ - f.AccZ);
 
         p.SmoothGyroX = f.GyroX = f.GyroX + GyroAlpha * (p.GyroX - f.GyroX);
         p.SmoothGyroY = f.GyroY = f.GyroY + GyroAlpha * (p.GyroY - f.GyroY);
         p.SmoothGyroZ = f.GyroZ = f.GyroZ + GyroAlpha * (p.GyroZ - f.GyroZ);
 
        // System.Diagnostics.Trace.WriteLine($"[PROCESSOR] f.Roll {f.Roll} - p.GyroZ: {p.GyroZ} ");
-        f.Roll = 0.98 * (f.Roll + p.GyroZ * dt) + 0.02 * p.Roll; // 98% gyro, 2% roll statico
+        f.Roll = 0.90 * (f.Roll + p.GyroZ * dt) + 0.10 * p.Roll; // 90% gyro, 10% roll statico
         //f.Roll = 0.0 * (f.Roll + p.GyroZ * dt) + 1.0 * p.Roll;
         p.SmoothRoll = f.Roll;
 
@@ -131,10 +144,25 @@ public class SkiDataProcessor
         }
         
     }
+    private static double PushAndMedian(Queue<double> buf, double newVal, int size = 5)
+    {
+        buf.Enqueue(newVal);
+        if (buf.Count > size) buf.Dequeue();
+        var sorted = buf.OrderBy(x => x).ToList();
+        return sorted[sorted.Count / 2];
+    }
+    private static double PushAndAverage(Queue<double> buf, double newVal, int size = 5)
+    {
+        buf.Enqueue(newVal);
+        if (buf.Count > size) buf.Dequeue();
+        return buf.Average();
+    }
     public void Reset()
     {
         _fL.IsInitialized = false;
         _fR.IsInitialized = false;
+        _fL.AccXBuf.Clear(); _fL.AccYBuf.Clear(); _fL.AccZBuf.Clear();
+        _fR.AccXBuf.Clear(); _fR.AccYBuf.Clear(); _fR.AccZBuf.Clear();
     }
 
 }

@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Storage;
 using SkiTelemetry_Analyst.Services;
 using SkiTelemetry_Core;
 using System.Collections.ObjectModel;
@@ -264,16 +265,29 @@ namespace SkiTelemetry_Analyst.Views.Runs
                                      $"{p.SmoothGyroX.ToString(provider)};{p.SmoothGyroY.ToString(provider)};{p.SmoothGyroZ.ToString(provider)};");
                 }
 
-                // Definiamo il percorso di salvataggio (cartella Downloads o documenti pubblica)
-                string folder = Path.Combine(FileSystem.AppDataDirectory, "Exports");
-                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-
                 string fileName = $"Export_{runItem.RunName}_{DateTime.Now:HHmmss}.csv";
-                string filePath = Path.Combine(folder, fileName);
+                try
+                {
+                    // 2. Convertiamo la stringa CSV in un MemoryStream
+                    using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv.ToString()));
 
-                await File.WriteAllTextAsync(filePath, csv.ToString());
+                    // 3. Chiediamo all'utente dove salvarlo
+                    var fileSaveResult = await FileSaver.Default.SaveAsync(fileName, stream, default);
 
-                await DisplayAlertAsync("Esportazione", $"CSV generato in:\n{filePath}", "OK");
+                    if (fileSaveResult.IsSuccessful)
+                    {
+                        await DisplayAlertAsync("Successo", $"File salvato correttamente in:\n{fileSaveResult.FilePath}", "OK");
+                    }
+                    else
+                    {
+                        // L'utente ha annullato l'operazione o c'è stato un errore
+                        System.Diagnostics.Debug.WriteLine("Salvataggio annullato dall'utente.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await DisplayAlertAsync("Errore", $"Impossibile salvare il file: {ex.Message}", "OK");
+                }
             }
             catch (Exception ex)
             {
@@ -396,8 +410,22 @@ namespace SkiTelemetry_Analyst.Views.Runs
         private string ParseRunName(string fileName)
         {
             string nameOnly = Path.GetFileNameWithoutExtension(fileName);
+
             string[] parts = nameOnly.Split('_');
-            return parts.Length >= 5 ? $"Run {parts[4]}" : fileName;
+            if (nameOnly.IndexOf("RUN") == -1)
+            {
+                // formato data con minuti e secondi
+                
+                return parts.Length >= 5 ? $"{parts[3]}_{parts[4]}" : fileName;
+            }
+            else
+            {
+                // 4. Formattazione finale: "13 marzo 2026 - Run 2"
+                
+                return parts.Length >= 5 ? $"Run {parts[4]}" : fileName;
+            }
+
+            
         }
 
         // Classe di supporto per la lista

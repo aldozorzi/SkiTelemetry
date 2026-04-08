@@ -57,6 +57,7 @@ namespace SkiTelemetry_Analyst.Views
                 // Missing configuration: force pairing UI
                 ConfigView.IsVisible = true;
                 ActiveView.IsVisible = false;
+                BtnHistoryContainer.IsVisible = true;
                 StatusLabel.Text = "È necessario accoppiare i sensori.";
             }
         }
@@ -95,6 +96,7 @@ namespace SkiTelemetry_Analyst.Views
                 _ = SpeechHelper.SpeakAsync($"Sensori non trovati.");
 
                 BtnScan.IsEnabled = true;
+                CheckConfiguration();
                 UpdateBtnScan();
                 UpdateCalibrationWarning();
                 //DataContainer.IsVisible = false;
@@ -230,12 +232,21 @@ namespace SkiTelemetry_Analyst.Views
 
             if (success)
             {
-                ActivateDashboard();
+                StatusLabel.Text = "Sensori accoppiati.";
+                _ = SpeechHelper.SpeakAsync($"Sensori accoppiati.");
+                BtnPair.IsEnabled = true;
+                UpdateBtnScan();
+                UpdateCalibrationWarning();
+                //_isSessionActive = true;
+                ConfigView.IsVisible = false;
+                ActiveView.IsVisible = true;
+                //ActivateDashboard();
             }
             else
             {
                 // Specifichiamo che non li ha trovati entrambi
                 await DisplayAlertAsync("Errore", "Sensori non trovati.", "OK");
+                _ = SpeechHelper.SpeakAsync($"Sensori non trovati");
                 BtnPair.IsEnabled = true;
             }
         }
@@ -392,13 +403,17 @@ namespace SkiTelemetry_Analyst.Views
 
         public async void OnHeadsetHook()
         {
-            if (BtnQuickCalibrate.IsVisible)
+            if (ConfigView.IsVisible && BtnPair.IsVisible)
+            {
+                _ = SpeechHelper.SpeakAsync($"Ricerca sensori, attendi");
+                OnPairSensorsClicked(new object(), new EventArgs());
+            }
+            else if (ActiveView.IsVisible && BtnQuickCalibrate.IsVisible)
             {
                 _ = SpeechHelper.SpeakAsync($"Avvio Calibrazione, non muoverti e attendi.");
-                await Task.Delay(1000);
                 OnQuickCalibrateClicked(new object(), new EventArgs());
             }
-            else if (BtnScan.IsVisible)
+            else if (ActiveView.IsVisible && BtnScan.IsVisible)
             {
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
@@ -406,7 +421,7 @@ namespace SkiTelemetry_Analyst.Views
                     OnScanClicked(new object(), new EventArgs()); // [DEBUG] ?
                 });
             } 
-            else if (BtnStopContainer.IsVisible)
+            else if (ActiveView.IsVisible && BtnStopContainer.IsVisible)
             {
                 _ = SpeechHelper.SpeakAsync($"Sessione terminata");
                 OnStopClicked(new object(), new EventArgs());
@@ -445,7 +460,7 @@ namespace SkiTelemetry_Analyst.Views
             
 
             // 3. Eseguiamo la calibrazione (i 50 campioni)
-            bool success = await BluetoothService.Instance.RunCalibrationAsync(50);
+            bool success = await BluetoothService.Instance.RunCalibrationAsync(200);
 
             if (success)
             {

@@ -58,18 +58,26 @@ public partial class RunDetailPage : ContentPage
             #endif
             MainThread.BeginInvokeOnMainThread(() => {
                 string fileName = Path.GetFileNameWithoutExtension(path);
+                
                 string[] parts = fileName.Split('_');
-
                 int year = int.Parse(parts[0]);
                 int month = int.Parse(parts[1]);
                 int day = int.Parse(parts[2]);
                 DateTime dt = new DateTime(year, month, day);
 
-                // 3. Recupero del numero della run (l'ultima parte dopo "RUN")
-                string runNumber = parts[4];
+                if (fileName.IndexOf("RUN") == -1)
+                {
+                    // formato data con minuti e secondi
+                    LblRunName.Text = $"{dt.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("it-IT"))} - {parts[3]}:{parts[4]} ";
+                }
+                else
+                {
+                    // 4. Formattazione finale: "13 marzo 2026 - Run 2"
+                    string runNumber = parts[4];
+                    LblRunName.Text = $"{dt.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("it-IT"))} - Run {runNumber}";
+                }
+               
 
-                // 4. Formattazione finale: "13 marzo 2026 - Run 2"
-                LblRunName.Text = $"{dt.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("it-IT"))} - Run {runNumber}";
                 LblTurnCount.Text = detectedTurns.Count.ToString();
 
                 if (detectedTurns.Any())

@@ -7,73 +7,6 @@ using System.Text;
 
 public static class SkiGraphGenerator
 {
-    // DETECTING CURVE
-    /*public static void GenerateHtmlReport(List<SkiDataPoint> allPoints, List<SkiTurn> detectedTurns, string filePath = "SkiDebugGraph.html")
-    {
-        // Sincronizziamo i dati per timestamp per calcolare la media reale (CombinedGyro)
-        var combinedData = allPoints
-            .GroupBy(p => p.Timestamp)
-            .Select(g => new {
-                Ts = g.Key,
-                // Media tra Left e Right (se mancano dati per un lato, usa 0 o l'unico presente)
-                Val = g.Average(p => p.SmoothGyroZ)
-            })
-            .OrderBy(x => x.Ts)
-            .ToList();
-
-        string combinedX = string.Join(",", combinedData.Select(d => d.Ts));
-        string combinedY = string.Join(",", combinedData.Select(d => d.Val.ToString("F2").Replace(",", ".")));
-
-        // Rettangoli per le curve (Zone Rosse)
-        var turnShapes = new StringBuilder();
-        foreach (var turn in detectedTurns)
-        {
-            turnShapes.AppendLine($@"{{
-            type: 'rect', xref: 'x', yref: 'paper',
-            x0: {turn.StartTimestamp}, x1: {turn.EndTimestamp},
-            y0: 0, y1: 1,
-            fillcolor: 'rgba(255, 0, 0, 0.2)',
-            line: {{ width: 1 }}
-        }},");
-        }
-
-        var sb = new StringBuilder();
-        sb.AppendLine($@"
-    <html>
-    <head>
-        <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
-    </head>
-    <body>
-        <div id='graph' style='width:100%; height:95vh;'></div>
-        <script>
-            var traceCombined = {{
-                x: [{combinedX}],
-                y: [{combinedY}],
-                mode: 'lines',
-                name: 'Combined Smooth GyroY (Media)',
-                line: {{ color: '#1f77b4', width: 2 }}
-            }};
-
-            var layout = {{
-                title: 'Rilevamento Curve su Combined Smooth GyroY',
-                xaxis: {{ title: 'Timestamp' }},
-                yaxis: {{ title: 'deg/s', range: [-250, 250] }},
-                shapes: [{turnShapes}],
-                hovermode: 'x unified',
-                // Aggiungiamo una linea dello zero per riferimento
-                shapes: [{turnShapes} {{
-                    type: 'line', x0: {combinedData.First().Ts}, x1: {combinedData.Last().Ts},
-                    y0: 0, y1: 0, line: {{ color: 'black', width: 1, dash: 'dot' }}
-                }}]
-            }};
-            Plotly.newPlot('graph', [traceCombined], layout);
-        </script>
-    </body>
-    </html>");
-
-        File.WriteAllText(filePath, sb.ToString());
-    }*/
-
     //ANALISI ROLL E G_FORCE
     public static void GenerateHtmlReport(List<SkiDataPoint> allPoints, List<SkiTurn> detectedTurns, string filePath = "SkiPhysicsAnalysis.html")
     {
@@ -84,16 +17,32 @@ public static class SkiGraphGenerator
         string leftRoll = string.Join(",", leftData.Select(p => p.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
         string rightRoll = string.Join(",", rightData.Select(p => p.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
-        string leftAccX = string.Join(",", leftData.Select(p => p.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightAccX = string.Join(",", rightData.Select(p => p.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftSmoothAccX = string.Join(",", leftData.Select(p => p.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightSmoothAccX = string.Join(",", rightData.Select(p => p.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+
+        string leftRawAccX = string.Join(",", leftData.Select(p => p.AccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawAccX = string.Join(",", rightData.Select(p => p.AccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawAccY = string.Join(",", leftData.Select(p => p.AccY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawAccY = string.Join(",", rightData.Select(p => p.AccY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawAccZ = string.Join(",", leftData.Select(p => p.AccZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawAccZ = string.Join(",", rightData.Select(p => p.AccZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+
+
 
         string leftG = string.Join(",", leftData.Select(p => p.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
         string rightG = string.Join(",", rightData.Select(p => p.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
-        string leftGyroY = string.Join(",", leftData.Select(p => p.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightGyroY = string.Join(",", rightData.Select(p => p.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string leftGyroX = string.Join(",", leftData.Select(p => p.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightGyroX = string.Join(",", rightData.Select(p => p.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftSmoothGyroY = string.Join(",", leftData.Select(p => p.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightSmoothGyroY = string.Join(",", rightData.Select(p => p.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftSmoothGyroX = string.Join(",", leftData.Select(p => p.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightSmoothGyroX = string.Join(",", rightData.Select(p => p.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+
+        string leftRawGyroY = string.Join(",", leftData.Select(p => p.GyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawGyroY = string.Join(",", rightData.Select(p => p.GyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawGyroX = string.Join(",", leftData.Select(p => p.GyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawGyroX = string.Join(",", rightData.Select(p => p.GyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawGyroZ = string.Join(",", leftData.Select(p => p.GyroZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawGyroZ = string.Join(",", rightData.Select(p => p.GyroZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
         string timestamps = string.Join(",", leftData.Select(p => p.Timestamp));
 
@@ -119,15 +68,28 @@ public static class SkiGraphGenerator
             var traceGL = {{ x: xData, y: [{leftG}], name: 'G-Force L', yaxis: 'y2', line: {{color: 'red', width: 1.5, dash: 'dot'}} }};
             var traceGR = {{ x: xData, y: [{rightG}], name: 'G-Force R', yaxis: 'y2', line: {{color: '#1f77b4', width: 1.5, dash: 'dot'}} }};
             // 2. AccX (Asse Y2 - Destra interna)
-            var traceAccXL = {{ x: xData, y: [{leftAccX}], name: 'AccX L', yaxis: 'y2', line: {{color: 'green', width: 1.5, dash: 'dot'}} }};
-            var traceAccXR = {{ x: xData, y: [{rightAccX}], name: 'AccX R', yaxis: 'y2', line: {{color: 'orange', width: 1.5, dash: 'dot'}} }};
+            var traceSmoothAccXL = {{ x: xData, y: [{leftSmoothAccX}], name: 'AccX Smooth L', yaxis: 'y2', line: {{color: 'green', width: 1.5, dash: 'dot'}} }};
+            var traceSmoothAccXR = {{ x: xData, y: [{rightSmoothAccX}], name: 'AccX Smooth R', yaxis: 'y2', line: {{color: 'orange', width: 1.5, dash: 'dot'}} }};
+
+            var traceRawAccXL = {{ x: xData, y: [{leftRawAccX}], name: 'AccX Raw L', yaxis: 'y2', line: {{color: 'red', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccXR = {{ x: xData, y: [{rightRawAccX}], name: 'AccX Raw R', yaxis: 'y2', line: {{color: 'blue', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccYL = {{ x: xData, y: [{leftRawAccY}], name: 'AccY Raw L', yaxis: 'y2', line: {{color: 'yellow', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccYR = {{ x: xData, y: [{rightRawAccY}], name: 'AccY Raw R', yaxis: 'y2', line: {{color: 'orange', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccZL = {{ x: xData, y: [{leftRawAccZ}], name: 'AccZ Raw L', yaxis: 'y2', line: {{color: 'purple', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccZR = {{ x: xData, y: [{rightRawAccZ}], name: 'AccZ Raw R', yaxis: 'y2', line: {{color: 'green', width: 1.5, dash: 'dot'}} }};
 
             // 3. GYRO Y (Asse Y3 - Destra esterna)
-            // Usiamo una linea continua sottile per distinguerla dalla G-Force
-            var traceGyroYL = {{ x: xData, y: [{leftGyroY}], name: 'GyroY L (deg/s)', yaxis: 'y3', line: {{color: 'rgba(0, 128, 0, 0.6)', width: 1}} }};
-            var traceGyroYR = {{ x: xData, y: [{rightGyroY}], name: 'GyroY R (deg/s)', yaxis: 'y3', line: {{color: 'rgba(139, 69, 19, 0.6)', width: 1}} }};
-            var traceGyroXL = {{ x: xData, y: [{leftGyroX}], name: 'GyroZ L (deg/s)', yaxis: 'y3', line: {{color: 'red', width: 1}} }};
-            var traceGyroXR = {{ x: xData, y: [{rightGyroX}], name: 'GyroZ R (deg/s)', yaxis: 'y3', line: {{color: 'blue', width: 1}} }};
+            var traceSmoothGyroYL = {{ x: xData, y: [{leftSmoothGyroY}], name: 'GyroY L (deg/s)', yaxis: 'y3', line: {{color: 'rgba(0, 128, 0, 0.6)', width: 1}} }};
+            var traceSmoothGyroYR = {{ x: xData, y: [{rightSmoothGyroY}], name: 'GyroY R (deg/s)', yaxis: 'y3', line: {{color: 'rgba(139, 69, 19, 0.6)', width: 1}} }};
+            var traceSmoothGyroXL = {{ x: xData, y: [{leftSmoothGyroX}], name: 'GyroZ L (deg/s)', yaxis: 'y3', line: {{color: 'red', width: 1}} }};
+            var traceSmoothGyroXR = {{ x: xData, y: [{rightSmoothGyroX}], name: 'GyroZ R (deg/s)', yaxis: 'y3', line: {{color: 'blue', width: 1}} }};
+
+            var traceRawGyroYL = {{ x: xData, y: [{leftRawGyroY}], name: 'GyroY L (deg/s)', yaxis: 'y3', line: {{color: 'red', width: 1}} }};
+            var traceRawGyroYR = {{ x: xData, y: [{rightRawGyroY}], name: 'GyroY R (deg/s)', yaxis: 'y3', line: {{color: 'yellow', width: 1}} }};
+            var traceRawGyroXL = {{ x: xData, y: [{leftRawGyroX}], name: 'GyroZ L (deg/s)', yaxis: 'y3', line: {{color: 'blue', width: 1}} }};
+            var traceRawGyroXR = {{ x: xData, y: [{rightRawGyroX}], name: 'GyroZ R (deg/s)', yaxis: 'y3', line: {{color: 'green', width: 1}} }};
+            var traceRawGyroZL = {{ x: xData, y: [{leftRawGyroZ}], name: 'GyroZ L (deg/s)', yaxis: 'y3', line: {{color: 'orange', width: 1}} }};
+            var traceRawGyroZR = {{ x: xData, y: [{rightRawGyroZ}], name: 'GyroZ R (deg/s)', yaxis: 'y3', line: {{color: 'purple', width: 1}} }};
 
             var layout = {{
                 title: 'Analisi Fisica Sci: Roll vs G-Force vs GyroY',
@@ -154,7 +116,31 @@ public static class SkiGraphGenerator
                 hovermode: 'x unified'
             }};
 
-            Plotly.newPlot('graph', [/*traceRollL, traceRollR,*/traceAccXL,traceAccXR, traceGL, traceGR, /*traceGyroYL, traceGyroYR,traceGyroXL, traceGyroXR*/], layout);
+            Plotly.newPlot('graph', [
+                traceRawAccXL,
+                traceRawAccXR,
+                traceRawAccYL,
+                traceRawAccYR,
+                traceRawAccZL,
+                traceRawAccZR,
+                /*traceRawGyroYL,
+                traceRawGyroYR,
+                traceRawGyroXL,
+                traceRawGyroXR,
+                traceRawGyroZL,
+                traceRawGyroZR,*/
+    
+                /*traceRollL, 
+                traceRollR,
+                traceSmoothAccXL,
+                traceSmoothAccXR, 
+                traceGL, 
+                traceGR,
+                traceSmoothGyroYL, 
+                traceSmoothGyroYR, 
+                traceSmoothGyroXL,  
+                traceSmoothGyroXR*/
+            ], layout);
         </script>
     </body>
     </html>";

@@ -23,7 +23,14 @@ namespace SkiTelemetry_Analyst
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell());
+            var window = new Window(new AppShell());
+            window.Destroying += (s, e) =>
+            {
+                // Pulisci qui le tue variabili temporanee o i Singleton
+                // LimpaVariabiliTemporanee();
+            };
+
+            return window;
         }
        
     }

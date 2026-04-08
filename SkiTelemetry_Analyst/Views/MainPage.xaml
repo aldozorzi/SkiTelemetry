@@ -174,19 +174,20 @@
                      />
                 </VerticalStackLayout>
 
-                <VerticalStackLayout x:Name="BtnHistoryContainer" VerticalOptions="Center" Margin="0,20,0,0">
+                
+            </VerticalStackLayout>
+
+            <VerticalStackLayout x:Name="BtnHistoryContainer" VerticalOptions="Center" Margin="0,0,0,0">
 
                 <Button x:Name="BtnHistory"
         
-                    Text="VISUALIZZA SESSIONI"
-                    Clicked="OnHistoryClicked"
-                    BackgroundColor="DarkMagenta" HeightRequest="60" 
-                        
-                        TextColor="White"/>
+                Text="VISUALIZZA SESSIONI"
+                Clicked="OnHistoryClicked"
+                BackgroundColor="DarkMagenta" HeightRequest="60" 
+        
+                    TextColor="White"/> 
 
             </VerticalStackLayout>
-            </VerticalStackLayout>
-            
         </VerticalStackLayout>
     </ScrollView>
 

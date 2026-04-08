@@ -65,8 +65,23 @@ void taskData(void *pvParameters) {
             
             // Leggi IMU Destra (Interna)
             M5.Imu.update();
-            M5.Imu.getAccel(&dataCombo.accXR, &dataCombo.accYR, &dataCombo.accZR);
-            M5.Imu.getGyro(&dataCombo.gyroXR, &dataCombo.gyroYR, &dataCombo.gyroZR);
+            /*M5.Imu.getAccel(&dataCombo.accXR, &dataCombo.accYR, &dataCombo.accZR);
+            M5.Imu.getGyro(&dataCombo.gyroXR, &dataCombo.gyroYR, &dataCombo.gyroZR);*/
+            int16_t rawAccX = M5.Imu.getRawData(0);
+            int16_t rawAccY = M5.Imu.getRawData(1);
+            int16_t rawAccZ = M5.Imu.getRawData(2);
+            int16_t rawGyroX = M5.Imu.getRawData(3);
+            int16_t rawGyroY = M5.Imu.getRawData(4);
+            int16_t rawGyroZ = M5.Imu.getRawData(5);
+
+            // Conversione manuale basata su +-4G (8192 LSB/g) - per +-8G -> 4096.0f
+            dataCombo.accXR = (float)rawAccX / 8192.0f;
+            dataCombo.accYR = (float)rawAccY / 8192.0f;
+            dataCombo.accZR = (float)rawAccZ / 8192.0f;
+            dataCombo.gyroXR = (float)rawGyroX / 16.4f;
+            dataCombo.gyroYR = (float)rawGyroY / 16.4f;
+            dataCombo.gyroZR = (float)rawGyroZ / 16.4f;
+            
 
             /*Serial.printf("[IMU] AccX:%.3f AccY:%.3f AccZ:%.3f | G_mag:%.3f\n",
             dataCombo.accXR, dataCombo.accYR, dataCombo.accZR,

@@ -31,8 +31,24 @@ void taskIMU(void *pvParameters) {
     for(;;) {
         if (masterWantsData) {
             M5.Imu.update();
-            M5.Imu.getAccel(&data.accX, &data.accY, &data.accZ);
-            M5.Imu.getGyro(&data.gyroX, &data.gyroY, &data.gyroZ);
+            /*M5.Imu.getAccel(&data.accX, &data.accY, &data.accZ);
+            M5.Imu.getGyro(&data.gyroX, &data.gyroY, &data.gyroZ);*/
+
+
+            int16_t rawAccX = M5.Imu.getRawData(0);
+            int16_t rawAccY = M5.Imu.getRawData(1);
+            int16_t rawAccZ = M5.Imu.getRawData(2);
+            int16_t rawGyroX = M5.Imu.getRawData(3);
+            int16_t rawGyroY = M5.Imu.getRawData(4);
+            int16_t rawGyroZ = M5.Imu.getRawData(5);
+
+            // Conversione manuale basata su +-4G (8192 LSB/g) - per +-8G -> 4096.0f
+            data.accX = (float)rawAccX / 8192.0f;
+            data.accY = (float)rawAccY / 8192.0f;
+            data.accZ = (float)rawAccZ / 8192.0f;
+            data.gyroX = (float)rawGyroX / 16.4f;
+            data.gyroY = (float)rawGyroY / 16.4f;
+            data.gyroZ = (float)rawGyroZ / 16.4f;
 
             /*Serial.printf("[IMU] AccX:%.3f AccY:%.3f AccZ:%.3f | G_mag:%.3f\n",
             data.accX, data.accY, data.accZ,

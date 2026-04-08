@@ -58,12 +58,18 @@
                 Clicked="OnCalibrateClicked" />
 
                         <Button x:Name="BtnResetCalib"
-                Text="RESETTA AI VALORI DI FABBRICA"
+                Text="RESET CALIBRAZIONE"
                 BackgroundColor="Transparent"
                 TextColor="Red"
                 BorderColor="Red"
                 BorderWidth="1"
                 Clicked="OnResetCalibrationClicked" />
+                        
+                        <Button x:Name="BtnExportCalib"
+                        Text="ESPORTA LOG CALIBRAZIONE"
+                        BackgroundColor="LightSlateGray"
+                        TextColor="White"
+                        Clicked="OnExportCalibrationClicked" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -96,9 +102,8 @@
                                 Text="RESET CONFIGURAZIONE"
                                 BackgroundColor="#FF3B30"
                                 TextColor="White"
-                                FontAttributes="Bold"
                                 Clicked="OnResetConfigClicked"
-                                HeightRequest="50" />
+                                />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
@@ -119,9 +124,9 @@
                         <Button Text="LOGOUT / RESET SERVER"
                             BackgroundColor="#FF9500"
                             TextColor="White"
-                            FontAttributes="Bold"
+
                             Clicked="OnResetServerClicked"
-                            HeightRequest="50" />
+                            />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>

@@ -1,5 +1,10 @@
+using CommunityToolkit.Maui.Storage;
 using SkiTelemetry_Analyst.Services;
 using SkiTelemetry_Core;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO.Compression;
+using System.Text;
 
 namespace SkiTelemetry_Analyst;
 
@@ -114,7 +119,7 @@ public partial class SettingsPage : ContentPage
 
 
         // Eseguiamo il flusso BLE isolato
-        bool success = await bleService.RunCalibrationAsync(50);
+        bool success = await bleService.RunCalibrationAsync(200);
 
         if (success)
         {
@@ -172,5 +177,86 @@ public partial class SettingsPage : ContentPage
             BtnResetCalib.IsVisible = true;
         }
     }
+
+    private async void OnExportCalibrationClicked(object? sender, EventArgs e)
+    {
+        string tempStagingFolder = Path.Combine(Path.GetTempPath(), "ExportStaging_" + Guid.NewGuid().ToString());
+        string tempZipPath = Path.Combine(Path.GetTempPath(), $"Export_{DateTime.Now:yyyyMMdd_HHmmss}.zip");
+        string zipFileName = $"Export_Data_{DateTime.Now:HHmmss}.zip";
+
+        string baseDir = FileSystem.Current.AppDataDirectory;
+        string sourceFolder = Path.Combine(baseDir, "Calibrations");
+
+        // 1. Controllo se la cartella esiste e contiene file
+        if (!Directory.Exists(sourceFolder) || !Directory.EnumerateFiles(sourceFolder).Any())
+        {
+            await DisplayAlertAsync("Esporta", "Non ci sono file di calibrazione da esportare.", "OK");
+            return;
+        }
+
+        try
+        {
+
+            // 2. Crea cartella di staging
+            Directory.CreateDirectory(tempStagingFolder);
+
+            // 3. Conversione Binari -> CSV
+            var binaryFiles = Directory.GetFiles(sourceFolder, "*.bin");
+
+            foreach (var dataFilePath in binaryFiles)
+            {
+                var points = RunParser.ParseBinFile(dataFilePath);
+                if (points == null) continue;
+
+                StringBuilder csv = new StringBuilder();
+                csv.AppendLine("Timestamp;Side;AccX;AccY;AccZ;GyroX;GyroY;GyroZ;SmoothAccX;SmoothAccY;SmoothAccZ;SmoothGyroX;SmoothGyroY;SmoothGyroZ");
+
+                foreach (var p in points)
+                {
+                    IFormatProvider provider = CultureInfo.InvariantCulture;
+
+                    csv.AppendLine($"{p.Timestamp};{p.Side};" +
+                                   $"{p.AccX.ToString(provider)};{p.AccY.ToString(provider)};{p.AccZ.ToString(provider)};" +
+                                   $"{p.GyroX.ToString(provider)};{p.GyroY.ToString(provider)};{p.GyroZ.ToString(provider)};" +
+                                   $"{p.SmoothAccX.ToString(provider)};{p.SmoothAccY.ToString(provider)};{p.SmoothAccZ.ToString(provider)};" +
+                                   $"{p.SmoothGyroX.ToString(provider)};{p.SmoothGyroY.ToString(provider)};{p.SmoothGyroZ.ToString(provider)}");
+                }
+
+                string csvPath = Path.Combine(tempStagingFolder, Path.GetFileNameWithoutExtension(dataFilePath) + ".csv");
+                await File.WriteAllTextAsync(csvPath, csv.ToString(), Encoding.UTF8);
+            }
+
+            // 4. Creazione dello Zip temporaneo
+            ZipFile.CreateFromDirectory(tempStagingFolder, tempZipPath);
+
+            // 5. Salvataggio tramite FileSaver (Input dell'utente)
+            using var stream = File.OpenRead(tempZipPath);
+            var fileSaveResult = await FileSaver.Default.SaveAsync(zipFileName, stream, default);
+
+            if (fileSaveResult.IsSuccessful)
+            {
+                // 4. Se il salvataggio è andato a buon fine, svuotiamo la cartella originale
+                var files = Directory.GetFiles(sourceFolder);
+                foreach (var file in files)
+                {
+                    File.Delete(file);
+                }
+
+                await DisplayAlertAsync("Successo", "Esportazione completata.", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlertAsync("Errore", ex.Message, "OK");
+        }
+        finally
+        {
+            // 6. Pulizia totale
+            if (Directory.Exists(tempStagingFolder)) Directory.Delete(tempStagingFolder, true);
+            if (File.Exists(tempZipPath)) File.Delete(tempZipPath);
+        }
+    }
+    
+
 
 }

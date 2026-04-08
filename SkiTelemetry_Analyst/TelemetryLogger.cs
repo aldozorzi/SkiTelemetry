@@ -6,22 +6,31 @@
 
 public class TelemetryLogger : IDisposable
 {
+    private bool _useNameCounter = false;
     private FileStream? _fileStream;
     private BinaryWriter? _writer;
     public bool isLogging = false;
 
-    public void StartLogging()
+    public void StartLogging( string? filefolder = null, string? filename = null)
     {
         string baseDir = FileSystem.Current.AppDataDirectory;
         if (!Directory.Exists(baseDir)) Directory.CreateDirectory(baseDir);
-        string folder = Path.Combine(baseDir, "Logs");
+        string folder = filefolder != null ? Path.Combine(baseDir, filefolder) : Path.Combine(baseDir, "Logs");
         if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-        string filePath = GenerateProgressiveFileName(folder);
+        string filePath;
+        if (filename != null)
+        {
+            filePath = Path.Combine(folder, $"{filename}.bin");
+        }
+        else
+        {
+            filePath = Path.Combine(folder, GenerateProgressiveFileName());
+        }
         _fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
         _writer = new BinaryWriter(_fileStream);
         isLogging = true;
 
-        System.Diagnostics.Debug.WriteLine($"[LOGGER] File binario creato: {filePath}");
+        //System.Diagnostics.Debug.WriteLine($"[LOGGER] File binario creato: {filePath}");
     }
 
     public void LogData(SkiDataPoint point)
@@ -60,9 +69,12 @@ public class TelemetryLogger : IDisposable
         _fileStream = null;
     }
 
-    private string GenerateProgressiveFileName(string folder)
+    private string GenerateProgressiveFileName()
     {
         string dateToday = DateTime.Now.ToString("yyyy_MM_dd");
+
+        if(!_useNameCounter)
+            return $"{dateToday}_{DateTime.Now.ToString("HH_mm")}.bin";
 
         // 1. Recupera la data dell'ultima RUN registrata
         string lastRunDate = Preferences.Default.Get("LastRunDate", "");
@@ -85,7 +97,7 @@ public class TelemetryLogger : IDisposable
         Preferences.Default.Set("LastRunDate", dateToday);
         Preferences.Default.Set("LastRunNumber", currentRunNumber);
 
-        return Path.Combine(folder, $"{dateToday}_RUN_{currentRunNumber:D2}.bin");
+        return $"{dateToday}_RUN_{currentRunNumber:D2}.bin";
     }
     public void Dispose() => StopLogging();
 }
