@@ -102,7 +102,7 @@ public class CalibrationService
 
             if (!_logger.IsLogging && isSettingsLoggingEnabled)
             {
-                _logger.StartLogging("Calibrations_Auto"); // Prefisso diverso per distinguere
+                _logger.StartLogging("Calibrations"); // Prefisso diverso per distinguere
             }
             else if (_logger != null && _logger.IsLogging)
             {
