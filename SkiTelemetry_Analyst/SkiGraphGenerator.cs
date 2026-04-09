@@ -8,43 +8,43 @@ using System.Text;
 public static class SkiGraphGenerator
 {
     //ANALISI ROLL E G_FORCE
-    public static void GenerateHtmlReport(List<SkiDataPoint> allPoints, List<SkiTurn> detectedTurns, string filePath = "SkiPhysicsAnalysis.html")
+    public static void GenerateHtmlReport(List<SkiFrame> allFrames, List<SkiTurn> detectedTurns, string filePath = "SkiPhysicsAnalysis.html")
     {
-        var leftData = allPoints.Where(p => p.Side == SensorSide.Left).ToList();
-        var rightData = allPoints.Where(p => p.Side == SensorSide.Right).ToList();
+        /*var leftData = allFrames.Where(p => p.Side == SensorSide.Left).ToList();
+        var rightData = allPoints.Where(p => p.Side == SensorSide.Right).ToList();*/
 
         // Estrazione dati con cultura invariante (punto per i decimali)
-        string leftRoll = string.Join(",", leftData.Select(p => p.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightRoll = string.Join(",", rightData.Select(p => p.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRoll = string.Join(",", allFrames.Select(f => f.Left.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRoll = string.Join(",", allFrames.Select(f => f.Right.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
-        string leftSmoothAccX = string.Join(",", leftData.Select(p => p.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightSmoothAccX = string.Join(",", rightData.Select(p => p.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftSmoothAccX = string.Join(",", allFrames.Select(f => f.Left.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightSmoothAccX = string.Join(",", allFrames.Select(f => f.Right.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
-        string leftRawAccX = string.Join(",", leftData.Select(p => p.AccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightRawAccX = string.Join(",", rightData.Select(p => p.AccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string leftRawAccY = string.Join(",", leftData.Select(p => p.AccY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightRawAccY = string.Join(",", rightData.Select(p => p.AccY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string leftRawAccZ = string.Join(",", leftData.Select(p => p.AccZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightRawAccZ = string.Join(",", rightData.Select(p => p.AccZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawAccX = string.Join(",", allFrames.Select(f => f.Left.AccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawAccX = string.Join(",", allFrames.Select(f => f.Right.AccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawAccY = string.Join(",", allFrames.Select(f => f.Left.AccY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawAccY = string.Join(",", allFrames.Select(f => f.Right.AccY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawAccZ = string.Join(",", allFrames.Select(f => f.Left.AccZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawAccZ = string.Join(",", allFrames.Select(f => f.Right.AccZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
 
 
-        string leftG = string.Join(",", leftData.Select(p => p.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightG = string.Join(",", rightData.Select(p => p.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftG = string.Join(",", allFrames.Select(f => f.Left.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightG = string.Join(",", allFrames.Select(f => f.Right.AdjustedG.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
-        string leftSmoothGyroY = string.Join(",", leftData.Select(p => p.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightSmoothGyroY = string.Join(",", rightData.Select(p => p.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string leftSmoothGyroX = string.Join(",", leftData.Select(p => p.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightSmoothGyroX = string.Join(",", rightData.Select(p => p.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftSmoothGyroY = string.Join(",", allFrames.Select(f => f.Left.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightSmoothGyroY = string.Join(",", allFrames.Select(f => f.Right.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftSmoothGyroX = string.Join(",", allFrames.Select(f => f.Left.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightSmoothGyroX = string.Join(",", allFrames.Select(f => f.Right.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
-        string leftRawGyroY = string.Join(",", leftData.Select(p => p.GyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightRawGyroY = string.Join(",", rightData.Select(p => p.GyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string leftRawGyroX = string.Join(",", leftData.Select(p => p.GyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightRawGyroX = string.Join(",", rightData.Select(p => p.GyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string leftRawGyroZ = string.Join(",", leftData.Select(p => p.GyroZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightRawGyroZ = string.Join(",", rightData.Select(p => p.GyroZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawGyroY = string.Join(",", allFrames.Select(f => f.Left.GyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawGyroY = string.Join(",", allFrames.Select(f => f.Right.GyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawGyroX = string.Join(",", allFrames.Select(f => f.Left.GyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawGyroX = string.Join(",", allFrames.Select(f => f.Right.GyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRawGyroZ = string.Join(",", allFrames.Select(f => f.Left.GyroZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRawGyroZ = string.Join(",", allFrames.Select(f => f.Right.GyroZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
-        string timestamps = string.Join(",", leftData.Select(p => p.Timestamp));
+        string timestamps = string.Join(",", allFrames.Select(f => f.Left.Timestamp));
 
         var turnShapes = new StringBuilder();
         foreach (var turn in detectedTurns)

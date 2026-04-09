@@ -104,21 +104,25 @@ namespace SkiTelemetry_Analyst.Views
             }
         }
 
-        private void OnTelemetryReceived(object? sender, SkiDataPoint rawPoint)
+        private void OnTelemetryReceived(object? sender, SkiFrame rawFrame)
         {
             if (_isCalibrating) return;
             //System.Diagnostics.Trace.WriteLine($"[MAinPage] rawPoint {rawPoint} ");
-            _dataProcessor.Process(rawPoint);
-            if (_logger.isLogging) _logger.LogData(rawPoint);
+            CalibrationService.Instance.AddFrame(rawFrame, true);
+            _dataProcessor.Process(rawFrame);
+            if (_logger.IsLogging)
+            {
+                _logger.LogData(rawFrame);
+            }
             if (MainThread.IsMainThread)
             {
-                UpdateDebugUI(rawPoint);
+                UpdateDebugUI(rawFrame);
             }
             else
             {
                 try
                 {
-                    MainThread.BeginInvokeOnMainThread(() => UpdateDebugUI(rawPoint));
+                    MainThread.BeginInvokeOnMainThread(() => UpdateDebugUI(rawFrame));
                 }
                 catch (InvalidOperationException)
                 {
@@ -128,30 +132,27 @@ namespace SkiTelemetry_Analyst.Views
             }
         }
 
-        private void UpdateDebugUI(SkiDataPoint rawPoint)
+        private void UpdateDebugUI(SkiFrame rawFrame)
         {
             if (!DebugDataDisplay.IsVisible) return;
             
-            if (rawPoint.Side == SensorSide.Left)
-            {
-                LblAccXL.Text = $"X: {rawPoint.AccX:F2}";
-                LblAccYL.Text = $"Y: {rawPoint.AccY:F2}";
-                LblAccZL.Text = $"Z: {rawPoint.AccZ:F2}";
-                LblGyrXL.Text = $"X: {rawPoint.GyroX:F1}";
-                LblGyrYL.Text = $"Y: {rawPoint.GyroY:F1}";
-                LblGyrZL.Text = $"Z: {rawPoint.GyroZ:F1}";
-                LblRollL.Text = $"{rawPoint.Roll:F1}°";
-            }
-            else
-            {
-                LblAccXR.Text = $"X: {rawPoint.AccX:F2}";
-                LblAccYR.Text = $"Y: {rawPoint.AccY:F2}";
-                LblAccZR.Text = $"Z: {rawPoint.AccZ:F2}";
-                LblGyrXR.Text = $"X: {rawPoint.GyroX:F1}";
-                LblGyrYR.Text = $"Y: {rawPoint.GyroY:F1}";
-                LblGyrZR.Text = $"Z: {rawPoint.GyroZ:F1}";
-                LblRollR.Text = $"{rawPoint.Roll:F1}°";
-            }
+
+                LblAccXL.Text = $"X: {rawFrame.Left.AccX:F2}";
+                LblAccYL.Text = $"Y: {rawFrame.Left.AccY:F2}";
+                LblAccZL.Text = $"Z: {rawFrame.Left.AccZ:F2}";
+                LblGyrXL.Text = $"X: {rawFrame.Left.GyroX:F1}";
+                LblGyrYL.Text = $"Y: {rawFrame.Left.GyroY:F1}";
+                LblGyrZL.Text = $"Z: {rawFrame.Left.GyroZ:F1}";
+                LblRollL.Text = $"{rawFrame.Left.Roll:F1}°";
+           
+                LblAccXR.Text = $"X: {rawFrame.Right.AccX:F2}";
+                LblAccYR.Text = $"Y: {rawFrame.Right.AccY:F2}";
+                LblAccZR.Text = $"Z: {rawFrame.Right.AccZ:F2}";
+                LblGyrXR.Text = $"X: {rawFrame.Right.GyroX:F1}";
+                LblGyrYR.Text = $"Y: {rawFrame.Right.GyroY:F1}";
+                LblGyrZR.Text = $"Z: {rawFrame.Right.GyroZ:F1}";
+                LblRollR.Text = $"{rawFrame.Right.Roll:F1}°";
+
  
         }
 

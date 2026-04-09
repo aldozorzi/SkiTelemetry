@@ -6,10 +6,6 @@ public class SkiDataProcessor
     public event EventHandler<SkiTurn>? OnNewTurn;
     private readonly TurnDetector _detector = new();
 
-    // Dizionario per sincronizzare i dati dei due sci tramite Timestamp
-    private readonly Dictionary<uint, SkiDataPoint> _pendingLeft = new Dictionary<uint, SkiDataPoint>();
-    private readonly Dictionary<uint, SkiDataPoint> _pendingRight = new Dictionary<uint, SkiDataPoint>();
-
     private CalibrationOffsets _leftOffsets = new();
     private CalibrationOffsets _rightOffsets = new();
 
@@ -39,29 +35,13 @@ public class SkiDataProcessor
     /// <summary>
     /// Punto di ingresso unico per i dati grezzi che arrivano dal sensore
     /// </summary>
-    public void Process(SkiDataPoint rawPoint)
+    public void Process(SkiFrame rawFrame)
     {
-        // 1. Normalizzazione e Smoothing
-        ApplyFilters(rawPoint);
 
-        // 2. Sincronizzazione dei due piedi
-        if (rawPoint.Side == SensorSide.Left)
-            _pendingLeft[rawPoint.Timestamp] = rawPoint;
-        else
-            _pendingRight[rawPoint.Timestamp] = rawPoint;
+        ApplyFilters(rawFrame.Left);
+        ApplyFilters(rawFrame.Right);
 
-        // 3. Se abbiamo entrambi i piedi per questo timestamp, processiamo il "Frame"
-        if (_pendingLeft.TryGetValue(rawPoint.Timestamp, out var left) &&
-            _pendingRight.TryGetValue(rawPoint.Timestamp, out var right))
-        {
-            _detector.ProcessFrame(new SkiFrame(left, right));
-            _pendingLeft.Remove(rawPoint.Timestamp);
-            _pendingRight.Remove(rawPoint.Timestamp);
-        }
-
-        // Opzionale: pulizia buffer per timestamp persi (timeout)
-        if (_pendingLeft.Count > 100) _pendingLeft.Clear();
-        if (_pendingRight.Count > 100) _pendingRight.Clear();
+        _detector.ProcessFrame(rawFrame);
     }
 
     

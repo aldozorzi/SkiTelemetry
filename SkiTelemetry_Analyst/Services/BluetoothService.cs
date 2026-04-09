@@ -34,7 +34,7 @@ namespace SkiTelemetry_Analyst.Services
 
         // Lista dei sensori connessi (Sinistro e Destro)
 
-        public event EventHandler<SkiDataPoint>? DataReceived;
+        public event EventHandler<SkiFrame>? DataReceived;
 
         // Questo dizionario tiene traccia dei sensori connessi per lato
         public IDevice? ConnectedSensor { get; set; }
@@ -190,8 +190,7 @@ namespace SkiTelemetry_Analyst.Services
             var frame = GetSkiFrameFromData(data);
 
             // Invia i punti uno dopo l'altro
-            DataReceived?.Invoke(this, frame.Left);
-            DataReceived?.Invoke(this, frame.Right);
+            DataReceived?.Invoke(this, frame);
 
         }
 
@@ -362,12 +361,11 @@ namespace SkiTelemetry_Analyst.Services
                 }
                 else if (_logger.IsLogging)
                 {
-                    _logger.LogData(frame.Left);
-                    _logger.LogData(frame.Right);
+                    _logger.LogData(frame);
                 }
 
 
-                CalibrationService.Instance.AddFrame(frame);
+                CalibrationService.Instance.AddFrame(frame,false);
 
                 if (counter >= samplesCount) tcs.TrySetResult(true);
             };

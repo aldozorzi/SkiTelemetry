@@ -33,29 +33,36 @@ public class TelemetryLogger : IDisposable
         //System.Diagnostics.Debug.WriteLine($"[LOGGER] File binario creato: {filePath}");
     }
 
-    public void LogData(SkiDataPoint point)
+    public void LogData(SkiFrame frame)
     {
         if (!IsLogging || _writer == null) return;
 
         // Scrittura binaria compatta (Esempio struttura: 104 byte per riga)
         // Timestamp (4) + Side (1) + Acc(4*3) + Gyro(4*3) + Roll(4) -> ripetuto per Left e Right
-        WritePoint(point);
+        WritePoint(frame);
     }
 
-    private void WritePoint(SkiDataPoint p)
+    private void WritePoint(SkiFrame frame)
     {
         if (_writer == null) return;
 
         //System.Diagnostics.Debug.WriteLine($"[LOGGER] Logging point: {p}");
 
-        _writer.Write((uint)p.Timestamp); // 4 byte
-        _writer.Write((byte)p.Side);      // 1 byte
-        _writer.Write((float)p.AccX);     // 4 byte
-        _writer.Write((float)p.AccY);     // 4 byte
-        _writer.Write((float)p.AccZ);     // 4 byte
-        _writer.Write((float)p.GyroX);    // 4 byte
-        _writer.Write((float)p.GyroY);    // 4 byte
-        _writer.Write((float)p.GyroZ);    // 4 byte
+        _writer.Write((uint)frame.Left.Timestamp); // 4 byte
+        // sensore sinistro
+        _writer.Write((float)frame.Left.AccX);     // 4 byte
+        _writer.Write((float)frame.Left.AccY);     // 4 byte
+        _writer.Write((float)frame.Left.AccZ);     // 4 byte
+        _writer.Write((float)frame.Left.GyroX);    // 4 byte
+        _writer.Write((float)frame.Left.GyroY);    // 4 byte
+        _writer.Write((float)frame.Left.GyroZ);    // 4 byte
+        // sensore destro
+        _writer.Write((float)frame.Right.AccX);     // 4 byte
+        _writer.Write((float)frame.Right.AccY);     // 4 byte
+        _writer.Write((float)frame.Right.AccZ);     // 4 byte
+        _writer.Write((float)frame.Right.GyroX);    // 4 byte
+        _writer.Write((float)frame.Right.GyroY);    // 4 byte
+        _writer.Write((float)frame.Right.GyroZ);    // 4 byte
     }
 
     public void StopLogging()

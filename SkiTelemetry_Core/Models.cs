@@ -174,9 +174,9 @@ public class RollingBuffer
     private readonly Queue<float> _queue = new();
     private readonly int _maxSize;
     public double Average { get; private set; }
-    public double StdDev { get; private set; }  // ← AGGIUNGI QUESTO
+    public double StdDev { get; private set; }  
     private double _sum = 0;
-    private double _sumSquares = 0;  // ← AGGIUNGI QUESTO
+    private double _sumSquares = 0; 
 
     public RollingBuffer(int maxSize) => _maxSize = maxSize;
 
@@ -198,6 +198,13 @@ public class RollingBuffer
         double variance = (_sumSquares / _queue.Count) - (Average * Average);
         StdDev = Math.Sqrt(Math.Max(0, variance)); 
     }
-
+    public void Clear()
+    {
+        _queue.Clear();
+        _sum = 0;
+        _sumSquares = 0;
+        Average = 0;
+        StdDev = 0;
+    }
     public int Count => _queue.Count;  
 }

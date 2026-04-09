@@ -27,9 +27,9 @@ public partial class RunDetailPage : ContentPage
     {
         try
         {
-            var points = RunParser.ParseBinFile(path);
+            List<SkiFrame> frames = RunParser.ParseBinFile(path);
             var detectedTurns = new List<SkiTurn>();
-            var processor = new SkiDataProcessor();
+            SkiDataProcessor processor = new SkiDataProcessor();
             processor.OnNewTurn += (s, turn) => detectedTurns.Add(turn);
 
             HashSet<MonitorMode> metrics = new();
@@ -48,13 +48,13 @@ public partial class RunDetailPage : ContentPage
             processor.setMetrics(metrics);
 
 
-            foreach (var p in points)
+            foreach (var f in frames)
             {
-                processor.Process(p);
+                processor.Process(f);
             }
             // aggiunti tutti i punti
             #if WINDOWS
-            SkiGraphGenerator.GenerateHtmlReport(points, detectedTurns);
+            SkiGraphGenerator.GenerateHtmlReport(frames, detectedTurns);
             #endif
             MainThread.BeginInvokeOnMainThread(() => {
                 string fileName = Path.GetFileNameWithoutExtension(path);

@@ -247,22 +247,29 @@ namespace SkiTelemetry_Analyst.Views.Runs
                 IsLoading = true;
 
                 // Carichiamo la run usando il servizio esistente
-                var points = RunParser.ParseBinFile(dataFilePath);
-                if (points == null) return;
+                List<SkiFrame> frames = RunParser.ParseBinFile(dataFilePath);
+                if (frames == null) return;
 
                 StringBuilder csv = new StringBuilder();
                 // Header (usiamo ; per Excel italiano)
-                csv.AppendLine("Timestamp;Side;AccX;AccY;AccZ;GyroX;GyroY;GyroZ;SmoothAccX;SmoothAccY;SmoothAccZ;SmoothGyroX;SmoothGyroY;SmoothGyroZ");
+                csv.AppendLine("Timestamp;AccXL;AccYL;AccZL;GyroXL;GyroYL;GyroZL;SmoothAccXL;SmoothAccYL;SmoothAccZL;SmoothGyroXL;SmoothGyroYL;SmoothGyroZL;AccXR;AccYR;AccZR;GyroXR;GyroYR;GyroZR;SmoothAccXR;SmoothAccYR;SmoothAccZR;SmoothGyroXR;SmoothGyroYR;SmoothGyroZR");
 
-                foreach (var p in points)
+                foreach (var f in frames)
                 {
-                    processor.Process(p);
+                    processor.Process(f);
                     IFormatProvider provider = CultureInfo.InvariantCulture;
 
-                    csv.AppendLine($"{p.Timestamp};{p.Side};{p.AccX.ToString(provider)};{p.AccY.ToString(provider)};{p.AccZ.ToString(provider)};" +
-                                     $"{p.GyroX.ToString(provider)};{p.GyroY.ToString(provider)};{p.GyroZ.ToString(provider)};" +
-                                     $"{p.SmoothAccX.ToString(provider)};{p.SmoothAccY.ToString(provider)};{p.SmoothAccZ.ToString(provider)};" +
-                                     $"{p.SmoothGyroX.ToString(provider)};{p.SmoothGyroY.ToString(provider)};{p.SmoothGyroZ.ToString(provider)};");
+                    csv.AppendLine($"{f.Left.Timestamp};{f.Left.AccX.ToString(provider)};{f.Left.AccY.ToString(provider)};{f.Left.AccZ.ToString(provider)};" +
+                                     $"{f.Left.GyroX.ToString(provider)};{f.Left.GyroY.ToString(provider)};{f.Left.GyroZ.ToString(provider)};" +
+                                     $"{f.Left.SmoothAccX.ToString(provider)};{f.Left.SmoothAccY.ToString(provider)};{f.Left.SmoothAccZ.ToString(provider)};" +
+                                     $"{f.Left.SmoothGyroX.ToString(provider)};{f.Left.SmoothGyroY.ToString(provider)};{f.Left.SmoothGyroZ.ToString(provider)};"+
+
+                                     $"{f.Right.AccX.ToString(provider)};{f.Right.AccY.ToString(provider)};{f.Right.AccZ.ToString(provider)};" +
+                                     $"{f.Right.GyroX.ToString(provider)};{f.Right.GyroY.ToString(provider)};{f.Right.GyroZ.ToString(provider)};" +
+                                     $"{f.Right.SmoothAccX.ToString(provider)};{f.Right.SmoothAccY.ToString(provider)};{f.Right.SmoothAccZ.ToString(provider)};" +
+                                     $"{f.Right.SmoothGyroX.ToString(provider)};{f.Right.SmoothGyroY.ToString(provider)};{f.Right.SmoothGyroZ.ToString(provider)};"
+
+                                     );
                 }
 
                 string fileName = $"Export_{runItem.RunName}_{DateTime.Now:HHmmss}.csv";

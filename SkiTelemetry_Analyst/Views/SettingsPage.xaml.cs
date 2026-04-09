@@ -205,21 +205,24 @@ public partial class SettingsPage : ContentPage
 
             foreach (var dataFilePath in binaryFiles)
             {
-                var points = RunParser.ParseBinFile(dataFilePath);
-                if (points == null) continue;
+                var frames = RunParser.ParseBinFile(dataFilePath);
+                if (frames == null) continue;
 
                 StringBuilder csv = new StringBuilder();
-                csv.AppendLine("Timestamp;Side;AccX;AccY;AccZ;GyroX;GyroY;GyroZ;SmoothAccX;SmoothAccY;SmoothAccZ;SmoothGyroX;SmoothGyroY;SmoothGyroZ");
+                csv.AppendLine("Timestamp;AccXL;AccYL;AccZL;GyroXL;GyroYL;GyroZL;AccXR;AccYR;AccZR;GyroXR;GyroYR;GyroZR");
 
-                foreach (var p in points)
+                foreach (var f in frames)
                 {
                     IFormatProvider provider = CultureInfo.InvariantCulture;
 
-                    csv.AppendLine($"{p.Timestamp};{p.Side};" +
-                                   $"{p.AccX.ToString(provider)};{p.AccY.ToString(provider)};{p.AccZ.ToString(provider)};" +
-                                   $"{p.GyroX.ToString(provider)};{p.GyroY.ToString(provider)};{p.GyroZ.ToString(provider)};" +
-                                   $"{p.SmoothAccX.ToString(provider)};{p.SmoothAccY.ToString(provider)};{p.SmoothAccZ.ToString(provider)};" +
-                                   $"{p.SmoothGyroX.ToString(provider)};{p.SmoothGyroY.ToString(provider)};{p.SmoothGyroZ.ToString(provider)}");
+                    csv.AppendLine($"{f.Left.Timestamp};{f.Left.AccX.ToString(provider)};{f.Left.AccY.ToString(provider)};{f.Left.AccZ.ToString(provider)};" +
+                                     $"{f.Left.GyroX.ToString(provider)};{f.Left.GyroY.ToString(provider)};{f.Left.GyroZ.ToString(provider)};" +
+                                     
+
+                                     $"{f.Right.AccX.ToString(provider)};{f.Right.AccY.ToString(provider)};{f.Right.AccZ.ToString(provider)};" +
+                                     $"{f.Right.GyroX.ToString(provider)};{f.Right.GyroY.ToString(provider)};{f.Right.GyroZ.ToString(provider)};"
+
+                                     );
                 }
 
                 string csvPath = Path.Combine(tempStagingFolder, Path.GetFileNameWithoutExtension(dataFilePath) + ".csv");

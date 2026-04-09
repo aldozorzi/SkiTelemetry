@@ -1,4 +1,5 @@
-﻿using SkiTelemetry_Core;
+﻿using SkiTelemetry_Analyst.Helpers;
+using SkiTelemetry_Core;
 
 namespace SkiTelemetry_Analyst.Services;
 
@@ -21,12 +22,20 @@ public class CalibrationService
     RollingBuffer rightGyroYList = new(150);
     RollingBuffer rightGyroZList = new(150);
 
+    private readonly Queue<SkiFrame> _recentFrames = new(150);
+
+    private int _consecutiveDeadChecks = 0;
+    private const int DEAD_CHECK_THRESHOLD = 3;
+
     public static CalibrationService Instance => _instance.Value;
 
     public CalibrationOffsets OffsetL { get; private set; }
     public CalibrationOffsets OffsetR { get; private set; }
 
     private readonly TelemetryLogger _logger = new();
+
+    private DateTime _lastAutoCalibTime = DateTime.MinValue;
+    private const int MINUTES_BETWEEN_AUTOCALIBS = 5;
 
     private CalibrationService()
     {
@@ -36,7 +45,7 @@ public class CalibrationService
         OffsetR = Preferences.Default.Get("CalibR", 0.0);*/
     }
 
-    public void AddFrame(SkiFrame frame)
+    public void AddFrame(SkiFrame frame,bool auto = true)
     {
                 
         leftAccXList.Add(frame.Left.AccX);
@@ -53,11 +62,19 @@ public class CalibrationService
         rightGyroYList.Add(frame.Right.GyroY);
         rightGyroZList.Add(frame.Right.GyroZ);
 
-        CheckAndAutoCalibrate(frame);
+        _recentFrames.Enqueue(frame);
+        if (_recentFrames.Count > 150) _recentFrames.Dequeue();
+
+        if(auto)
+            CheckAndAutoCalibrate(frame);
     }
 
     private void CheckAndAutoCalibrate(SkiFrame frame)
     {
+        if ((DateTime.Now - _lastAutoCalibTime) < TimeSpan.FromMinutes(MINUTES_BETWEEN_AUTOCALIBS))
+        {
+            return;
+        }
         // Calcola la magnitude dell'accelerometro
         double leftGMag = Math.Sqrt(
             Math.Pow(frame.Left.AccX, 2) +
@@ -68,6 +85,22 @@ public class CalibrationService
             Math.Pow(frame.Right.AccX, 2) +
             Math.Pow(frame.Right.AccY, 2) +
             Math.Pow(frame.Right.AccZ, 2));
+
+        if (!AreSensorsAlive())
+        {
+            _consecutiveDeadChecks++;
+            if (_consecutiveDeadChecks >= DEAD_CHECK_THRESHOLD)
+            {
+                // Sensori probabilmente morti: skip calibrazione, logga warning
+                System.Diagnostics.Trace.WriteLine("[CALIB] Sensors appear frozen, skipping auto-cal");
+                return;
+            }
+        }
+        else
+        {
+            // Reset counter se i sensori tornano vivi
+            _consecutiveDeadChecks = 0;
+        }
 
         // SOGLIE per considerare "fermo":
         bool isStationary =
@@ -97,6 +130,8 @@ public class CalibrationService
             OffsetR.GyroY = (float)rightGyroYList.Average;
             OffsetR.GyroZ = (float)rightGyroZList.Average;
 
+            _ = SpeechHelper.SpeakAsync($"Autocalibrazione effettuata.");
+
             //bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
             bool isSettingsLoggingEnabled = true; // forcing logging 
 
@@ -106,9 +141,14 @@ public class CalibrationService
             }
             else if (_logger != null && _logger.IsLogging)
             {
-                _logger.LogData(frame.Left);
-                _logger.LogData(frame.Right);
+                foreach (var cachedFrame in _recentFrames)
+                {
+                    _logger.LogData(cachedFrame);
+                }
             }
+            _recentFrames.Clear();
+            ResetBuffers();
+            _lastAutoCalibTime = DateTime.Now;
         }
     }
 
@@ -148,11 +188,58 @@ public class CalibrationService
         Preferences.Default.Set(LastCalibDateKey, DateTime.Today.ToString("yyyy-MM-dd"));*/
         IsCalibratedToday = true;
     }
+    private bool AreSensorsAlive()
+    {
+        // Soglie basate sul rumore termico reale dell'M5 Stick Plus 2
+        const double GYRO_NOISE_FLOOR = 0.05;  // deg/s: sotto è sospetto
+        const double ACC_NOISE_FLOOR = 0.002;  // G: sotto è sospetto
 
+        // Helper: un buffer è "alive" se mostra rumore o non è congelato
+        bool IsBufferAlive(RollingBuffer buf, double noiseFloor)
+        {
+            // Caso 1: StdDev sopra la soglia = sicuramente vivo
+            if (buf.StdDev > noiseFloor) return true;
+
+            // Caso 2: Controlla valori bit-per-bit identici (congelato)
+            // Se tutti gli ultimi N valori sono ESATTAMENTE uguali, il sensore è morto
+            if (buf.Count >= 15 && buf.StdDev == 0.0)
+            {
+                // Aggiungere un metodo GetRecentValues() a RollingBuffer se serve
+                // Oppure: se StdDev è zero per 15+ campioni, è congelato
+                return false; // Frozen!
+            }
+
+            // Caso 3: StdDev bassa ma >0 = probabilmente vivo (rumore minimo)
+            return buf.StdDev > 0.0;
+        }
+
+        // Basta che UNO degli assi mostri segni di vita
+        return
+            IsBufferAlive(leftGyroXList, GYRO_NOISE_FLOOR) ||
+            IsBufferAlive(leftGyroYList, GYRO_NOISE_FLOOR) ||
+            IsBufferAlive(leftGyroZList, GYRO_NOISE_FLOOR) ||
+            IsBufferAlive(rightGyroXList, GYRO_NOISE_FLOOR) ||
+            IsBufferAlive(rightGyroYList, GYRO_NOISE_FLOOR) ||
+            IsBufferAlive(rightGyroZList, GYRO_NOISE_FLOOR) ||
+            IsBufferAlive(leftAccXList, ACC_NOISE_FLOOR) ||
+            IsBufferAlive(leftAccYList, ACC_NOISE_FLOOR) ||
+            IsBufferAlive(leftAccZList, ACC_NOISE_FLOOR) ||
+            IsBufferAlive(rightAccXList, ACC_NOISE_FLOOR) ||
+            IsBufferAlive(rightAccYList, ACC_NOISE_FLOOR) ||
+            IsBufferAlive(rightAccZList, ACC_NOISE_FLOOR);
+    }
+    private void ResetBuffers()
+    {
+        leftAccXList.Clear(); leftAccYList.Clear(); leftAccZList.Clear();
+        leftGyroXList.Clear(); leftGyroYList.Clear(); leftGyroZList.Clear();
+
+        rightAccXList.Clear(); rightAccYList.Clear(); rightAccZList.Clear();
+        rightGyroXList.Clear(); rightGyroYList.Clear(); rightGyroZList.Clear();
+    }
     public void Reset()
     {
         OffsetL.GyroX = OffsetL.GyroY = OffsetL.GyroZ = OffsetR.GyroX = OffsetR.GyroY = OffsetR.GyroZ = 0;
-
+        ResetBuffers();
         Preferences.Default.Remove("CalibL");
         Preferences.Default.Remove("CalibR");
         Preferences.Default.Remove(LastCalibDateKey);
