@@ -22,7 +22,7 @@ public class SkiDataProcessor
 
     // Coefficiente di smoothing (0.0 a 1.0). Più è basso, più è filtrato.
     private const double AccAlpha = 0.05;
-    private const double GyroAlpha = 0.93;
+    private const double GyroAlpha = 0.70;
 
     private double _lastTimestampL = 0;
     private double _lastTimestampR = 0;
@@ -114,7 +114,10 @@ public class SkiDataProcessor
         double gDeviation = Math.Abs(gMagnitude - 1.0);
 
         // Se le G si discostano di >0.4G, riduci drasticamente il peso dell'accelerometro
-        double accWeight = gDeviation > 0.4 ? 0.00 : (1.0 - GyroAlpha);
+        bool accRollReliable = Math.Abs(p.AccX) < 0.95 && gDeviation <= 0.4;
+        double accWeight = accRollReliable ? (1.0 - GyroAlpha) : 0.00;
+
+
         double gyroWeight = 1.0 - accWeight;
 
         double safeAccRoll = Math.Clamp(p.Roll, -75.0, 75.0);

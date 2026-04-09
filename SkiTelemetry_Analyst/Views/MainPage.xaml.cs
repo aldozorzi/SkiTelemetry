@@ -404,17 +404,17 @@ namespace SkiTelemetry_Analyst.Views
 
         public async void OnHeadsetHook()
         {
-            if (ConfigView.IsVisible && BtnPair.IsVisible)
+            if (ConfigView.IsVisible && BtnPair.IsVisible && BtnPair.IsEnabled)
             {
                 _ = SpeechHelper.SpeakAsync($"Ricerca sensori, attendi");
                 OnPairSensorsClicked(new object(), new EventArgs());
             }
-            else if (ActiveView.IsVisible && BtnQuickCalibrate.IsVisible)
+            else if (ActiveView.IsVisible && BtnQuickCalibrate.IsVisible && BtnQuickCalibrate.IsEnabled)
             {
                 _ = SpeechHelper.SpeakAsync($"Avvio Calibrazione, non muoverti e attendi.");
                 OnQuickCalibrateClicked(new object(), new EventArgs());
             }
-            else if (ActiveView.IsVisible && BtnScan.IsVisible)
+            else if (ActiveView.IsVisible && BtnScan.IsVisible && BtnScan.IsEnabled)
             {
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
@@ -422,7 +422,7 @@ namespace SkiTelemetry_Analyst.Views
                     OnScanClicked(new object(), new EventArgs()); // [DEBUG] ?
                 });
             } 
-            else if (ActiveView.IsVisible && BtnStopContainer.IsVisible)
+            else if (ActiveView.IsVisible && BtnStopContainer.IsVisible && BtnStopContainer.IsEnabled)
             {
                 _ = SpeechHelper.SpeakAsync($"Sessione terminata");
                 OnStopClicked(new object(), new EventArgs());

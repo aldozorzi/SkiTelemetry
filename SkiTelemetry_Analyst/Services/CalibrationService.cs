@@ -34,7 +34,7 @@ public class CalibrationService
 
     private readonly TelemetryLogger _logger = new();
 
-    private DateTime _lastAutoCalibTime = DateTime.MinValue;
+    private DateTime _lastCalibTime = DateTime.MinValue;
     private const int MINUTES_BETWEEN_AUTOCALIBS = 5;
 
     private CalibrationService()
@@ -71,7 +71,7 @@ public class CalibrationService
 
     private void CheckAndAutoCalibrate(SkiFrame frame)
     {
-        if ((DateTime.Now - _lastAutoCalibTime) < TimeSpan.FromMinutes(MINUTES_BETWEEN_AUTOCALIBS))
+        if ((DateTime.Now - _lastCalibTime) < TimeSpan.FromMinutes(MINUTES_BETWEEN_AUTOCALIBS))
         {
             return;
         }
@@ -148,7 +148,7 @@ public class CalibrationService
             }
             _recentFrames.Clear();
             ResetBuffers();
-            _lastAutoCalibTime = DateTime.Now;
+            _lastCalibTime = DateTime.Now;
         }
     }
 
@@ -187,6 +187,7 @@ public class CalibrationService
         Preferences.Default.Set("CalibR", r);
         Preferences.Default.Set(LastCalibDateKey, DateTime.Today.ToString("yyyy-MM-dd"));*/
         IsCalibratedToday = true;
+        _lastCalibTime = DateTime.Now;
     }
     private bool AreSensorsAlive()
     {
