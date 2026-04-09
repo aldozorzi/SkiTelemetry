@@ -36,6 +36,8 @@ public static class SkiGraphGenerator
         string rightSmoothGyroY = string.Join(",", allFrames.Select(f => f.Right.SmoothGyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
         string leftSmoothGyroX = string.Join(",", allFrames.Select(f => f.Left.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
         string rightSmoothGyroX = string.Join(",", allFrames.Select(f => f.Right.SmoothGyroX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftSmoothGyroZ = string.Join(",", allFrames.Select(f => f.Left.SmoothGyroZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightSmoothGyroZ = string.Join(",", allFrames.Select(f => f.Right.SmoothGyroZ.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
         string leftRawGyroY = string.Join(",", allFrames.Select(f => f.Left.GyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
         string rightRawGyroY = string.Join(",", allFrames.Select(f => f.Right.GyroY.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
@@ -81,8 +83,10 @@ public static class SkiGraphGenerator
             // 3. GYRO Y (Asse Y3 - Destra esterna)
             var traceSmoothGyroYL = {{ x: xData, y: [{leftSmoothGyroY}], name: 'GyroY L (deg/s)', yaxis: 'y3', line: {{color: 'rgba(0, 128, 0, 0.6)', width: 1}} }};
             var traceSmoothGyroYR = {{ x: xData, y: [{rightSmoothGyroY}], name: 'GyroY R (deg/s)', yaxis: 'y3', line: {{color: 'rgba(139, 69, 19, 0.6)', width: 1}} }};
-            var traceSmoothGyroXL = {{ x: xData, y: [{leftSmoothGyroX}], name: 'GyroZ L (deg/s)', yaxis: 'y3', line: {{color: 'red', width: 1}} }};
-            var traceSmoothGyroXR = {{ x: xData, y: [{rightSmoothGyroX}], name: 'GyroZ R (deg/s)', yaxis: 'y3', line: {{color: 'blue', width: 1}} }};
+            var traceSmoothGyroXL = {{ x: xData, y: [{leftSmoothGyroX}], name: 'GyroX L (deg/s)', yaxis: 'y3', line: {{color: 'red', width: 1}} }};
+            var traceSmoothGyroXR = {{ x: xData, y: [{rightSmoothGyroX}], name: 'GyroX R (deg/s)', yaxis: 'y3', line: {{color: 'blue', width: 1}} }};
+            var traceSmoothGyroZL = {{ x: xData, y: [{leftSmoothGyroZ}], name: 'GyroZ L (deg/s)', yaxis: 'y3', line: {{color: 'red', width: 1}} }};
+            var traceSmoothGyroZR = {{ x: xData, y: [{rightSmoothGyroZ}], name: 'GyroZ R (deg/s)', yaxis: 'y3', line: {{color: 'blue', width: 1}} }};
 
             var traceRawGyroYL = {{ x: xData, y: [{leftRawGyroY}], name: 'GyroY L (deg/s)', yaxis: 'y3', line: {{color: 'red', width: 1}} }};
             var traceRawGyroYR = {{ x: xData, y: [{rightRawGyroY}], name: 'GyroY R (deg/s)', yaxis: 'y3', line: {{color: 'yellow', width: 1}} }};
@@ -132,14 +136,16 @@ public static class SkiGraphGenerator
     
                 traceRollL, 
                 traceRollR,
-                traceSmoothAccXL,
+                /*traceSmoothAccXL,
                 traceSmoothAccXR, 
                 traceGL, 
                 traceGR,
                 traceSmoothGyroYL, 
                 traceSmoothGyroYR, 
                 traceSmoothGyroXL,  
-                traceSmoothGyroXR
+                traceSmoothGyroXR,*/
+                traceSmoothGyroZL,
+                traceSmoothGyroZR
             ], layout);
         </script>
     </body>
