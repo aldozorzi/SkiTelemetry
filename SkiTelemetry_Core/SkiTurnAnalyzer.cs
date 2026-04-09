@@ -387,20 +387,13 @@ public static class SkiTurnAnalyzer
         int bestIndex = minIndex;
         double bestAvg = 0;
 
+        var gValues = data.Select(f => isTurnToLeft ? f.Right.AdjustedG : f.Left.AdjustedG).ToList();
+        double windowSum = gValues.Skip(minIndex).Take(windowSize * 2 + 1).Sum();
         for (int i = minIndex + windowSize; i < data.Count - windowSize; i++)
         {
-            double windowAvg = 0;
-            for (int j = i - windowSize; j <= i + windowSize; j++)
-            {
-                windowAvg += isTurnToLeft ? data[j].Right.AdjustedG : data[j].Left.AdjustedG;
-            }
-            windowAvg /= (windowSize * 2 + 1);
-
-            if (windowAvg > bestAvg)
-            {
-                bestAvg = windowAvg;
-                bestIndex = i;
-            }
+            double windowAvg = windowSum / (windowSize * 2 + 1);
+            if (windowAvg > bestAvg) { bestAvg = windowAvg; bestIndex = i; }
+            windowSum += gValues[i + windowSize + 1] - gValues[i - windowSize];
         }
 
         return (bestIndex, bestAvg);
