@@ -39,7 +39,7 @@ public static class SkiTurnAnalyzer
     public static SensorSide DetermineOuterFoot(List<SkiFrame> turnData)
     {
         double avgY = turnData.Average(f => (f.CombinedGyro));
-        return avgY < 0 ? SensorSide.Right : SensorSide.Left;
+        return avgY > 0 ? SensorSide.Right : SensorSide.Left;
     }
     public static double CalculateSimilarity(List<SkiFrame> turnData)
     {
@@ -342,7 +342,7 @@ public static class SkiTurnAnalyzer
         if (data == null || data.Count == 0) return (0, 0);
 
         double avgGyro = data.Average(f => f.CombinedGyro);
-        bool isTurnToLeft = avgGyro < 0;
+        bool isTurnToLeft = avgGyro > 0;
         
 
         int peakIdx = 0;
@@ -366,7 +366,7 @@ public static class SkiTurnAnalyzer
         if (data == null || data.Count == 0) return (0, 0);
 
         double avgGyro = data.Average(f => f.CombinedGyro);
-        bool isTurnToLeft = avgGyro < 0;
+        bool isTurnToLeft = avgGyro > 0;
 
         // 1. Trova il minimo di G nella curva (momento di scarico/transizione)
         int minIndex = 0;
@@ -416,7 +416,7 @@ public static class SkiTurnAnalyzer
         int count = 0;
 
         double avgGyro = data.Average(f => f.CombinedGyro);
-        bool isTurnToLeft = avgGyro < 0;
+        bool isTurnToLeft = avgGyro > 0;
 
         //System.Diagnostics.Debug.WriteLine($"[ANALYZER] isTurnToLeft: {isTurnToLeft}");
 
@@ -451,7 +451,7 @@ public static class SkiTurnAnalyzer
         int count = 0;
 
         double avgGyro = data.Average(f => f.CombinedGyro);
-        bool isTurnToLeft = avgGyro < 0;
+        bool isTurnToLeft = avgGyro > 0;
 
         for (int i = start; i <= end; i++)
         {

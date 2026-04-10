@@ -54,6 +54,75 @@ class MyServerCallbacks: public BLEServerCallbacks {
     }
 };
 
+void checkIMUConfiguration() {
+    Serial.println("=== Verifica Configurazione MPU6886 ===");
+    
+    // Leggi registro GYRO_CONFIG (0x1B)
+    Wire1.beginTransmission(0x68);
+    Wire1.write(0x1B);
+    Wire1.endTransmission(false);
+    Wire1.requestFrom(0x68, 1);
+    
+    if (Wire1.available()) {
+        uint8_t gyroConfig = Wire1.read();
+        Serial.printf("[IMU] GYRO_CONFIG: 0x%02X\n", gyroConfig);
+        
+        // Estrai GYRO_FS_SEL (bit 4-3)
+        uint8_t fsSel = (gyroConfig >> 3) & 0x03;
+        Serial.print("[IMU] GYRO_FS_SEL: ");
+        switch (fsSel) {
+            case 0: 
+                Serial.println("±250 DPS (131 LSB/deg/s)");
+                Serial.println("[ERRORE] Stai dividendo per 16.4 ma il sensore è a 250 DPS!");
+                Serial.println("[SOLUZIONE] Cambia divisore in 131.0f OPPURE imposta 2000 DPS");
+                break;
+            case 1: 
+                Serial.println("±500 DPS (65.5 LSB/deg/s)");
+                Serial.println("[ERRORE] Divisore sbagliato!");
+                break;
+            case 2: 
+                Serial.println("±1000 DPS (32.8 LSB/deg/s)");
+                break;
+            case 3: 
+                Serial.println("±2000 DPS (16.4 LSB/deg/s)");
+                Serial.println("[OK] Configurazione corretta!");
+                break;
+        }
+    } else {
+        Serial.println("[ERRORE] Nessuna risposta da MPU6886 su Wire1");
+    }
+    
+    // Leggi registro ACCEL_CONFIG (0x1C)
+    Wire1.beginTransmission(0x68);
+    Wire1.write(0x1C);
+    Wire1.endTransmission(false);
+    Wire1.requestFrom(0x68, 1);
+    
+    if (Wire1.available()) {
+        uint8_t accelConfig = Wire1.read();
+        Serial.printf("[IMU] ACCEL_CONFIG: 0x%02X\n", accelConfig);
+        
+        uint8_t accelFsSel = (accelConfig >> 3) & 0x03;
+        Serial.print("[IMU] ACCEL_FS_SEL: ");
+        switch (accelFsSel) {
+            case 0: Serial.println("±2G (16384 LSB/G)"); break;
+            case 1: Serial.println("±4G (8192 LSB/G)"); break;
+            case 2: Serial.println("±8G (4096 LSB/G)"); break;
+            case 3: Serial.println("±16G (2048 LSB/G)"); break;
+        }
+    }
+    
+    Serial.println("=== Fine Verifica ===\n");
+}
+
+void printRawData() {
+  Serial.printf("RAW:[%d,%d,%d,%d,%d,%d,%d,%d,%d]\n",
+    M5.Imu.getRawData(0), M5.Imu.getRawData(1), M5.Imu.getRawData(2),
+    M5.Imu.getRawData(3), M5.Imu.getRawData(4), M5.Imu.getRawData(5),
+    M5.Imu.getRawData(6), M5.Imu.getRawData(7), M5.Imu.getRawData(8)
+  );
+}
+
 // --- TASK 1: DATA HARVESTER (IMU interna + BLE Notify) ---
 void taskData(void *pvParameters) {
     TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -65,6 +134,7 @@ void taskData(void *pvParameters) {
             
             // Leggi IMU Destra (Interna)
             M5.Imu.update();
+            
             /*M5.Imu.getAccel(&dataCombo.accXR, &dataCombo.accYR, &dataCombo.accZR);
             M5.Imu.getGyro(&dataCombo.gyroXR, &dataCombo.gyroYR, &dataCombo.gyroZR);*/
             int16_t rawAccX = M5.Imu.getRawData(0);
@@ -73,6 +143,9 @@ void taskData(void *pvParameters) {
             int16_t rawGyroX = M5.Imu.getRawData(3);
             int16_t rawGyroY = M5.Imu.getRawData(4);
             int16_t rawGyroZ = M5.Imu.getRawData(5);
+
+            //printRawData();
+            
 
             // Conversione manuale basata su +-4G (8192 LSB/g) - per +-8G -> 4096.0f
             dataCombo.accXR = (float)rawAccX / 8192.0f;
@@ -154,6 +227,7 @@ void setup() {
 
     auto cfg = M5.config();
     M5.begin(cfg);
+
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF); 
     delay(200);
@@ -215,18 +289,7 @@ void setup() {
     Wire1.write(0x08); // ±4g
     Wire1.endTransmission();
 
-    // VERIFICA Scrittura registro
-    /*delay(10);
-    Wire1.beginTransmission(0x68);
-    Wire1.write(0x1C);
-    Wire1.endTransmission(false);
-    Wire1.requestFrom(0x68, 1);
-    if (Wire1.available()) {
-        uint8_t accelCfg = Wire1.read();
-        Serial.printf("[IMU] ACCEL_CONFIG: 0x%02X (atteso 0x08)\n", accelCfg);
-    } else {
-        Serial.println("[IMU] ERRORE: nessuna risposta su Wire1");
-    }*/
+    //checkIMUConfiguration();
 
     // Task Creation
     xTaskCreatePinnedToCore(taskData, "DATA", 4096, NULL, 3, NULL, 1);
