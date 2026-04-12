@@ -109,7 +109,7 @@ public static class SkiTurnAnalyzer
 
         // 1. Picchi Asincroni (Memoria: Roll prima, G dopo)
         double maxRoll = turnData.Max(f => Math.Abs(f.Left.SmoothRoll + f.Right.SmoothRoll) / 2.0);
-        double maxG = turnData.Max(f => (f.Left.AdjustedG + f.Right.AdjustedG) / 2.0);
+        double maxG = turnData.Max(f => (f.Left.AdjustedG + f.Right.AdjustedG) / 2.0) + 1 ;
 
         if (maxRoll < 10) return 0;
 
@@ -121,7 +121,7 @@ public static class SkiTurnAnalyzer
         var end = turnData[^1].Left.Timestamp;
         var duration = (end - start) / 1000.0;
 
-        double boostRequired = GetDynamicMultiplier(maxRoll);
+        double boostRequired = GetDynamicMultiplier(maxRoll) ;
 
         double gOttimale = gBinario * boostRequired;
 
@@ -158,11 +158,11 @@ public static class SkiTurnAnalyzer
     private static double GetDynamicMultiplier(double currentRoll)
     {
         // Definiamo i nostri "pilastri" di taratura
-        const double MinRoll = 20.0;  // Sotto i 20° chiediamo il massimo
+        const double MinRoll = 30.0;  // Sotto i 20° chiediamo il massimo
         const double MaxRoll = 50.0;  // Sopra i 50° chiediamo il minimo
 
-        const double MaxMult = 2.0;   // Moltiplicatore per il corto raggio (cattivo)
-        const double MinMult = 1.6;   // Moltiplicatore per l'arco ampio (umano)
+        const double MaxMult = 2.6;   // Moltiplicatore per il corto raggio (cattivo)
+        const double MinMult = 2.0;   // Moltiplicatore per l'arco ampio (umano)
 
         // 1. Appiattiamo l'angolo nei limiti dei pilastri
         double clampedRoll = Math.Clamp(Math.Abs(currentRoll), MinRoll, MaxRoll);
@@ -306,7 +306,7 @@ public static class SkiTurnAnalyzer
 
         double apexIndex = (rollPeak.Index * 0.0) + (gPeak.Index * 1.0);
         double relativePosition = apexIndex / (totalFrames - 1);
-        Debug.WriteLine($"[EarlyLoading]   relativePosition: {relativePosition:F2} (apexIndex:{apexIndex} - totalFrames:{totalFrames} - gPeak:{gPeak.Index})");
+        //Debug.WriteLine($"[EarlyLoading]   relativePosition: {relativePosition:F2} (apexIndex:{apexIndex} - totalFrames:{totalFrames} - gPeak:{gPeak.Index})");
         double score;
 
         if (relativePosition <= excellentThreshold)

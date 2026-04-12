@@ -30,7 +30,6 @@ public class SkiDataProcessor
     // Coefficiente di smoothing (0.0 a 1.0). Più è basso, più è filtrato.
     private const double AccAlpha = 0.05;
     private const double GyroAlpha = 0.10;
-    private const double AccRollWeight = 0.2;
 
     private double _lastTimestampL = 0;
     private double _lastTimestampR = 0;
@@ -106,8 +105,8 @@ public class SkiDataProcessor
             }
             f.IsInitialized = true;
             p.SmoothRoll = f.Roll;
-            p.AdjustedG = Math.Sqrt(f.AccX * f.AccX + f.AccY * f.AccY + f.AccZ * f.AccZ);
-            f.MadgwickFilter = new MadgwickAHRS(dt, AccRollWeight);
+            p.AdjustedG = Math.Sqrt(p.AccX * p.AccX + p.AccY * p.AccY + p.AccZ * p.AccZ);
+            f.MadgwickFilter = new MadgwickAHRS(dt, 0.2);
             return;
         }
 
@@ -134,12 +133,12 @@ public class SkiDataProcessor
         // Calcoliamo il valore centrato prima di passarlo al filtro
 
         f.MadgwickFilter!.Update(
-            gxRad,           // Madgwick vede il tuo Z come Roll
-            gyRad,           // Madgwick vede il tuo X come Pitch
-            gzRad,           // Madgwick vede il tuo Y come Yaw
-            p.SmoothAccX,    // Corrispondente Acc per Z
-            p.SmoothAccY,    // Corrispondente Acc per X
-            p.SmoothAccZ     // Corrispondente Acc per Y
+            gxRad,          
+            gyRad,           
+            gzRad,           
+            p.SmoothAccX,    
+            p.SmoothAccY,    
+            p.SmoothAccZ    
         );
         f.Roll = f.MadgwickFilter.GetM5StickRoll();
         p.SmoothRoll = f.Roll;
@@ -148,7 +147,8 @@ public class SkiDataProcessor
         double gMagnitude = Math.Sqrt(p.SmoothAccX * p.SmoothAccX + p.SmoothAccY * p.SmoothAccY + p.SmoothAccZ * p.SmoothAccZ);
         double gDeviation = Math.Abs(gMagnitude - 1.0);
         // G totale calcolata
-        p.AdjustedG = gMagnitude;
+        //p.AdjustedG = f.AdjustedG = f.AdjustedG + 0.1 * (gMagnitude - f.AdjustedG);
+        f.AdjustedG = p.AdjustedG = f.MadgwickFilter!.GetDynamicG(p.SmoothAccX, p.SmoothAccY, p.SmoothAccZ);
     }
     private void OnTurnCompleted(object? sender, SkiTurn turn)
     {

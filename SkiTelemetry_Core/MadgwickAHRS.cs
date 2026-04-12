@@ -109,6 +109,20 @@ public class MadgwickAHRS
     {
         return Math.Atan2(2.0 * (q0 * q3 + q1 * q2), 1.0 - 2.0 * (q2 * q2 + q3 * q3)) * (180.0 / Math.PI);
     }
+    public double GetDynamicG(double ax, double ay, double az)
+    {
+        // Passa gli stessi valori rimappati che dai all'Update
+        // az qui è il tuo AccY originale (gravità)
+        double gX = 2.0 * (q1 * q3 - q0 * q2);
+        double gY = 2.0 * (q2 * q3 + q0 * q1);
+        double gZ = q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3;
+
+        double dynX = ax - gX;
+        double dynY = ay - gY;
+        double dynZ = az - gZ;
+
+        return Math.Sqrt(dynX * dynX + dynY * dynY + dynZ * dynZ);
+    }
     public double GetM5StickRoll()
     {
         // Calcola l'angolo attorno all'asse Z (il tuo Roll) usando il quaternione

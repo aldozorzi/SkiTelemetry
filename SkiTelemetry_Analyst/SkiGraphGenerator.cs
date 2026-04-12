@@ -137,15 +137,15 @@ public static class SkiGraphGenerator
                 traceRollL, 
                 traceRollR,
                 /*traceSmoothAccXL,
-                traceSmoothAccXR, 
+                traceSmoothAccXR, */
                 traceGL, 
                 traceGR,
-                traceSmoothGyroYL, 
+                /*traceSmoothGyroYL, 
                 traceSmoothGyroYR, 
                 traceSmoothGyroXL,  
-                traceSmoothGyroXR,*/
+                traceSmoothGyroXR,
                 traceSmoothGyroZL,
-                traceSmoothGyroZR
+                traceSmoothGyroZR*/
             ], layout);
         </script>
     </body>

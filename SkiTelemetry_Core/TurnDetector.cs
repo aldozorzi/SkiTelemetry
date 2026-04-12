@@ -42,17 +42,16 @@ public class TurnDetector
 
         if (_currentAccumulator.Count > 0)
         {
-            // Rimuovere rumore iniziale su Combette
-            // Su finale 1 Indagare perché apra l'ultima curva visto che il segno non è cambiato rispetto alla curva precedente
             
             if (Math.Sign(val) != _prevTurnSign)
             {
-                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] {_currentAccumulator.Last().Left.Timestamp} Sign has changed, now {Math.Sign(val)}, before {_prevTurnSign}");
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] {frame.Left.Timestamp} Sign has changed, now {Math.Sign(val)}, before {_prevTurnSign}");
                 FinalizeTurn();
             }
+
         }
-        
-            _currentAccumulator.Add(frame);
+        //System.Diagnostics.Debug.WriteLine($"[DETECTOR] {frame.Left.Timestamp} Building Turn: {absVal}");
+        _currentAccumulator.Add(frame);
     }
 
     private void FinalizeTurn()
@@ -60,6 +59,7 @@ public class TurnDetector
         if (_currentAccumulator.Count > 0)
         {
             // Calcoliamo il picco massimo della pancia prima di decidere se è una curva
+            //System.Diagnostics.Debug.WriteLine($"[DETECTOR] CalculateMaxEdgeAngle (on {_currentAccumulator.Count} frames)");
             double maxAbs = SkiTurnAnalyzer.CalculateMaxEdgeAngle(_currentAccumulator);
 
             // Prendo un frame all'interno della curva per avere un segno pulito
@@ -68,6 +68,7 @@ public class TurnDetector
 
             // SOGLIA DI DIGNITÀ: Se la pancia non arriva almeno a 15 deg/s, 
             // è rumore, non è una curva.
+            //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Checking ({maxAbs} > 15 && {_currentAccumulator.Count} > 15");
             if (maxAbs > 15 && _currentAccumulator.Count > 15)
             {
                 AnalyzeAndEmitTurn(new List<SkiFrame>(_currentAccumulator));
@@ -80,7 +81,7 @@ public class TurnDetector
     private void AnalyzeAndEmitTurn(List<SkiFrame> turnData)
     {
         _turnCounter++;
-        System.Diagnostics.Debug.WriteLine($"CURVA [{_turnCounter}] Frames:[{turnData.Count}]--------------------------------------------------");
+        //System.Diagnostics.Debug.WriteLine($"CURVA [{_turnCounter}] Frames:[{turnData.Count}]--------------------------------------------------");
         // 2. Crea il turno usando i timestamp dei DataPoint originali
         // (Assumo che SkiFrame abbia i riferimenti Left/Right come mostrato all'inizio)
         var turn = new SkiTurn
@@ -103,7 +104,7 @@ public class TurnDetector
         // SkiTurnAnalyzer.DiagnosticTurnAnalysis(turnData);
         //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Curva: {turn.StartTimestamp} -> {turn.EndTimestamp} - CarvingIndex: {turn.PerformanceIndex} - EdgeAngle:{turn.EdgeAngle} - GForce:{turn.GForce}");
         OnTurnCompleted?.Invoke(this, turn);
-        System.Diagnostics.Debug.WriteLine($"-----------------------------------------------------------");
+        //System.Diagnostics.Debug.WriteLine($"-----------------------------------------------------------");
     }
 
 }

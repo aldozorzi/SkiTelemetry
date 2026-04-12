@@ -69,21 +69,35 @@ void loop() {
 
     dataCombo.timestamp = currentMillis;
 
-    // SIMULAZIONE SINISTRO
-    dataCombo.accXL = 0.0f;
-    dataCombo.accYL = (sin(time) * amp); 
-    dataCombo.accZL = 1.0f;
-    dataCombo.gyroXL = (cos(time) * 1.5f);
-    dataCombo.gyroYL = 0.2f;
-    dataCombo.gyroZL = (sin(time) * 0.8f);
+   // -------- PARAMETRI --------
+float maxAngle = 45.0f * M_PI / 180.0f;
+float freq = 1.0f / 3.0f; // il secondo valore sono i secondi per un ciclo completo (3s -> 0.33Hz)
 
-    // SIMULAZIONE DESTRO
-    dataCombo.accXR = 0.0f;
-    dataCombo.accYR = (sin(time) * amp); 
-    dataCombo.accZR = 1.0f;
-    dataCombo.gyroXR = (cos(time) * 1.5f);
-    dataCombo.gyroYR = 0.2f;
-    dataCombo.gyroZR = (sin(time) * 0.8f);
+// -------- CINEMATICA --------
+float angle = maxAngle * sin(2 * M_PI * freq * time);
+float angularVel = maxAngle * 2 * M_PI * freq * cos(2 * M_PI * freq * time);
+
+// 👉 conversione a gradi/s
+float angularVelDeg = angularVel * 180.0f / M_PI;
+
+// -------- SINISTRO --------
+dataCombo.gyroXL = 0.0f;
+dataCombo.gyroYL = 0.0f;
+dataCombo.gyroZL = angularVelDeg;
+
+// Gravità (sempre in G, NON toccare)
+dataCombo.accXL = sin(angle);
+dataCombo.accYL = cos(angle);
+dataCombo.accZL = 0.0f;
+
+// -------- DESTRO --------
+dataCombo.gyroXR = 0.0f;
+dataCombo.gyroYR = 0.0f;
+dataCombo.gyroZR = angularVelDeg;
+
+dataCombo.accXR = sin(angle);
+dataCombo.accYR = cos(angle);
+dataCombo.accZR = 0.0f;
 
     // Invio pacchetto Combo (52 byte)
     pCharacteristic->setValue((uint8_t*)&dataCombo, sizeof(SkiDataCombo));
@@ -92,7 +106,7 @@ void loop() {
     /*Serial.print("Dati inviati - TS: ");
     Serial.println(currentMillis);*/
     
-    delay(100); // 10Hz
+    delay(20); // 10Hz
   }
   else {
     // Se non connesso, possiamo rallentare il loop

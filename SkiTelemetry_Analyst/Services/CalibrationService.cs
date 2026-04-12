@@ -36,6 +36,7 @@ public class CalibrationService
 
     private DateTime _lastCalibTime = DateTime.MinValue;
     private const int MINUTES_BETWEEN_AUTOCALIBS = 5;
+    private SkiDataProcessor? _dataProcessor;
 
     private CalibrationService()
     {
@@ -43,6 +44,11 @@ public class CalibrationService
         OffsetR = new CalibrationOffsets();
         /*OffsetL = Preferences.Default.Get("CalibL", 0.0);
         OffsetR = Preferences.Default.Get("CalibR", 0.0);*/
+    }
+
+    public void setProcessor(SkiDataProcessor processor)
+    {
+        _dataProcessor = processor;
     }
 
     public void AddFrame(SkiFrame frame,bool auto = true)
@@ -131,6 +137,9 @@ public class CalibrationService
             OffsetR.GyroZ = (float)rightGyroZList.Average;
 
             _ = SpeechHelper.SpeakAsync($"Autocalibrazione effettuata.");
+
+            if (_dataProcessor != null)
+                _dataProcessor.SetCalibration(OffsetL,OffsetR);
 
             //bool isSettingsLoggingEnabled = Preferences.Default.Get("IsLoggingEnabled", false);
             bool isSettingsLoggingEnabled = true; // forcing logging 

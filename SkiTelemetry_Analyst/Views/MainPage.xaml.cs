@@ -22,11 +22,12 @@ namespace SkiTelemetry_Analyst.Views
         private readonly TelemetryLogger _logger = new();
         private const string SensorKey = "MainSensorId";
         private bool _isCalibrating = false;
+        private bool _isScanning = false;
 
         public MainPage()
         {
             InitializeComponent();
-
+            CalibrationService.Instance.setProcessor(_dataProcessor);
             var leftOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Left);
             var rightOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Right);
             _dataProcessor.SetCalibration(leftOffsets, rightOffsets);
@@ -64,14 +65,18 @@ namespace SkiTelemetry_Analyst.Views
 
         private async void OnScanClicked(object? sender, EventArgs e)
         {
+            if (_isScanning) return;
+            _isScanning = true;
             if (_bleService.State() == BluetoothState.Off)
             {
                 StatusLabel.Text = "BlueTooth disattivato.";
                 _ = SpeechHelper.SpeakAsync($"BlueTooth disattivato.");
+                _isScanning = false;
+                return;
             }
-
-            StatusLabel.Text = "Connessione...";
             BtnScan.IsEnabled = false; // Disabilita per evitare click multipli
+            StatusLabel.Text = "Connessione...";
+            
 
             // 1. Tenta il pairing e la connessione reale
             // Il metodo nel Service deve restituire true solo se ConnectToDeviceAsync ha successo
@@ -87,7 +92,7 @@ namespace SkiTelemetry_Analyst.Views
             {
                 _dataProcessor.Reset();
                 ActivateDashboard();
-                
+                _isScanning = false;
             }
             else
             {
@@ -101,6 +106,7 @@ namespace SkiTelemetry_Analyst.Views
                 UpdateCalibrationWarning();
                 //DataContainer.IsVisible = false;
                 BtnStopContainer.IsVisible = false;
+                _isScanning = false;
             }
         }
 
