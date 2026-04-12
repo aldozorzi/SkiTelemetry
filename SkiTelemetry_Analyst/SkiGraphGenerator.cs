@@ -73,12 +73,12 @@ public static class SkiGraphGenerator
             var traceSmoothAccXL = {{ x: xData, y: [{leftSmoothAccX}], name: 'AccX Smooth L', yaxis: 'y2', line: {{color: 'green', width: 1.5, dash: 'dot'}} }};
             var traceSmoothAccXR = {{ x: xData, y: [{rightSmoothAccX}], name: 'AccX Smooth R', yaxis: 'y2', line: {{color: 'orange', width: 1.5, dash: 'dot'}} }};
 
-            var traceRawAccXL = {{ x: xData, y: [{leftRawAccX}], name: 'AccX Raw L', yaxis: 'y2', line: {{color: 'red', width: 1.5, dash: 'dot'}} }};
-            var traceRawAccXR = {{ x: xData, y: [{rightRawAccX}], name: 'AccX Raw R', yaxis: 'y2', line: {{color: 'blue', width: 1.5, dash: 'dot'}} }};
-            var traceRawAccYL = {{ x: xData, y: [{leftRawAccY}], name: 'AccY Raw L', yaxis: 'y2', line: {{color: 'yellow', width: 1.5, dash: 'dot'}} }};
-            var traceRawAccYR = {{ x: xData, y: [{rightRawAccY}], name: 'AccY Raw R', yaxis: 'y2', line: {{color: 'orange', width: 1.5, dash: 'dot'}} }};
-            var traceRawAccZL = {{ x: xData, y: [{leftRawAccZ}], name: 'AccZ Raw L', yaxis: 'y2', line: {{color: 'purple', width: 1.5, dash: 'dot'}} }};
-            var traceRawAccZR = {{ x: xData, y: [{rightRawAccZ}], name: 'AccZ Raw R', yaxis: 'y2', line: {{color: 'green', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccXL = {{ x: xData, y: [{leftRawAccX}], name: 'AccX Raw L', yaxis: 'y2',visible: 'legendonly', line: {{color: 'red', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccXR = {{ x: xData, y: [{rightRawAccX}], name: 'AccX Raw R', yaxis: 'y2',visible: 'legendonly', line: {{color: 'blue', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccYL = {{ x: xData, y: [{leftRawAccY}], name: 'AccY Raw L', yaxis: 'y2',visible: 'legendonly', line: {{color: 'yellow', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccYR = {{ x: xData, y: [{rightRawAccY}], name: 'AccY Raw R', yaxis: 'y2',visible: 'legendonly', line: {{color: 'orange', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccZL = {{ x: xData, y: [{leftRawAccZ}], name: 'AccZ Raw L', yaxis: 'y2',visible: 'legendonly', line: {{color: 'purple', width: 1.5, dash: 'dot'}} }};
+            var traceRawAccZR = {{ x: xData, y: [{rightRawAccZ}], name: 'AccZ Raw R', yaxis: 'y2',visible: 'legendonly', line: {{color: 'green', width: 1.5, dash: 'dot'}} }};
 
             // 3. GYRO Y (Asse Y3 - Destra esterna)
             var traceSmoothGyroYL = {{ x: xData, y: [{leftSmoothGyroY}], name: 'GyroY L (deg/s)', yaxis: 'y3', line: {{color: 'rgba(0, 128, 0, 0.6)', width: 1}} }};
@@ -121,11 +121,11 @@ public static class SkiGraphGenerator
             }};
 
             Plotly.newPlot('graph', [
-                /*traceRawAccXL,
+                traceRawAccXL,
                 traceRawAccXR,
                 traceRawAccYL,
                 traceRawAccYR,
-                traceRawAccZL,
+               /* traceRawAccZL,
                 traceRawAccZR,
                 traceRawGyroYL,
                 traceRawGyroYR,

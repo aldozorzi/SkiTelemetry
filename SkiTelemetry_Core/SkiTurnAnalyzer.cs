@@ -20,9 +20,9 @@ public static class SkiTurnAnalyzer
     {
         //System.Diagnostics.Debug.WriteLine($"START ROLL CALCULATION -------------------------------------------------");
         var peak = GetRollPeak(turnData);
-        //System.Diagnostics.Debug.WriteLine($"[ANALYZER] Recupero peak.: {peak.MaxRoll} ({peak.Index})");
+        //Debug.WriteLine($"[ANALYZER] Recupero Roll peak.: {peak.MaxRoll} ({peak.Index})");
         double roll = GetAverageRollInWindow(turnData, peak.Index);
-
+        //Debug.WriteLine($"[ANALYZER] Recupero Roll peak.: {peak.MaxRoll} -> {roll}");
         return Math.Round(roll);
     }
     public static double CalculateMaxGForce(List<SkiFrame> turnData)
@@ -108,8 +108,8 @@ public static class SkiTurnAnalyzer
         if (turnData == null || turnData.Count < 5) return 0;
 
         // 1. Picchi Asincroni (Memoria: Roll prima, G dopo)
-        double maxRoll = turnData.Max(f => Math.Abs(f.Left.SmoothRoll + f.Right.SmoothRoll) / 2.0);
-        double maxG = turnData.Max(f => (f.Left.AdjustedG + f.Right.AdjustedG) / 2.0) + 1 ;
+        double maxRoll = SkiTurnAnalyzer.CalculateMaxEdgeAngle(turnData);
+        double maxG = SkiTurnAnalyzer.CalculateMaxGForce(turnData);
 
         if (maxRoll < 10) return 0;
 
@@ -158,11 +158,11 @@ public static class SkiTurnAnalyzer
     private static double GetDynamicMultiplier(double currentRoll)
     {
         // Definiamo i nostri "pilastri" di taratura
-        const double MinRoll = 30.0;  // Sotto i 20° chiediamo il massimo
+        const double MinRoll = 30.0;  // Sotto i 30° chiediamo il massimo
         const double MaxRoll = 50.0;  // Sopra i 50° chiediamo il minimo
 
-        const double MaxMult = 2.6;   // Moltiplicatore per il corto raggio (cattivo)
-        const double MinMult = 2.0;   // Moltiplicatore per l'arco ampio (umano)
+        const double MaxMult = 2.4;   // Moltiplicatore per il corto raggio (cattivo)
+        const double MinMult = 1.8;   // Moltiplicatore per l'arco ampio (umano)
 
         // 1. Appiattiamo l'angolo nei limiti dei pilastri
         double clampedRoll = Math.Clamp(Math.Abs(currentRoll), MinRoll, MaxRoll);
@@ -408,7 +408,7 @@ public static class SkiTurnAnalyzer
 
     private static double GetAverageRollInWindow(List<SkiFrame> data, int peakIndex)
     {
-        int windowSize = 10;
+        int windowSize = 5;
         int start = Math.Max(0, peakIndex - windowSize);
         int end = Math.Min(data.Count - 1, peakIndex + windowSize);
 
@@ -443,7 +443,7 @@ public static class SkiTurnAnalyzer
 
     private static double GetAverageGInWindow(List<SkiFrame> data, int peakIndex)
     {
-        int windowSize = 10; 
+        int windowSize = 5; 
         int start = Math.Max(0, peakIndex - windowSize);
         int end = Math.Min(data.Count - 1, peakIndex + windowSize);
 

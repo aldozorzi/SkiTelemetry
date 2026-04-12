@@ -30,6 +30,7 @@ public class SkiDataProcessor
     // Coefficiente di smoothing (0.0 a 1.0). Più è basso, più è filtrato.
     private const double AccAlpha = 0.05;
     private const double GyroAlpha = 0.10;
+    
 
     private double _lastTimestampL = 0;
     private double _lastTimestampR = 0;
@@ -106,7 +107,6 @@ public class SkiDataProcessor
             f.IsInitialized = true;
             p.SmoothRoll = f.Roll;
             p.AdjustedG = Math.Sqrt(p.AccX * p.AccX + p.AccY * p.AccY + p.AccZ * p.AccZ);
-            f.MadgwickFilter = new MadgwickAHRS(dt, 0.2);
             return;
         }
 
@@ -124,31 +124,30 @@ public class SkiDataProcessor
         p.SmoothGyroY = f.GyroY = f.GyroY + GyroAlpha * (p.GyroY - f.GyroY);
         p.SmoothGyroZ = f.GyroZ = f.GyroZ + GyroAlpha * (p.GyroZ - f.GyroZ);
 
-        // 6. CALCOLO ROLL
-        double degToRad = Math.PI / 180.0;
-        double gxRad = p.GyroX * degToRad;
-        double gyRad = p.GyroY * degToRad;
-        double gzRad = p.GyroZ * degToRad;
+        //6. G-Force Adjuster
+        double rawG = Math.Sqrt(p.SmoothAccX * p.SmoothAccX + p.SmoothAccY * p.SmoothAccY + p.SmoothAccZ * p.SmoothAccZ);
+        p.AdjustedG = rawG;
 
-        // Calcoliamo il valore centrato prima di passarlo al filtro
+        // 7. ROLL
+        const double accWeight = 0.07;
 
-        f.MadgwickFilter!.Update(
-            gxRad,          
-            gyRad,           
-            gzRad,           
-            p.SmoothAccX,    
-            p.SmoothAccY,    
-            p.SmoothAccZ    
-        );
-        f.Roll = f.MadgwickFilter.GetM5StickRoll();
+
+        double accRoll = Math.Atan2(p.SmoothAccX, p.SmoothAccY) * (180.0 / Math.PI);
+        double safeAccRoll = Math.Clamp(accRoll, -75.0, 75.0);
+        double dynamicAccWeight = accWeight;
+        bool isInTransition = Math.Abs(p.SmoothGyroZ) < 10.0
+                   && Math.Abs(rawG - 1.0) < 0.15;
+        if (rawG > 1.1)
+        {
+            //dynamicAccWeight = Math.Min(0.999, accWeight + (rawG - 1.1) * 0.1);
+        }
+        double gyroWeight = 1.0 - dynamicAccWeight;
+
+        f.Roll = gyroWeight * (f.Roll + p.SmoothGyroZ * dt) + dynamicAccWeight * safeAccRoll;
         p.SmoothRoll = f.Roll;
 
+        
 
-        double gMagnitude = Math.Sqrt(p.SmoothAccX * p.SmoothAccX + p.SmoothAccY * p.SmoothAccY + p.SmoothAccZ * p.SmoothAccZ);
-        double gDeviation = Math.Abs(gMagnitude - 1.0);
-        // G totale calcolata
-        //p.AdjustedG = f.AdjustedG = f.AdjustedG + 0.1 * (gMagnitude - f.AdjustedG);
-        f.AdjustedG = p.AdjustedG = f.MadgwickFilter!.GetDynamicG(p.SmoothAccX, p.SmoothAccY, p.SmoothAccZ);
     }
     private void OnTurnCompleted(object? sender, SkiTurn turn)
     {

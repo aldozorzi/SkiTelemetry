@@ -60,7 +60,8 @@ public class TurnDetector
         {
             // Calcoliamo il picco massimo della pancia prima di decidere se è una curva
             //System.Diagnostics.Debug.WriteLine($"[DETECTOR] CalculateMaxEdgeAngle (on {_currentAccumulator.Count} frames)");
-            double maxAbs = SkiTurnAnalyzer.CalculateMaxEdgeAngle(_currentAccumulator);
+            double maxEdge = SkiTurnAnalyzer.CalculateMaxEdgeAngle(_currentAccumulator);
+            double duration = (_currentAccumulator.Last().Left.Timestamp - _currentAccumulator.First().Left.Timestamp) / 1000;
 
             // Prendo un frame all'interno della curva per avere un segno pulito
             int mid = _currentAccumulator.Count / 2;
@@ -69,8 +70,9 @@ public class TurnDetector
             // SOGLIA DI DIGNITÀ: Se la pancia non arriva almeno a 15 deg/s, 
             // è rumore, non è una curva.
             //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Checking ({maxAbs} > 15 && {_currentAccumulator.Count} > 15");
-            if (maxAbs > 15 && _currentAccumulator.Count > 15)
+            if (maxEdge >= 10 && duration > 0.8 &&  _currentAccumulator.Count > 15)
             {
+                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] Checking CombinedGyro: ({maxAbs} )");
                 AnalyzeAndEmitTurn(new List<SkiFrame>(_currentAccumulator));
             }
         }
@@ -81,7 +83,7 @@ public class TurnDetector
     private void AnalyzeAndEmitTurn(List<SkiFrame> turnData)
     {
         _turnCounter++;
-        //System.Diagnostics.Debug.WriteLine($"CURVA [{_turnCounter}] Frames:[{turnData.Count}]--------------------------------------------------");
+        //System.Diagnostics.Debug.WriteLine($"[DETECTOR ]CURVA [{_turnCounter}] Frames:[{turnData.Count}]--------------------------------------------------");
         // 2. Crea il turno usando i timestamp dei DataPoint originali
         // (Assumo che SkiFrame abbia i riferimenti Left/Right come mostrato all'inizio)
         var turn = new SkiTurn
