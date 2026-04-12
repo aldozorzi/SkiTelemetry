@@ -172,6 +172,23 @@ void setup() {
     Wire1.write(0x08); // ±4g
     Wire1.endTransmission();
 
+    // DLPF Giroscopio - registro 0x1A
+    // Valore 0x03 = banda ~41Hz, delay ~5.9ms
+    // Valore 0x04 = banda ~20Hz, delay ~9.9ms
+    // Valore 0x05 = banda ~10Hz, delay ~17.8ms
+    Wire1.beginTransmission(0x68);
+    Wire1.write(0x1A);
+    Wire1.write(0x04);
+    Wire1.endTransmission();
+
+    // DLPF Accelerometro - registro 0x1D  
+    // Valore 0x04 = banda ~21Hz, delay ~8.87ms
+    // Valore 0x05 = banda ~10Hz, delay ~13.79ms
+    Wire1.beginTransmission(0x68);
+    Wire1.write(0x1D);
+    Wire1.write(0x05);
+    Wire1.endTransmission();
+
     // VERIFICA Scrittura registro
     /*delay(10);
     Wire1.beginTransmission(0x68);
