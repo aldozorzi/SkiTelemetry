@@ -143,23 +143,25 @@ namespace SkiTelemetry_Analyst.Views
             if (!DebugDataDisplay.IsVisible) return;
             
 
-                LblAccXL.Text = $"X: {rawFrame.Left.AccX:F2}";
-                LblAccYL.Text = $"Y: {rawFrame.Left.AccY:F2}";
-                LblAccZL.Text = $"Z: {rawFrame.Left.AccZ:F2}";
-                LblGyrXL.Text = $"X: {rawFrame.Left.GyroX:F1}";
-                LblGyrYL.Text = $"Y: {rawFrame.Left.GyroY:F1}";
-                LblGyrZL.Text = $"Z: {rawFrame.Left.GyroZ:F1}";
-                LblRollL.Text = $"{rawFrame.Left.Roll:F1}°";
-           
-                LblAccXR.Text = $"X: {rawFrame.Right.AccX:F2}";
-                LblAccYR.Text = $"Y: {rawFrame.Right.AccY:F2}";
-                LblAccZR.Text = $"Z: {rawFrame.Right.AccZ:F2}";
-                LblGyrXR.Text = $"X: {rawFrame.Right.GyroX:F1}";
-                LblGyrYR.Text = $"Y: {rawFrame.Right.GyroY:F1}";
-                LblGyrZR.Text = $"Z: {rawFrame.Right.GyroZ:F1}";
-                LblRollR.Text = $"{rawFrame.Right.Roll:F1}°";
+            LblAccXL.Text = $"X: {rawFrame.Left.AccX:F2}";
+            LblAccYL.Text = $"Y: {rawFrame.Left.AccY:F2}";
+            LblAccZL.Text = $"Z: {rawFrame.Left.AccZ:F2}";
+            LblGyrXL.Text = $"X: {rawFrame.Left.GyroX:F1}";
+            LblGyrYL.Text = $"Y: {rawFrame.Left.GyroY:F1}";
+            LblGyrZL.Text = $"Z: {rawFrame.Left.GyroZ:F1}";
+            LblRollL.Text = $"{rawFrame.Left.Roll:F1}°";
+            LblGForceL.Text = $"{rawFrame.Left.AdjustedG:F1}";
 
- 
+            LblAccXR.Text = $"X: {rawFrame.Right.AccX:F2}";
+            LblAccYR.Text = $"Y: {rawFrame.Right.AccY:F2}";
+            LblAccZR.Text = $"Z: {rawFrame.Right.AccZ:F2}";
+            LblGyrXR.Text = $"X: {rawFrame.Right.GyroX:F1}";
+            LblGyrYR.Text = $"Y: {rawFrame.Right.GyroY:F1}";
+            LblGyrZR.Text = $"Z: {rawFrame.Right.GyroZ:F1}";
+            LblRollR.Text = $"{rawFrame.Right.Roll:F1}°";
+            LblGForceR.Text = $"{rawFrame.Right.AdjustedG:F1}";
+
+
         }
 
         private void DisplayTurnValues(object? sender, SkiTurn turn)
@@ -450,7 +452,7 @@ namespace SkiTelemetry_Analyst.Views
         }
         private void UpdateBtnScan()
         {
-            BtnScan.IsVisible = CalibrationService.Instance.IsCalibratedToday;
+            BtnScan.IsVisible = true; // CalibrationService.Instance.IsCalibratedToday;
         }
         private void UpdateCalibrationWarning()
         {

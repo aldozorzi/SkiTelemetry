@@ -123,6 +123,8 @@
 
                                         <Label Text="ROLL" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                         <Label x:Name="LblRollL" Text="0.0°" FontSize="12" FontAttributes="Bold"/>
+                                        <Label Text="GForce" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                        <Label x:Name="LblGForceL" Text="0.0" FontSize="12" FontAttributes="Bold"/>
                                     </VerticalStackLayout>
                                 </Border>
                             </VerticalStackLayout>
@@ -143,6 +145,8 @@
 
                                         <Label Text="ROLL" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                         <Label x:Name="LblRollR" Text="0.0°" FontSize="12" FontAttributes="Bold"/>
+                                        <Label Text="GFORCE" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                        <Label x:Name="LblGForceR" Text="0.0" FontSize="12" FontAttributes="Bold"/>
                                     </VerticalStackLayout>
                                 </Border>
                             </VerticalStackLayout>
