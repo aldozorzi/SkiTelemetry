@@ -364,3 +364,4 @@ FodyWeavers.xsd
 SkiTelemetry_Web/Logic.txt
 SkiTelemetry_Web/Stack.txt
 SkiTelemetry_Web/.env
+/SkiTelemetry_Chart
