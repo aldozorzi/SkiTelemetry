@@ -252,7 +252,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
                 StringBuilder csv = new StringBuilder();
                 // Header (usiamo ; per Excel italiano)
-                csv.AppendLine("Timestamp;AccXL;AccYL;AccZL;GyroXL;GyroYL;GyroZL;SmoothAccXL;SmoothAccYL;SmoothAccZL;SmoothGyroXL;SmoothGyroYL;SmoothGyroZL;AccXR;AccYR;AccZR;GyroXR;GyroYR;GyroZR;SmoothAccXR;SmoothAccYR;SmoothAccZR;SmoothGyroXR;SmoothGyroYR;SmoothGyroZR");
+                csv.AppendLine("Timestamp;AccXL;AccYL;AccZL;GyroXL;GyroYL;GyroZL;AccXR;AccYR;AccZR;GyroXR;GyroYR;GyroZR");
 
                 foreach (var f in frames)
                 {
@@ -261,13 +261,13 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
                     csv.AppendLine($"{f.Left.Timestamp};{f.Left.AccX.ToString(provider)};{f.Left.AccY.ToString(provider)};{f.Left.AccZ.ToString(provider)};" +
                                      $"{f.Left.GyroX.ToString(provider)};{f.Left.GyroY.ToString(provider)};{f.Left.GyroZ.ToString(provider)};" +
-                                     $"{f.Left.SmoothAccX.ToString(provider)};{f.Left.SmoothAccY.ToString(provider)};{f.Left.SmoothAccZ.ToString(provider)};" +
-                                     $"{f.Left.SmoothGyroX.ToString(provider)};{f.Left.SmoothGyroY.ToString(provider)};{f.Left.SmoothGyroZ.ToString(provider)};"+
+                                     /*$"{f.Left.SmoothAccX.ToString(provider)};{f.Left.SmoothAccY.ToString(provider)};{f.Left.SmoothAccZ.ToString(provider)};" +
+                                     $"{f.Left.SmoothGyroX.ToString(provider)};{f.Left.SmoothGyroY.ToString(provider)};{f.Left.SmoothGyroZ.ToString(provider)};"+*/
 
                                      $"{f.Right.AccX.ToString(provider)};{f.Right.AccY.ToString(provider)};{f.Right.AccZ.ToString(provider)};" +
-                                     $"{f.Right.GyroX.ToString(provider)};{f.Right.GyroY.ToString(provider)};{f.Right.GyroZ.ToString(provider)};" +
+                                     $"{f.Right.GyroX.ToString(provider)};{f.Right.GyroY.ToString(provider)};{f.Right.GyroZ.ToString(provider)};" /*+
                                      $"{f.Right.SmoothAccX.ToString(provider)};{f.Right.SmoothAccY.ToString(provider)};{f.Right.SmoothAccZ.ToString(provider)};" +
-                                     $"{f.Right.SmoothGyroX.ToString(provider)};{f.Right.SmoothGyroY.ToString(provider)};{f.Right.SmoothGyroZ.ToString(provider)};"
+                                     $"{f.Right.SmoothGyroX.ToString(provider)};{f.Right.SmoothGyroY.ToString(provider)};{f.Right.SmoothGyroZ.ToString(provider)};"*/
 
                                      );
                 }
