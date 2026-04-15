@@ -460,7 +460,7 @@ namespace SkiTelemetry_Analyst.Views
             BtnQuickCalibrate.IsVisible = !CalibrationService.Instance.IsCalibratedToday && !_isSessionActive;
         }
 
-        private async void OnQuickCalibrateClicked(object sender, EventArgs e)
+        private async void OnQuickCalibrateClicked(object? sender, EventArgs? e)
         {
             _isCalibrating = true;
             // 2. UI Feedback

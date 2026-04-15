@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:helpers="clr-namespace:SkiTelemetry_Analyst.Helpers"
+             xmlns:runs="clr-namespace:SkiTelemetry_Analyst.Views.Runs"
              x:Class="SkiTelemetry_Analyst.Views.Runs.RunDetailPage"
              Title=""
              BackgroundColor="#000000">
@@ -13,7 +14,7 @@
         </ResourceDictionary>
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto, Auto, *" Padding="20">
+    <Grid RowDefinitions="Auto, Auto, Auto, *" Padding="20">
 
         <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,0,0,20">
             <Label x:Name="LblRunName" 
@@ -56,76 +57,102 @@
             </Border>
         </Grid>
 
-        <CollectionView Grid.Row="2" x:Name="TurnsCollection" SelectionMode="None" Margin="0">
-            <CollectionView.ItemsLayout>
-                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
-            </CollectionView.ItemsLayout>
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Border Padding="15" Stroke="#333" BackgroundColor="#121212" StrokeShape="RoundRectangle 10">
-                       
-                        <VerticalStackLayout Spacing="8">
-                            <Label  Text="{Binding Index, StringFormat='# {0:F0}'}"  />
-                            <Grid ColumnDefinitions="*, Auto">
-                                <Label Grid.Column="0" Text="{Binding PerformanceIndex, StringFormat='PERFORMANCE INDEX: {0:F0}%'}" 
-FontAttributes="Bold" TextColor="Cyan" FontSize="11" />
-                                <Label Grid.Column="1" Text="{Binding Foot, StringFormat='FOOT: {0}'}" 
-TextColor="White" FontSize="11" Opacity="0.7" />
-                            </Grid>
-                            <ProgressBar Progress="{Binding PerformanceIndex, Converter={StaticResource PercentToRatioConverter}}" 
-  ProgressColor="Cyan" ScaleY="2" />
+        <HorizontalStackLayout Grid.Row="2" Spacing="10" Margin="0,0,0,12" HorizontalOptions="Center" >
+            <Border x:Name="BtnTabCurve" 
+            Padding="20,8" 
+            Stroke="White" StrokeShape="RoundRectangle 8"
+            BackgroundColor="#121212">
+                <Label Text="CURVE" FontSize="12" FontAttributes="Bold" 
+               TextColor="White" HorizontalOptions="Center"/>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTabCurve" />
+                </Border.GestureRecognizers>
+            </Border>
 
-                            <Grid ColumnDefinitions="*">
-                                <Label Text="{Binding EdgeAngle, StringFormat='MAX ROLL: {0:F0}°'}" 
-               FontAttributes="Bold" TextColor="Salmon" FontSize="11" />
-                                
-                            </Grid>
-                            <ProgressBar Progress="{Binding EdgeAngle, Converter={StaticResource AngleToPercentConverter}}" 
-                 ProgressColor="Salmon" ScaleY="2" />
+            <Border x:Name="BtnTabGrafico" 
+            Padding="20,8" 
+            Stroke="#333" StrokeShape="RoundRectangle 8"
+            BackgroundColor="Transparent">
+                <Label Text="CHART" FontSize="12" FontAttributes="Bold" 
+               TextColor="#555" HorizontalOptions="Center"/>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnTabGrafico" />
+                </Border.GestureRecognizers>
+            </Border>
+        </HorizontalStackLayout>
+        <Grid Grid.Row="3">
+            <CollectionView x:Name="TurnsCollection" SelectionMode="None" Margin="0">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="15" Stroke="#333" BackgroundColor="#121212" StrokeShape="RoundRectangle 10">
 
-                            
+                            <VerticalStackLayout Spacing="8">
+                                <Label  Text="{Binding Index, StringFormat='# {0:F0}'}"  />
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <Label Grid.Column="0" Text="{Binding PerformanceIndex, StringFormat='PERFORMANCE INDEX: {0:F0}%'}" 
+    FontAttributes="Bold" TextColor="Cyan" FontSize="11" />
+                                    <Label Grid.Column="1" Text="{Binding Foot, StringFormat='FOOT: {0}'}" 
+    TextColor="White" FontSize="11" Opacity="0.7" />
+                                </Grid>
+                                <ProgressBar Progress="{Binding PerformanceIndex, Converter={StaticResource PercentToRatioConverter}}" 
+      ProgressColor="Cyan" ScaleY="2" />
 
-                            <Grid ColumnDefinitions="*">
-                                <Label Grid.Column="1" Text="{Binding GForce, StringFormat='G-FORCE LOAD: {0:F1} G'}" 
-               FontAttributes="Bold" TextColor="Orange" FontSize="11" />
-                            </Grid>
-                            <ProgressBar Progress="{Binding GForce, Converter={StaticResource GForceToPercentConverter}}" 
-                 ProgressColor="Orange" ScaleY="2" />
+                                <Grid ColumnDefinitions="*">
+                                    <Label Text="{Binding EdgeAngle, StringFormat='MAX ROLL: {0:F0}°'}" 
+                   FontAttributes="Bold" TextColor="Salmon" FontSize="11" />
 
-                        
+                                </Grid>
+                                <ProgressBar Progress="{Binding EdgeAngle, Converter={StaticResource AngleToPercentConverter}}" 
+                     ProgressColor="Salmon" ScaleY="2" />
 
-                        <Grid ColumnDefinitions="*, *, *, *" Margin="0,5,0,0">
-                            <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
-                                <Label Text="SIMIL" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                    <Label Text="{Binding EdgeSimilarity, StringFormat='{0:F1}%'}" FontSize="12" TextColor="White" />
+
+
+                                <Grid ColumnDefinitions="*">
+                                    <Label Grid.Column="1" Text="{Binding GForce, StringFormat='G-FORCE LOAD: {0:F1} G'}" 
+                   FontAttributes="Bold" TextColor="Orange" FontSize="11" />
+                                </Grid>
+                                <ProgressBar Progress="{Binding GForce, Converter={StaticResource GForceToPercentConverter}}" 
+                     ProgressColor="Orange" ScaleY="2" />
+
+
+
+                                <Grid ColumnDefinitions="*, *, *, *" Margin="0,5,0,0">
+                                    <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
+                                        <Label Text="SIMIL" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                        <Label Text="{Binding EdgeSimilarity, StringFormat='{0:F1}%'}" FontSize="12" TextColor="White" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                                        <Label Text="EARLY" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                        <Label Text="{Binding EarlyLoading, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                                        <Label Text="BUILD" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                        <Label Text="{Binding ProgressiveEdgeBuild, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center">
+                                        <Label Text="TIME" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
+                                        <Label Text="{Binding Duration, StringFormat='{0:F2}s'}" FontSize="12" TextColor="White" />
+                                    </VerticalStackLayout>
+                                </Grid>
                             </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
 
-                            <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
-                                <Label Text="EARLY" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                    <Label Text="{Binding EarlyLoading, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" />
-                            </VerticalStackLayout>
-
-                            <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
-                                <Label Text="BUILD" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Text="{Binding ProgressiveEdgeBuild, StringFormat='{0:F0}%'}" FontSize="12" TextColor="White" />
-                            </VerticalStackLayout>
-
-                            <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center">
-                                <Label Text="TIME" FontSize="9" TextColor="Gray" HorizontalOptions="Center"/>
-                                <Label Text="{Binding Duration, StringFormat='{0:F2}s'}" FontSize="12" TextColor="White" />
-                            </VerticalStackLayout>
-                        </Grid>
-                        </VerticalStackLayout>
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-
-            <CollectionView.EmptyView>
-                <VerticalStackLayout Padding="50" HorizontalOptions="Center" VerticalOptions="Center">
-                    <Label Text="Nessuna curva rilevata." TextColor="Gray" HorizontalTextAlignment="Center" />
-                    <Label Text="Verifica che i dati binari siano corretti." FontSize="12" TextColor="#444" HorizontalTextAlignment="Center" />
-                </VerticalStackLayout>
-            </CollectionView.EmptyView>
-        </CollectionView>
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="50" HorizontalOptions="Center" VerticalOptions="Center">
+                        <Label Text="Nessuna curva rilevata." TextColor="Gray" HorizontalTextAlignment="Center" />
+                        <Label Text="Verifica che i dati binari siano corretti." FontSize="12" TextColor="#444" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+            <runs:SkiChartView x:Name="SkiChart" IsVisible="False" />
+        </Grid>
     </Grid>
 </ContentPage>

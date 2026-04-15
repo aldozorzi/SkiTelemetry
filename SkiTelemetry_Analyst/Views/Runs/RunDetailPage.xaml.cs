@@ -86,7 +86,7 @@ public partial class RunDetailPage : ContentPage
                     LblMaxAngle.Text = $"{detectedTurns.Max(t => t.EdgeAngle):F0}°";
                     LblMaxG.Text = $"{detectedTurns.Max(t => t.GForce):F2}";
                 }
-
+                SkiChart.LoadFrames(frames);
                 TurnsCollection.ItemsSource = detectedTurns;
             });
         }
@@ -94,5 +94,33 @@ public partial class RunDetailPage : ContentPage
         {
             DisplayAlertAsync("Errore", $"Impossibile leggere il file: {ex.Message}", "OK");
         }
+    }
+
+    private void OnTabCurve(object? sender, EventArgs? e)
+    {
+        TurnsCollection.IsVisible = true;
+        SkiChart.IsVisible = false;
+
+        BtnTabCurve.Stroke = new SolidColorBrush(Colors.White);
+        BtnTabCurve.BackgroundColor = Color.FromArgb("#121212");
+        ((Label)BtnTabCurve.Content!).TextColor = Colors.White;
+
+        BtnTabGrafico.Stroke = new SolidColorBrush(Color.FromArgb("#333"));
+        BtnTabGrafico.BackgroundColor = Colors.Transparent;
+        ((Label)BtnTabGrafico.Content!).TextColor = Color.FromArgb("#555");
+    }
+
+    private void OnTabGrafico(object? sender, EventArgs? e)
+    {
+        TurnsCollection.IsVisible = false;
+        SkiChart.IsVisible = true;
+
+        BtnTabGrafico.Stroke = new SolidColorBrush(Colors.White);
+        BtnTabGrafico.BackgroundColor = Color.FromArgb("#121212");
+        ((Label)BtnTabGrafico.Content!).TextColor = Colors.White;
+
+        BtnTabCurve.Stroke = new SolidColorBrush(Color.FromArgb("#333"));
+        BtnTabCurve.BackgroundColor = Colors.Transparent;
+        ((Label)BtnTabCurve.Content!).TextColor = Color.FromArgb("#555");
     }
 }
