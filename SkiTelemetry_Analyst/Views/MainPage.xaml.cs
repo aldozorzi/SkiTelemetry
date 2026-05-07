@@ -452,7 +452,7 @@ namespace SkiTelemetry_Analyst.Views
         }
         private void UpdateBtnScan()
         {
-            BtnScan.IsVisible = true; // CalibrationService.Instance.IsCalibratedToday;
+            BtnScan.IsVisible = CalibrationService.Instance.IsCalibratedToday;
         }
         private void UpdateCalibrationWarning()
         {
@@ -493,7 +493,6 @@ namespace SkiTelemetry_Analyst.Views
             BtnQuickCalibrate.IsEnabled = true;
             BtnQuickCalibrate.Text = "CALIBRA ORA";
         }
-
 
         public void StartLogging()
         {
