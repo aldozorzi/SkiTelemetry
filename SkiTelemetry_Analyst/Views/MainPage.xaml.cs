@@ -452,7 +452,7 @@ namespace SkiTelemetry_Analyst.Views
         }
         private void UpdateBtnScan()
         {
-            BtnScan.IsVisible = CalibrationService.Instance.IsCalibratedToday;
+            BtnScan.IsVisible = true; // CalibrationService.Instance.IsCalibratedToday;
         }
         private void UpdateCalibrationWarning()
         {
