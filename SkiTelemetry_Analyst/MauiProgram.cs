@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommunityToolkit.Maui;
+using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace SkiTelemetry_Analyst
@@ -10,6 +11,7 @@ namespace SkiTelemetry_Analyst
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+                .UseMauiCommunityToolkit()
                 .UseSkiaSharp()
                 .ConfigureFonts(fonts =>
                 {
