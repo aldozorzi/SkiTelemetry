@@ -27,6 +27,19 @@ namespace SkiTelemetry_Analyst.Views
         public MainPage()
         {
             InitializeComponent();
+            // Picker items in code (x:Array does not materialize under XAML source gen).
+            // Order must match MonitorMode enum indexes used by OnModeChanged.
+            ModePicker.ItemsSource = new List<string>
+            {
+                "Performance Index",
+                "Edge Angle",
+                "G-Force",
+                "Progressive Edge Build",
+                "Early Loading",
+                "Edge Similarity",
+                "Turn Time",
+                "Debug Data",
+            };
             CalibrationService.Instance.setProcessor(_dataProcessor);
             var leftOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Left);
             var rightOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Right);
@@ -462,6 +475,7 @@ namespace SkiTelemetry_Analyst.Views
 
         private async void OnQuickCalibrateClicked(object? sender, EventArgs? e)
         {
+            if (_isCalibrating) return;
             _isCalibrating = true;
             // 2. UI Feedback
             BtnQuickCalibrate.Text = "ATTENDI...";

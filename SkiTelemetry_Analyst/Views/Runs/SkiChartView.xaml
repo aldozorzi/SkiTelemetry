@@ -16,12 +16,13 @@
         </ScrollView>
 
         <!-- Canvas grafico -->
-        <Border Grid.Row="1" Stroke="#2a2a2a" StrokeShape="RoundRectangle 10"
-                BackgroundColor="#0f0f0f" Margin="0">
+        <Border Grid.Row="1" Stroke="#30FFFFFF" StrokeShape="RoundRectangle 10"
+                BackgroundColor="#332B0A4E" Margin="0">
             <skia:SKCanvasView x:Name="ChartCanvas"
                                PaintSurface="OnPaintSurface"
                                EnableTouchEvents="True"
-                               Touch="OnTouch" />
+                               Touch="OnTouch"
+                               BackgroundColor="Transparent" />
         </Border>
 
         <!-- Controlli zoom -->
@@ -30,16 +31,16 @@
             <Button Text="↺" ToolTipProperties.Text="Reset zoom"
                     Clicked="OnResetZoom"
                     FontSize="13" Padding="10,4"
-                    BackgroundColor="#1e1e1e" TextColor="#aaa"
-                    BorderColor="#333" BorderWidth="1" CornerRadius="8"/>
+                    BackgroundColor="#332B0A4E" TextColor="#D8CCE8"
+                    BorderColor="#30FFFFFF" BorderWidth="1" CornerRadius="8"/>
             <Button Text="＋" Clicked="OnZoomIn"
                     FontSize="13" Padding="10,4"
-                    BackgroundColor="#1e1e1e" TextColor="#aaa"
-                    BorderColor="#333" BorderWidth="1" CornerRadius="8"/>
+                    BackgroundColor="#332B0A4E" TextColor="#D8CCE8"
+                    BorderColor="#30FFFFFF" BorderWidth="1" CornerRadius="8"/>
             <Button Text="－" Clicked="OnZoomOut"
                     FontSize="13" Padding="10,4"
-                    BackgroundColor="#1e1e1e" TextColor="#aaa"
-                    BorderColor="#333" BorderWidth="1" CornerRadius="8"/>
+                    BackgroundColor="#332B0A4E" TextColor="#D8CCE8"
+                    BorderColor="#30FFFFFF" BorderWidth="1" CornerRadius="8"/>
         </HorizontalStackLayout>
     </Grid>
 </ContentView>

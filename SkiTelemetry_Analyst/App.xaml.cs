@@ -14,6 +14,9 @@ namespace SkiTelemetry_Analyst
         public App()
         {
             InitializeComponent();
+
+            // Always use the dark purple theme, ignore system light/dark mode.
+            UserAppTheme = AppTheme.Dark;
         }
 
         protected override Window CreateWindow(IActivationState? activationState)

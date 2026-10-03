@@ -3,41 +3,46 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:helpers="clr-namespace:SkiTelemetry_Analyst.Helpers"
              x:Class="SkiTelemetry_Analyst.Views.Runs.RunsListPage"
+             Shell.NavBarIsVisible="False"
              Title="">
     <ContentPage.Resources>
         <ResourceDictionary>
             <helpers:InvertBoolConverter x:Key="InvertBoolConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
-    <Grid RowDefinitions="Auto, Auto, *" Padding="30, 30">
 
-        <Label Grid.Row="0" Text="STORICO SESSIONI" FontSize="22" FontAttributes="Bold" HorizontalOptions="Center" Margin="0, 0, 0, 20" />
-        <!--
-        <Button 
-            x:Name="BtnSyncAll"
-            Grid.Row="1" 
-            Text="SINCRONIZZA TUTTE" 
-            Clicked="OnSyncAllClicked"
-            BackgroundColor="CornflowerBlue"
-            TextColor="White"
-            Margin="0,10,0,20"
-            HeightRequest="45" 
-            IsVisible="false"/>
-        -->
-        <Border  Grid.Row="1" BackgroundColor="Firebrick" 
-            Padding="10" 
-            Margin="0,0,0,10"
-            IsVisible="{Binding IsOfflineMode}"
-            StrokeShape="RoundRectangle 5"> 
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#2B0A4E" Offset="0.0" />
+            <GradientStop Color="#3D0F55" Offset="0.55" />
+            <GradientStop Color="#5C1C49" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
+    <Grid RowDefinitions="Auto, Auto, *" Padding="20,20,20,10">
+
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" Spacing="2" Margin="4,4,4,16">
+            <Label Text="MOTION ANALYTICS" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
+            <Label Text="Session History" FontSize="28" FontAttributes="Bold" TextColor="White" />
+        </VerticalStackLayout>
+
+        <Border Grid.Row="1" BackgroundColor="#B3D32F2F"
+                Stroke="#30FFFFFF" StrokeThickness="1"
+                Padding="12"
+                Margin="0,0,0,10"
+                IsVisible="{Binding IsOfflineMode}">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="14" />
+            </Border.StrokeShape>
             <Label HorizontalOptions="Center">
                 <Label.FormattedText>
                     <FormattedString>
                         <Span Text="Modalità offline attivata. " TextColor="White" />
-                        <Span Text="Torna online" 
-              TextColor="Yellow" 
-              FontAttributes="Bold" 
-              TextDecorations="Underline">
+                        <Span Text="Torna online"
+                              TextColor="Yellow"
+                              FontAttributes="Bold"
+                              TextDecorations="Underline">
                             <Span.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding ToggleOnlineCommand}" />
                             </Span.GestureRecognizers>
@@ -50,28 +55,50 @@
         <CollectionView Grid.Row="2" x:Name="RunsCollection" SelectionMode="None" ItemsSource="{Binding Runs}">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Border StrokeShape="RoundRectangle 10" StrokeThickness="0" Margin="0,8" Padding="15" BackgroundColor="#2A2A2A">
+                    <Border Stroke="#30FFFFFF" StrokeThickness="1"
+                            BackgroundColor="#1AFFFFFF"
+                            StrokeShape="RoundRectangle 20"
+                            Margin="0,7" Padding="16">
                         <VerticalStackLayout Spacing="10">
 
                             <Label Text="{Binding DisplayTitle}" FontSize="16" FontAttributes="Bold" TextColor="White" />
 
-                            <Label Text="{Binding Notes}" FontSize="13" TextColor="LightGray" 
-                           LineBreakMode="WordWrap" MaxLines="3"
-                           IsVisible="{Binding HasNotes}" />
+                            <Label Text="{Binding Notes}" FontSize="13" TextColor="#D8CCE8"
+                                   LineBreakMode="WordWrap" MaxLines="3"
+                                   IsVisible="{Binding HasNotes}" />
 
-                            <BoxView HeightRequest="1" Color="#444" Margin="0,5" />
+                            <BoxView HeightRequest="1" Color="#33FFFFFF" Margin="0,4" />
 
                             <Grid ColumnDefinitions="*, *, *, *, *" ColumnSpacing="10">
-                                <Button Grid.Column="0" Text="👁" Command="{Binding BindingContext.ViewCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="#555"/>
+                                <Button Grid.Column="0" Text="&#xE8F4;" FontFamily="MatSymbols" FontSize="24" HeightRequest="52" CornerRadius="14"
+                                        Command="{Binding BindingContext.ViewCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="#665E35B1" TextColor="White" />
 
-                                <Button Grid.Column="1" Text="✎" Command="{Binding BindingContext.EditNotesCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="Goldenrod"/>
+                                <Button Grid.Column="1" Text="&#xE3C9;" FontFamily="MatSymbols" FontSize="24" HeightRequest="52" CornerRadius="14"
+                                        Command="{Binding BindingContext.EditNotesCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="#66E8890C" TextColor="White" />
 
-                                <Button Grid.Column="2" Text="🗑" Command="{Binding BindingContext.DeleteCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="IndianRed" />
+                                <Button Grid.Column="2" Text="&#xE872;" FontFamily="MatSymbols" FontSize="24" HeightRequest="52" CornerRadius="14"
+                                        Command="{Binding BindingContext.DeleteCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="#66D32F2F" TextColor="White" />
 
-                                <Button Grid.Column="3" Text="☁" Command="{Binding BindingContext.SyncCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" IsVisible="{Binding IsLocal}" BackgroundColor="CornflowerBlue"/>
-                                <Label Grid.Column="3" Text="☁"  TextColor="CornflowerBlue" VerticalOptions="Center" HorizontalOptions="Fill" IsVisible="{Binding IsLocal, Converter={StaticResource InvertBoolConverter}}" HorizontalTextAlignment="Center"/>
+                                <Button Grid.Column="3" Text="&#xE2C3;" FontFamily="MatSymbols" FontSize="24" HeightRequest="52" CornerRadius="14"
+                                        Command="{Binding BindingContext.SyncCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                        CommandParameter="{Binding .}"
+                                        IsVisible="{Binding IsLocal}"
+                                        BackgroundColor="#664267F5" TextColor="White" />
+                                <Label Grid.Column="3" Text="&#xE2BD;" FontFamily="MatSymbols" FontSize="26" TextColor="#8FA8E8"
+                                       VerticalOptions="Center" HorizontalOptions="Center"
+                                       IsVisible="{Binding IsLocal, Converter={StaticResource InvertBoolConverter}}" />
 
-                                <Button Grid.Column="4" Text="📄" TextColor="DarkSlateGray" Command="{Binding BindingContext.ExportCsvCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}" CommandParameter="{Binding .}" BackgroundColor="DarkSeaGreen"/>
+                                <Button Grid.Column="4" Text="&#xE873;" FontFamily="MatSymbols" FontSize="24" HeightRequest="52" CornerRadius="14"
+                                        TextColor="White"
+                                        Command="{Binding BindingContext.ExportCsvCommand, Source={RelativeSource AncestorType={x:Type ContentPage}}}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="#6638A169" />
                             </Grid>
                         </VerticalStackLayout>
                     </Border>
@@ -79,26 +106,24 @@
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <Border StrokeThickness="0" 
-                BackgroundColor="{AppThemeBinding Dark={StaticResource Gray900}, Light={StaticResource Gray200}}" 
-                Padding="20" 
-                VerticalOptions="Center" 
-                IsVisible="{Binding IsLoading}"
-                Grid.RowSpan="3"
+        <Border Grid.RowSpan="3"
+                StrokeThickness="0"
+                BackgroundColor="#CC2B0A4E"
+                Padding="24"
+                VerticalOptions="Center"
                 HorizontalOptions="Center"
-                >
+                IsVisible="{Binding IsLoading}">
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="20" />
             </Border.StrokeShape>
-
-            <VerticalStackLayout Grid.Row="0" Grid.RowSpan="3" >
-                <ActivityIndicator IsRunning="{Binding IsLoading}" 
-                   Color="DeepSkyBlue" 
-                   WidthRequest="50" 
-                   HeightRequest="50" />
-                <Label Text="Caricamento sessione..." 
-               TextColor="White" 
-               HorizontalOptions="Center" />
+            <VerticalStackLayout Spacing="12">
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   Color="White"
+                                   WidthRequest="50"
+                                   HeightRequest="50" />
+                <Label Text="Caricamento sessione..."
+                       TextColor="White"
+                       HorizontalOptions="Center" />
             </VerticalStackLayout>
         </Border>
 

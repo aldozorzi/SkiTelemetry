@@ -2,174 +2,196 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="SkiTelemetry_Analyst.SettingsPage"
-             Title="">
+             Title=""
+             Shell.NavBarIsVisible="False">
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#2B0A4E" Offset="0.0" />
+            <GradientStop Color="#3D0F55" Offset="0.55" />
+            <GradientStop Color="#5C1C49" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
     <ScrollView>
         <VerticalStackLayout>
-            <VerticalStackLayout Padding="30" Spacing="25">
-                <Label Text="GESTIONE DATI" 
-               FontSize="20" 
-               FontAttributes="Bold" 
-               HorizontalOptions="Center" />
+            <VerticalStackLayout Padding="20" Spacing="16">
+                <Label Text="MOTION ANALYTICS" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6"
+                       HorizontalOptions="Center" />
+                <Label Text="GESTIONE DATI"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
 
-                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+                <Border Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF" Padding="20">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="15"/>
+                        <RoundRectangle CornerRadius="20"/>
                     </Border.StrokeShape>
 
                     <VerticalStackLayout Spacing="15">
                         <HorizontalStackLayout Spacing="20" VerticalOptions="Center">
-                            <Label Text="Attiva Logging" 
-                           VerticalOptions="Center" 
-                           FontAttributes="Bold" 
-                           FontSize="16" 
-                                   TextColor="#666666"/>
-                            <Switch x:Name="SwitchLogging" 
-                            Toggled="OnLoggingToggled" 
-                            VerticalOptions="Center" />
+                            <Label Text="Attiva Logging"
+                                   VerticalOptions="Center"
+                                   FontAttributes="Bold"
+                                   FontSize="16"
+                                   TextColor="White"/>
+                            <Switch x:Name="SwitchLogging"
+                                    Toggled="OnLoggingToggled"
+                                    VerticalOptions="Center"
+                                    OnColor="#4ADE80"
+                                    ThumbColor="White" />
                         </HorizontalStackLayout>
 
                         <Label x:Name ="lblLogging" Text="Se attivo, l'app salverà i dati grezzi dei sensori durante la sessione."
-                       FontSize="13" 
-                       TextColor="#666666" />
+                               FontSize="13"
+                               TextColor="#D8CCE8" />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
-            <VerticalStackLayout Padding="30" Spacing="25">
-                <Label Text="GESTIONE SENSORI" 
-                           FontSize="20" 
-                           FontAttributes="Bold" 
-                           HorizontalOptions="Center" />
-                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+            <VerticalStackLayout Padding="20" Spacing="16">
+                <Label Text="GESTIONE SENSORI"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
+                <Border Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF" Padding="20">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="15"/>
+                        <RoundRectangle CornerRadius="20"/>
                     </Border.StrokeShape>
 
                     <VerticalStackLayout Spacing="15">
-                        <Label Text="Calibrazione Orizzontale" FontAttributes="Bold" FontSize="16" />
+                        <Label Text="Calibrazione Orizzontale" FontAttributes="Bold" FontSize="16" TextColor="White" />
 
                         <HorizontalStackLayout Spacing="5">
-                            <Label Text="Stato:" FontSize="13" TextColor="#666666" />
-                            <Label x:Name="LblCalibrationStatus" Text="..." FontSize="13" FontAttributes="Bold" />
+                            <Label Text="Stato:" FontSize="13" TextColor="#D8CCE8" />
+                            <Label x:Name="LblCalibrationStatus" Text="..." FontSize="13" FontAttributes="Bold" TextColor="White" />
                         </HorizontalStackLayout>
 
                         <Button x:Name="BtnCalibrate"
-                Text="CALIBRA ORA"
-                BackgroundColor="#007AFF"
-                Clicked="OnCalibrateClicked" />
+                                Text="CALIBRA ORA"
+                                BackgroundColor="#664267F5"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="14"
+                                HeightRequest="52"
+                                Clicked="OnCalibrateClicked" />
 
                         <Button x:Name="BtnResetCalib"
-                Text="RESET CALIBRAZIONE"
-                BackgroundColor="Transparent"
-                TextColor="Red"
-                BorderColor="Red"
-                BorderWidth="1"
-                Clicked="OnResetCalibrationClicked" />
-                        
+                                Text="RESET CALIBRAZIONE"
+                                BackgroundColor="#66D32F2F"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="14"
+                                HeightRequest="52"
+                                Clicked="OnResetCalibrationClicked" />
+
                         <Button x:Name="BtnExportCalib"
-                        Text="ESPORTA LOG CALIBRAZIONE"
-                        BackgroundColor="LightSlateGray"
-                        TextColor="White"
-                        Clicked="OnExportCalibrationClicked" />
+                                Text="ESPORTA LOG CALIBRAZIONE"
+                                BackgroundColor="#55FFFFFF"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="14"
+                                HeightRequest="52"
+                                Clicked="OnExportCalibrationClicked" />
                     </VerticalStackLayout>
                 </Border>
 
-                <Border Stroke="#E0E0E0"
+                <Border Stroke="#30FFFFFF"
                         StrokeThickness="1"
-                        BackgroundColor="#F9F9F9"
+                        BackgroundColor="#1AFFFFFF"
                         Padding="20">
 
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="15"/>
+                        <RoundRectangle CornerRadius="20"/>
                     </Border.StrokeShape>
 
-                    <Border.Shadow>
-                        <Shadow Brush="Black"
-                                Offset="2,2"
-                                Radius="5"
-                                Opacity="0.1" />
-                    </Border.Shadow>
-
                     <VerticalStackLayout Spacing="15">
-                        <Label Text="Pairing Attuale" 
-                               FontAttributes="Bold" 
-                               FontSize="16" />
+                        <Label Text="Pairing Attuale"
+                               FontAttributes="Bold"
+                               FontSize="16"
+                               TextColor="White" />
 
-                        <Label Text="Se i sensori non si connettono o vuoi cambiare dispositivi, usa il tasto reset qui sotto." 
-                               FontSize="13" 
-                               TextColor="#666666" />
+                        <Label Text="Se i sensori non si connettono o vuoi cambiare dispositivi, usa il tasto reset qui sotto."
+                               FontSize="13"
+                               TextColor="#D8CCE8" />
 
                         <Button x:Name="BtnReset"
                                 Text="RESET CONFIGURAZIONE"
-                                BackgroundColor="#FF3B30"
+                                BackgroundColor="#66D32F2F"
                                 TextColor="White"
-                                Clicked="OnResetConfigClicked"
-                                />
+                                FontAttributes="Bold"
+                                CornerRadius="14"
+                                HeightRequest="52"
+                                Clicked="OnResetConfigClicked" />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
-            <VerticalStackLayout Padding="30" Spacing="25">
-                <Label Text="ACCOUNT &amp; SERVER" 
-                   FontSize="20" 
-                   FontAttributes="Bold" 
-                   HorizontalOptions="Center" />
+            <VerticalStackLayout Padding="20" Spacing="16">
+                <Label Text="ACCOUNT &amp; SERVER"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
 
-                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+                <Border Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF" Padding="20">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="15"/>
+                        <RoundRectangle CornerRadius="20"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="15">
-                        <Label Text="Connessione Server" FontAttributes="Bold" FontSize="16" />
-                        <Label Text="Usa questo tasto per disconnetterti e cancellare i dati di accesso (Token e Account)." 
-                           FontSize="13" TextColor="#666666" />
+                        <Label Text="Connessione Server" FontAttributes="Bold" FontSize="16" TextColor="White" />
+                        <Label Text="Usa questo tasto per disconnetterti e cancellare i dati di accesso (Token e Account)."
+                               FontSize="13" TextColor="#D8CCE8" />
                         <Button Text="LOGOUT / RESET SERVER"
-                            BackgroundColor="#FF9500"
-                            TextColor="White"
-
-                            Clicked="OnResetServerClicked"
-                            />
+                                BackgroundColor="#66E8890C"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="14"
+                                HeightRequest="52"
+                                Clicked="OnResetServerClicked" />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
-            <VerticalStackLayout Padding="30" Spacing="25">
-                <Label Text="FEEDBACK VOCALE" 
-   FontSize="20" 
-   FontAttributes="Bold" 
-   HorizontalOptions="Center" />
+            <VerticalStackLayout Padding="20,20,20,30" Spacing="16">
+                <Label Text="FEEDBACK VOCALE"
+                       FontSize="20"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center" />
 
-                <Border Stroke="#E0E0E0" StrokeThickness="1" BackgroundColor="#F9F9F9" Padding="20">
+                <Border Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF" Padding="20">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="15"/>
+                        <RoundRectangle CornerRadius="20"/>
                     </Border.StrokeShape>
 
                     <VerticalStackLayout Spacing="15">
-                        <Label Text="Velocità Voce" 
-           FontAttributes="Bold" 
-           FontSize="16" 
-           TextColor="#666666"/>
+                        <Label Text="Velocità Voce"
+                               FontAttributes="Bold"
+                               FontSize="16"
+                               TextColor="White"/>
 
                         <Slider x:Name="SliderSpeechRate"
-            Minimum="0.1"
-            Maximum="2"
-            Value="1.5"
-            ValueChanged="OnSpeechRateChanged" 
-            BackgroundColor="LightGray"
-            MinimumTrackColor="DarkSlateGray"
-            />
+                                Minimum="0.1"
+                                Maximum="2"
+                                Value="1.5"
+                                ValueChanged="OnSpeechRateChanged"
+                                BackgroundColor="Transparent"
+                                MinimumTrackColor="White"
+                                MaximumTrackColor="#66FFFFFF"
+                                ThumbColor="White" />
 
-                        <Label x:Name="LblSpeechRateValue" 
-           Text="Valore: 0.0"
-           FontSize="13" 
-           TextColor="#666666" 
-           HorizontalOptions="End" />
+                        <Label x:Name="LblSpeechRateValue"
+                               Text="Valore: 0.0"
+                               FontSize="13"
+                               TextColor="#D8CCE8"
+                               HorizontalOptions="End" />
 
                         <Label Text="Regola il tono e la velocità degli avvisi vocali durante la sciata."
-           FontSize="13" 
-           TextColor="#666666" />
+                               FontSize="13"
+                               TextColor="#D8CCE8" />
                     </VerticalStackLayout>
                 </Border>
             </VerticalStackLayout>
         </VerticalStackLayout>
-        
-        
+
+
     </ScrollView>
 </ContentPage>

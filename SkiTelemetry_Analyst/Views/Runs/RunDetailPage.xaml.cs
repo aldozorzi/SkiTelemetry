@@ -101,13 +101,13 @@ public partial class RunDetailPage : ContentPage
         TurnsCollection.IsVisible = true;
         SkiChart.IsVisible = false;
 
-        BtnTabCurve.Stroke = new SolidColorBrush(Colors.White);
-        BtnTabCurve.BackgroundColor = Color.FromArgb("#121212");
-        ((Label)BtnTabCurve.Content!).TextColor = Colors.White;
+        BtnTabCurve.Stroke = new SolidColorBrush(Colors.Transparent);
+        BtnTabCurve.BackgroundColor = Colors.White;
+        ((Label)BtnTabCurve.Content!).TextColor = Color.FromArgb("#2B0A4E");
 
-        BtnTabGrafico.Stroke = new SolidColorBrush(Color.FromArgb("#333"));
+        BtnTabGrafico.Stroke = new SolidColorBrush(Colors.Transparent);
         BtnTabGrafico.BackgroundColor = Colors.Transparent;
-        ((Label)BtnTabGrafico.Content!).TextColor = Color.FromArgb("#555");
+        ((Label)BtnTabGrafico.Content!).TextColor = Color.FromArgb("#8E7BA8");
     }
 
     private void OnTabGrafico(object? sender, EventArgs? e)
@@ -115,12 +115,12 @@ public partial class RunDetailPage : ContentPage
         TurnsCollection.IsVisible = false;
         SkiChart.IsVisible = true;
 
-        BtnTabGrafico.Stroke = new SolidColorBrush(Colors.White);
-        BtnTabGrafico.BackgroundColor = Color.FromArgb("#121212");
-        ((Label)BtnTabGrafico.Content!).TextColor = Colors.White;
+        BtnTabGrafico.Stroke = new SolidColorBrush(Colors.Transparent);
+        BtnTabGrafico.BackgroundColor = Colors.White;
+        ((Label)BtnTabGrafico.Content!).TextColor = Color.FromArgb("#2B0A4E");
 
-        BtnTabCurve.Stroke = new SolidColorBrush(Color.FromArgb("#333"));
+        BtnTabCurve.Stroke = new SolidColorBrush(Colors.Transparent);
         BtnTabCurve.BackgroundColor = Colors.Transparent;
-        ((Label)BtnTabCurve.Content!).TextColor = Color.FromArgb("#555");
+        ((Label)BtnTabCurve.Content!).TextColor = Color.FromArgb("#8E7BA8");
     }
 }

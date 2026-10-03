@@ -2,19 +2,28 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SkiTelemetry_Analyst.Views.AuthPage"
+             Shell.NavBarIsVisible="False"
              Title="Autenticazione">
+
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#2B0A4E" Offset="0.0" />
+            <GradientStop Color="#3D0F55" Offset="0.55" />
+            <GradientStop Color="#5C1C49" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
     <VerticalStackLayout Spacing="15" Padding="30" VerticalOptions="Center">
 
-        <Label x:Name="LblTitle" FontSize="26" FontAttributes="Bold" HorizontalOptions="Center" />
+        <Label x:Name="LblTitle" FontSize="26" FontAttributes="Bold" HorizontalOptions="Center" TextColor="White" />
 
-        <Entry x:Name="EntEmail" Placeholder="Email" Keyboard="Email" />
-        <Entry x:Name="EntPassword" Placeholder="Password" IsPassword="True" />
+        <Entry x:Name="EntEmail" Placeholder="Email" PlaceholderColor="#8E7BA8" TextColor="White" Keyboard="Email" />
+        <Entry x:Name="EntPassword" Placeholder="Password" PlaceholderColor="#8E7BA8" TextColor="White" IsPassword="True" />
 
         <VerticalStackLayout x:Name="RegisterFields" Spacing="15">
-            <Entry x:Name="EntFirstName" Placeholder="Nome" />
-            <Entry x:Name="EntLastName" Placeholder="Cognome" />
-            <Picker x:Name="PkRole" Title="Seleziona Ruolo" SelectedIndex="0">
+            <Entry x:Name="EntFirstName" Placeholder="Nome" PlaceholderColor="#8E7BA8" TextColor="White" />
+            <Entry x:Name="EntLastName" Placeholder="Cognome" PlaceholderColor="#8E7BA8" TextColor="White" />
+            <Picker x:Name="PkRole" Title="Seleziona Ruolo" TitleColor="#8E7BA8" TextColor="White" SelectedIndex="0">
                 <Picker.Items>
                     <x:String>ATHLETE</x:String>
                     <x:String>COACH</x:String>

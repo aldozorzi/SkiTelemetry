@@ -107,7 +107,7 @@ public partial class SkiChartView : ContentView
                 StrokeThickness = 1,
 
                 // Mantiene BackgroundColor e Padding
-                BackgroundColor = active ? ParseColor(s.Color) : Color.FromArgb("#1e1e1e"),
+                BackgroundColor = active ? ParseColor(s.Color) : Color.FromArgb("#332B0A4E"),
                 Padding = new Thickness(10, 10),
 
                 // Layout interno
@@ -138,7 +138,7 @@ public partial class SkiChartView : ContentView
                     bool isVisible = _visible[key];
 
                     // Aggiorniamo il Background del Border
-                    border.BackgroundColor = isVisible ? ParseColor(col) : Color.FromArgb("#1e1e1e");
+                    border.BackgroundColor = isVisible ? ParseColor(col) : Color.FromArgb("#332B0A4E");
 
                     // Cerchiamo la Label nel Content per cambiare il TextColor
                     if (border.Content is Label label)
@@ -218,7 +218,7 @@ public partial class SkiChartView : ContentView
     {
         var canvas = e!.Surface.Canvas;
         var info = e!.Info;
-        canvas.Clear(SKColor.Parse("#0f0f0f"));
+        canvas.Clear(SKColors.Transparent);
 
         if (!_sampled.Any()) return;
 
@@ -255,9 +255,9 @@ public partial class SkiChartView : ContentView
 
         // Grid Y
         using var gridPaint = new SKPaint
-        { Color = SKColor.Parse("#222222"), StrokeWidth = 1, IsAntialias = false };
+        { Color = SKColor.Parse("#4DFFFFFF"), StrokeWidth = 1, IsAntialias = false };
         using var labelPaint = new SKPaint
-        { Color = SKColor.Parse("#666666"), IsAntialias = true };
+        { Color = SKColor.Parse("#B9A3D6"), IsAntialias = true };
 
         int gridLines = 5;
         SKTextAlign align = new SKTextAlign();
