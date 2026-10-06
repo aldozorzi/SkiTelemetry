@@ -67,16 +67,18 @@ namespace SkiTelemetry_Analyst.Views
             {
                 // Interfaccia per il LOGIN
                 LblTitle.Text = "Accedi";
-                BtnSubmit.Text = "LOGIN";
-                BtnSwitch.Text = "Registra nuovo utente";
+                BtnSubmit.Text = "ACCEDI";
+                // Registrazione disabilitata: BtnSwitch nascosto dallo XAML
+                // BtnSwitch.Text = "Registra nuovo utente";
                 RegisterFields.IsVisible = false; // Nasconde Nome, Cognome e Ruolo
             }
             else
             {
                 // Interfaccia per la REGISTRAZIONE
                 LblTitle.Text = "Registrazione";
-                BtnSubmit.Text = "CREA ACCOUNT";
-                BtnSwitch.Text = "Sei già registrato?";
+                BtnSubmit.Text = "REGISTRATI";
+                // Registrazione disabilitata: BtnSwitch nascosto dallo XAML
+                // BtnSwitch.Text = "Sei già registrato?";
                 RegisterFields.IsVisible = true; // Mostra i campi extra
             }
         }

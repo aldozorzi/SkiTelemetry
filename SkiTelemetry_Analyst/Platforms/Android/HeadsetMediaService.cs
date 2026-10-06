@@ -73,7 +73,7 @@ public class HeadsetMediaService : MediaBrowserServiceCompat
             notificationManager?.CreateNotificationChannel(channel);
         }
         var builder = new NotificationCompat.Builder(this, channelId);
-        builder.SetContentTitle("SkiTelemetry");
+        builder.SetContentTitle("SKINETIK");
         builder.SetContentText("Controllo remoto");
         builder.SetSmallIcon(SkiTelemetry_Analyst.Resource.Drawable.notification_icon);
         builder.SetOngoing(true);

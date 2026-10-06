@@ -19,8 +19,7 @@
             <!-- Header -->
             <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center" Margin="4,4,4,4">
                 <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
-                    <Label Text="MOTION ANALYTICS" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
-                    <Label Text="Dashboard" FontSize="30" FontAttributes="Bold" TextColor="White" />
+                    <Label Text="SKINETIK" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
                 </VerticalStackLayout>
                 <Border Grid.Column="1"
                         WidthRequest="48" HeightRequest="48"
@@ -38,26 +37,31 @@
                 </Border>
             </Grid>
 
-            <!-- Pairing card (visible until sensors are paired) -->
+            <!-- Pair button (visible until sensors are paired) -->
             <VerticalStackLayout x:Name="ConfigView" Spacing="0">
                 <Border Stroke="#30FFFFFF" StrokeThickness="1"
-                        BackgroundColor="#1AFFFFFF" Padding="20">
+                        BackgroundColor="#B3E8890C" Padding="16">
                     <Border.StrokeShape>
-                        <RoundRectangle CornerRadius="22" />
+                        <RoundRectangle CornerRadius="20" />
                     </Border.StrokeShape>
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="SENSORS" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
-                        <Label Text="Accoppiamento Sensori" FontSize="22" FontAttributes="Bold" TextColor="White" />
-                        <Label Text="Pair your motion sensors to begin" FontSize="13" TextColor="#D8CCE8" />
-                        <Button x:Name="BtnPair"
-                                Text="ACCOPPIA SENSORI"
-                                Clicked="OnPairSensorsClicked"
-                                BackgroundColor="#E8890C"
-                                TextColor="White"
-                                FontAttributes="Bold"
-                                CornerRadius="16"
-                                HeightRequest="56" />
-                    </VerticalStackLayout>
+                    <HorizontalStackLayout Spacing="14" VerticalOptions="Center">
+                        <Border WidthRequest="48" HeightRequest="48"
+                                BackgroundColor="#33FFFFFF" StrokeThickness="0"
+                                VerticalOptions="Center">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Label Text="🎿" FontSize="20"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                            <Label Text="Accoppia Sensori" FontSize="17" FontAttributes="Bold" TextColor="White" />
+                            <Label Text="Connetti i sensori di movimento" FontSize="13" TextColor="#F5E9CE" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnPairSensorsClicked" />
+                    </Border.GestureRecognizers>
                 </Border>
             </VerticalStackLayout>
 
@@ -68,6 +72,7 @@
                      Kept in a collapsed container: code toggles the buttons'
                      IsVisible, which the cards below observe via x:Reference. -->
                 <VerticalStackLayout IsVisible="False" HeightRequest="0" WidthRequest="0">
+                    <Button x:Name="BtnPair" Clicked="OnPairSensorsClicked" />
                     <Button x:Name="BtnScan" Clicked="OnScanClicked" />
                     <Button x:Name="BtnQuickCalibrate" Text="CALIBRA ORA" Clicked="OnQuickCalibrateClicked" />
                 </VerticalStackLayout>
@@ -79,7 +84,7 @@
                         <RoundRectangle CornerRadius="22" />
                     </Border.StrokeShape>
                     <VerticalStackLayout x:Name="DataContainer" IsVisible="True" Spacing="10">
-                        <Label Text="MONITORING" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
+                        <Label Text="MONITORAGGIO" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
                         <Picker x:Name="ModePicker"
                                 SelectedIndexChanged="OnModeChanged"
                                 Title="Seleziona cosa monitorare"
@@ -88,55 +93,55 @@
 
                         <HorizontalStackLayout x:Name="EdgeAngleDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="EDGE ANGLE" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="ANGOLO LAMINA" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblEdgeAngle" Text="0.0°" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="EdgeSimilarityDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="EDGE SIMILARITY" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="SIMILITUDINE LAMINE" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblEdgeSimilarity" Text="0%" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="GForceDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="MAX G-FORCE" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="FORZA G MAX" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblGForce" Text="0.0 G" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="RadiusDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="RADIUS" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="RAGGIO" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblRadius" Text="0 m" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="EarlyLoadingDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="EARLY LOADING" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="CARICO ANTICIPATO" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblEarlyLoading" Text="0%" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="ProgressiveBuildDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="PROGRESSIVE EDGE BUILD" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="PROGRESSIONE LAMINA" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblProgressiveBuild" Text="0%" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="TurnShapeDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="TURN SHAPE" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="FORMA CURVA" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblTurnShape" Text="0%" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="PerformanceIndexDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="PERFORMANCE INDEX" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="INDICE PRESTAZIONE" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblPerformanceIndex" Text="0%" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="TurnTimeDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="TURN TIME" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="TEMPO CURVA" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblTurnTime" Text="0s" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
@@ -144,44 +149,44 @@
                         <VerticalStackLayout x:Name="DebugDataDisplay" IsVisible="False" Spacing="5" Padding="5">
                             <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                                 <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                    <Label Text="LEFT SENSOR" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                                    <Label Text="SENSORE SINISTRO" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                                     <Border Padding="5" Stroke="#30FFFFFF" BackgroundColor="#1AFFFFFF">
                                         <VerticalStackLayout>
-                                            <Label Text="ACCELEROMETER (m/s²)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="ACCELEROMETRO (m/s²)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblAccXL" Text="X: 0.00" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblAccYL" Text="Y: 0.00" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblAccZL" Text="Z: 0.00" FontSize="12" FontFamily="monospace"/>
 
-                                            <Label Text="GYROSCOPE (°/s)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="GIROSCOPIO (°/s)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblGyrXL" Text="X: 0.0" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblGyrYL" Text="Y: 0.0" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblGyrZL" Text="Z: 0.0" FontSize="12" FontFamily="monospace"/>
 
-                                            <Label Text="ROLL" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="ROLLIO" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblRollL" Text="0.0°" FontSize="12" FontAttributes="Bold"/>
-                                            <Label Text="GForce" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="FORZA G" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblGForceL" Text="0.0" FontSize="12" FontAttributes="Bold"/>
                                         </VerticalStackLayout>
                                     </Border>
                                 </VerticalStackLayout>
 
                                 <VerticalStackLayout Grid.Column="1" Spacing="2">
-                                    <Label Text="RIGHT SENSOR" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                                    <Label Text="SENSORE DESTRO" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                                     <Border Padding="5" Stroke="#30FFFFFF" BackgroundColor="#1AFFFFFF">
                                         <VerticalStackLayout>
-                                            <Label Text="ACCELEROMETER (m/s²)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="ACCELEROMETRO (m/s²)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblAccXR" Text="X: 0.00" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblAccYR" Text="Y: 0.00" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblAccZR" Text="Z: 0.00" FontSize="12" FontFamily="monospace"/>
 
-                                            <Label Text="GYROSCOPE (°/s)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="GIROSCOPIO (°/s)" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblGyrXR" Text="X: 0.0" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblGyrYR" Text="Y: 0.0" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblGyrZR" Text="Z: 0.0" FontSize="12" FontFamily="monospace"/>
 
-                                            <Label Text="ROLL" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="ROLLIO" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblRollR" Text="0.0°" FontSize="12" FontAttributes="Bold"/>
-                                            <Label Text="GFORCE" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="FORZA G" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblGForceR" Text="0.0" FontSize="12" FontAttributes="Bold"/>
                                         </VerticalStackLayout>
                                     </Border>
@@ -225,8 +230,8 @@
                                    HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
                         <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                            <Label Text="Start Session" FontSize="17" FontAttributes="Bold" TextColor="White" />
-                            <Label Text="Begin motion capture" FontSize="13" TextColor="#E4D8F2" />
+                            <Label Text="Avvia Sessione" FontSize="17" FontAttributes="Bold" TextColor="White" />
+                            <Label Text="Inizia la cattura del movimento" FontSize="13" TextColor="#E4D8F2" />
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                     <Border.GestureRecognizers>
@@ -253,7 +258,7 @@
                                    HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
                         <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                            <Label Text="Calibrate Sensors" FontSize="17" FontAttributes="Bold" TextColor="White" />
+                            <Label Text="Calibra Sensori" FontSize="17" FontAttributes="Bold" TextColor="White" />
                             <Label Text="{Binding Source={x:Reference BtnQuickCalibrate}, Path=Text}"
                                    FontSize="13" TextColor="#F5E3CE" />
                         </VerticalStackLayout>
@@ -299,12 +304,40 @@
                                    HorizontalOptions="Center" VerticalOptions="Center" />
                         </Border>
                         <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                            <Label Text="View Sessions" FontSize="17" FontAttributes="Bold" TextColor="White" />
-                            <Label Text="Browse past recordings" FontSize="13" TextColor="#EFD8EA" />
+                            <Label Text="Vedi Sessioni" FontSize="17" FontAttributes="Bold" TextColor="White" />
+                            <Label Text="Sfoglia le registrazioni passate" FontSize="13" TextColor="#EFD8EA" />
                         </VerticalStackLayout>
                     </HorizontalStackLayout>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnHistoryClicked" />
+                    </Border.GestureRecognizers>
+                </Border>
+            </VerticalStackLayout>
+
+            <!-- Login / Cloud Backup (visible only when no user ever logged in) -->
+            <VerticalStackLayout x:Name="BtnLoginContainer" Spacing="0" IsVisible="False">
+                <Border Stroke="#30FFFFFF" StrokeThickness="1"
+                        BackgroundColor="#B34267F5" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20" />
+                    </Border.StrokeShape>
+                    <HorizontalStackLayout Spacing="14" VerticalOptions="Center">
+                        <Border WidthRequest="48" HeightRequest="48"
+                                BackgroundColor="#33FFFFFF" StrokeThickness="0"
+                                VerticalOptions="Center">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <Label Text="👤" FontSize="20"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                            <Label Text="Accedi" FontSize="17" FontAttributes="Bold" TextColor="White" />
+                            <Label Text="Sincronizza le sessioni nel cloud" FontSize="13" TextColor="#D8E0F5" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnLoginClicked" />
                     </Border.GestureRecognizers>
                 </Border>
             </VerticalStackLayout>

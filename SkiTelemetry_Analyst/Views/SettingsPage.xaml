@@ -14,7 +14,7 @@
     <ScrollView>
         <VerticalStackLayout>
             <VerticalStackLayout Padding="20" Spacing="16">
-                <Label Text="MOTION ANALYTICS" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6"
+                <Label Text="SKINETIK" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6"
                        HorizontalOptions="Center" />
                 <Label Text="GESTIONE DATI"
                        FontSize="20"
@@ -29,7 +29,7 @@
 
                     <VerticalStackLayout Spacing="15">
                         <HorizontalStackLayout Spacing="20" VerticalOptions="Center">
-                            <Label Text="Attiva Logging"
+                            <Label Text="Salvataggio Dati"
                                    VerticalOptions="Center"
                                    FontAttributes="Bold"
                                    FontSize="16"
@@ -85,7 +85,7 @@
                                 Clicked="OnResetCalibrationClicked" />
 
                         <Button x:Name="BtnExportCalib"
-                                Text="ESPORTA LOG CALIBRAZIONE"
+                                Text="ESPORTA DATI CALIBRAZIONE"
                                 BackgroundColor="#55FFFFFF"
                                 TextColor="White"
                                 FontAttributes="Bold"
@@ -105,7 +105,7 @@
                     </Border.StrokeShape>
 
                     <VerticalStackLayout Spacing="15">
-                        <Label Text="Pairing Attuale"
+                        <Label Text="Accoppiamento Attuale"
                                FontAttributes="Bold"
                                FontSize="16"
                                TextColor="White" />
@@ -126,7 +126,7 @@
                 </Border>
             </VerticalStackLayout>
             <VerticalStackLayout Padding="20" Spacing="16">
-                <Label Text="ACCOUNT &amp; SERVER"
+                <Label Text="UTENTE &amp; SERVER"
                        FontSize="20"
                        FontAttributes="Bold"
                        TextColor="White"
@@ -138,9 +138,9 @@
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="15">
                         <Label Text="Connessione Server" FontAttributes="Bold" FontSize="16" TextColor="White" />
-                        <Label Text="Usa questo tasto per disconnetterti e cancellare i dati di accesso (Token e Account)."
+                        <Label Text="Usa questo tasto per disconnetterti e cancellare i dati di accesso salvati."
                                FontSize="13" TextColor="#D8CCE8" />
-                        <Button Text="LOGOUT / RESET SERVER"
+                        <Button Text="ESCI / RESET SERVER"
                                 BackgroundColor="#66E8890C"
                                 TextColor="White"
                                 FontAttributes="Bold"
@@ -151,7 +151,7 @@
                 </Border>
             </VerticalStackLayout>
             <VerticalStackLayout Padding="20,20,20,30" Spacing="16">
-                <Label Text="FEEDBACK VOCALE"
+                <Label Text="AVVISI VOCALI"
                        FontSize="20"
                        FontAttributes="Bold"
                        TextColor="White"

@@ -72,9 +72,9 @@ public partial class RunDetailPage : ContentPage
                 }
                 else
                 {
-                    // 4. Formattazione finale: "13 marzo 2026 - Run 2"
+                    // 4. Formattazione finale: "13 marzo 2026 - Manche 2"
                     string runNumber = parts[4];
-                    LblRunName.Text = $"{dt.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("it-IT"))} - Run {runNumber}";
+                    LblRunName.Text = $"{dt.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("it-IT"))} - Manche {runNumber}";
                 }
                
 

@@ -23,8 +23,8 @@
 
         <!-- Header -->
         <VerticalStackLayout Grid.Row="0" Spacing="2" Margin="4,4,4,16">
-            <Label Text="MOTION ANALYTICS" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
-            <Label Text="Session History" FontSize="28" FontAttributes="Bold" TextColor="White" />
+            <Label Text="SKINETIK" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
+            <Label Text="Storico Sessioni" FontSize="26" FontAttributes="Bold" TextColor="White" />
         </VerticalStackLayout>
 
         <Border Grid.Row="1" BackgroundColor="#B3D32F2F"

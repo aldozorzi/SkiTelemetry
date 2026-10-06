@@ -106,7 +106,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
         {
             // Apre un prompt di sistema: ottimo perché supporta la dettatura vocale
             string result = await DisplayPromptAsync("Note Sessione",
-                "Inserisci commenti sulla run:",
+                "Inserisci commenti sulla manche:",
                 initialValue: run.Notes, keyboard: Keyboard.Text);
 
             if (result == null) return; // Utente ha annullato
@@ -185,7 +185,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
             string origine = run.IsLocal ? "locale" : "nel cloud";
             bool confirm = await DisplayAlertAsync("Elimina Sessione",
-                $"Vuoi davvero eliminare questa run {origine}? L'azione è irreversibile.", "Elimina", "Annulla");
+                $"Vuoi davvero eliminare questa manche {origine}? L'azione è irreversibile.", "Elimina", "Annulla");
 
             if (!confirm) return;
 
@@ -272,7 +272,7 @@ namespace SkiTelemetry_Analyst.Views.Runs
                                      );
                 }
 
-                string fileName = $"Export_{runItem.RunName}_{DateTime.Now:HHmmss}.csv";
+                string fileName = $"Esportazione_{runItem.RunName}_{DateTime.Now:HHmmss}.csv";
                 try
                 {
                     // 2. Convertiamo la stringa CSV in un MemoryStream
@@ -372,9 +372,10 @@ namespace SkiTelemetry_Analyst.Views.Runs
 
 
 
-            // Recupera le run dal server
+            // Recupera le run dal server (con indicatore di caricamento)
             if (Preferences.Default.Get("HasAccount", false) && !Preferences.Default.Get("OfflineMode", false))
             {
+                IsLoading = true;
                 try
                 {
                     var remoteRuns = await _runService.GetRemoteRunsAsync();
@@ -400,6 +401,10 @@ namespace SkiTelemetry_Analyst.Views.Runs
                 {
                     System.Diagnostics.Debug.WriteLine($"Errore recupero remoto: {ex.Message}");
                 }
+                finally
+                {
+                    IsLoading = false;
+                }
             }
 
                 // 4. Ordinamento e UI
@@ -423,13 +428,13 @@ namespace SkiTelemetry_Analyst.Views.Runs
             {
                 // formato data con minuti e secondi
                 
-                return parts.Length >= 5 ? $"{parts[3]}_{parts[4]}" : fileName;
+                return parts.Length >= 5 ? $"{parts[3]}:{parts[4]}" : fileName;
             }
             else
             {
-                // 4. Formattazione finale: "13 marzo 2026 - Run 2"
+                // 4. Formattazione finale: "13 marzo 2026 - Manche 2"
                 
-                return parts.Length >= 5 ? $"Run {parts[4]}" : fileName;
+                return parts.Length >= 5 ? $"Manche {parts[4]}" : fileName;
             }
 
             

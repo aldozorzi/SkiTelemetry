@@ -31,14 +31,14 @@ namespace SkiTelemetry_Analyst.Views
             // Order must match MonitorMode enum indexes used by OnModeChanged.
             ModePicker.ItemsSource = new List<string>
             {
-                "Performance Index",
-                "Edge Angle",
-                "G-Force",
-                "Progressive Edge Build",
-                "Early Loading",
-                "Edge Similarity",
-                "Turn Time",
-                "Debug Data",
+                "Indice Prestazione",
+                "Angolo Lamina",
+                "Forza G",
+                "Progressione Lamina",
+                "Carico Anticipato",
+                "Similitudine Lamine",
+                "Tempo Curva",
+                "Dati Grezzi",
             };
             CalibrationService.Instance.setProcessor(_dataProcessor);
             var leftOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Left);
@@ -74,6 +74,22 @@ namespace SkiTelemetry_Analyst.Views
                 BtnHistoryContainer.IsVisible = true;
                 StatusLabel.Text = "È necessario accoppiare i sensori.";
             }
+            UpdateLoginVisibility();
+        }
+
+        private void UpdateLoginVisibility()
+        {
+            // Shown under "View Sessions" only when no user has ever logged in.
+            // HasAccount is set to true by AuthService after the first login/signup.
+            bool hasAccount = Preferences.Default.Get("HasAccount", false);
+            BtnLoginContainer.IsVisible = !hasAccount && !_isSessionActive;
+        }
+
+        private async void OnLoginClicked(object? sender, EventArgs e)
+        {
+            // Apre sempre il LOGIN (non la registrazione).
+            // Al ritorno, OnAppearing aggiorna la visibilita' della card.
+            await Shell.Current.Navigation.PushModalAsync(new AuthPage(startInLogin: true));
         }
 
         private async void OnScanClicked(object? sender, EventArgs e)
@@ -259,6 +275,7 @@ namespace SkiTelemetry_Analyst.Views
                 BtnPair.IsEnabled = true;
                 UpdateBtnScan();
                 UpdateCalibrationWarning();
+                UpdateLoginVisibility();
                 //_isSessionActive = true;
                 ConfigView.IsVisible = false;
                 ActiveView.IsVisible = true;
@@ -283,6 +300,7 @@ namespace SkiTelemetry_Analyst.Views
                 BtnScan.IsVisible = false;
                 BtnQuickCalibrate.IsVisible = false;
                 BtnHistoryContainer.IsVisible = false;
+                BtnLoginContainer.IsVisible = false;
                 //DataContainer.IsVisible = true;
                 BtnStopContainer.IsVisible = true;
                 StatusLabel.Text = "Stato: Sessione Attiva";
@@ -307,6 +325,7 @@ namespace SkiTelemetry_Analyst.Views
             UpdateCalibrationWarning();
             BtnScan.IsEnabled = true;
             BtnHistoryContainer.IsVisible = true;
+            UpdateLoginVisibility();
             ResetDisplayValues();
             // 3. Reset dello stato
             StatusLabel.Text = "Disconnessione in corso...";
@@ -462,6 +481,7 @@ namespace SkiTelemetry_Analyst.Views
             CheckConfiguration();
             UpdateBtnScan();
             UpdateCalibrationWarning();
+            UpdateLoginVisibility();
         }
         private void UpdateBtnScan()
         {

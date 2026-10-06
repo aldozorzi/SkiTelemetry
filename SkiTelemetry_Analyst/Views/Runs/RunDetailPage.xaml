@@ -11,6 +11,7 @@
         <ResourceDictionary>
             <helpers:AngleToPercentConverter x:Key="AngleToPercentConverter" />
             <helpers:PercentToRatioConverter x:Key="PercentToRatioConverter" />
+            <helpers:FootToItalianConverter x:Key="FootToItalianConverter" />
             <helpers:GForceToPercentConverter x:Key="GForceToPercentConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
@@ -27,9 +28,9 @@
 
         <!-- Header -->
         <VerticalStackLayout Grid.Row="0" Spacing="2" Margin="4,4,4,16">
-            <Label Text="MOTION ANALYTICS" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
+            <Label Text="SKINETIK" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
             <Label x:Name="LblRunName"
-                   FontSize="22"
+                   FontSize="26"
                    FontAttributes="Bold"
                    TextColor="White"
                    Text="CARICAMENTO..." />
@@ -45,7 +46,7 @@
                     <RoundRectangle CornerRadius="14" />
                 </Border.StrokeShape>
                 <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
-                    <Label Text="AVG IDX" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
+                    <Label Text="INDICE MED" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
                     <Label x:Name="LblPerformanceIndex" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0%" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
             </Border>
@@ -75,7 +76,7 @@
                     <RoundRectangle CornerRadius="14" />
                 </Border.StrokeShape>
                 <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
-                    <Label Text="CURVES" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
+                    <Label Text="CURVE" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
                     <Label x:Name="LblTurnCount" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0" HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
             </Border>
@@ -105,7 +106,7 @@
                         StrokeThickness="0"
                         StrokeShape="RoundRectangle 10"
                         BackgroundColor="Transparent">
-                    <Label Text="CHART" FontSize="12" FontAttributes="Bold"
+                    <Label Text="GRAFICO" FontSize="12" FontAttributes="Bold"
                            TextColor="#8E7BA8" HorizontalOptions="Center"/>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnTabGrafico" />
@@ -128,7 +129,7 @@
                                 <!-- Card header: index + direction / perf ring -->
                                 <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
                                     <VerticalStackLayout Grid.Column="0" Spacing="6" VerticalOptions="Center">
-                                        <Label Text="{Binding Index, StringFormat='CURVE {0:00}'}"
+                                        <Label Text="{Binding Index, StringFormat='CURVA {0:00}'}"
                                                FontSize="12" CharacterSpacing="2" TextColor="#B9A3D6" />
                                         <Border Padding="10,5" StrokeThickness="0"
                                                 BackgroundColor="#33FFFFFF"
@@ -136,7 +137,7 @@
                                             <Border.StrokeShape>
                                                 <RoundRectangle CornerRadius="10" />
                                             </Border.StrokeShape>
-                                            <Label Text="{Binding Foot, StringFormat='{0}'}"
+                                            <Label Text="{Binding Foot, Converter={StaticResource FootToItalianConverter}}"
                                                    FontSize="12" FontAttributes="Bold" TextColor="White" />
                                         </Border>
                                     </VerticalStackLayout>
@@ -152,7 +153,7 @@
                                                    FontSize="16" FontAttributes="Bold" TextColor="White"
                                                    HorizontalOptions="Center" VerticalOptions="End" Margin="0,0,0,16" />
                                         </Grid>
-                                        <Label Text="PERF INDEX" FontSize="8" CharacterSpacing="1"
+                                        <Label Text="INDICE PERF" FontSize="8" CharacterSpacing="1"
                                                TextColor="#B9A3D6" HorizontalOptions="Center" />
                                     </VerticalStackLayout>
                                 </Grid>
@@ -160,14 +161,14 @@
                                 <!-- Roll / G bars -->
                                 <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
                                     <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                        <Label Text="MAX ROLL" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                        <Label Text="ROLLIO MAX" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
                                         <Label Text="{Binding EdgeAngle, StringFormat='{0:F0}°'}"
                                                FontSize="20" FontAttributes="Bold" TextColor="White" />
                                         <ProgressBar Progress="{Binding EdgeAngle, Converter={StaticResource AngleToPercentConverter}}"
                                                      ProgressColor="White" BackgroundColor="#33FFFFFF" HeightRequest="6" />
                                     </VerticalStackLayout>
                                     <VerticalStackLayout Grid.Column="1" Spacing="4">
-                                        <Label Text="G-FORCE" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                        <Label Text="FORZA G" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
                                         <Label Text="{Binding GForce, StringFormat='{0:F1} G'}"
                                                FontSize="20" FontAttributes="Bold" TextColor="White" />
                                         <ProgressBar Progress="{Binding GForce, Converter={StaticResource GForceToPercentConverter}}"
@@ -187,15 +188,15 @@
                                             <Label Text="{Binding EdgeSimilarity, StringFormat='{0:F1}%'}" FontSize="13" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
                                         </VerticalStackLayout>
                                         <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="2">
-                                            <Label Text="EARLY" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                            <Label Text="ANTICIPO" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                             <Label Text="{Binding EarlyLoading, StringFormat='{0:F0}%'}" FontSize="13" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
                                         </VerticalStackLayout>
                                         <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center" Spacing="2">
-                                            <Label Text="BUILD" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                            <Label Text="COSTRUZ" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                             <Label Text="{Binding ProgressiveEdgeBuild, StringFormat='{0:F0}%'}" FontSize="13" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
                                         </VerticalStackLayout>
                                         <VerticalStackLayout Grid.Column="3" HorizontalOptions="Center" Spacing="2">
-                                            <Label Text="TIME" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                            <Label Text="TEMPO" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                             <Label Text="{Binding Duration, StringFormat='{0:F2}s'}" FontSize="13" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
                                         </VerticalStackLayout>
                                     </Grid>

@@ -32,7 +32,8 @@
         </VerticalStackLayout>
 
         <Button x:Name="BtnSubmit" Clicked="OnSubmitClicked" />
-        <Button x:Name="BtnSwitch" Clicked="OnSwitchModeClicked" BackgroundColor="Transparent" TextColor="White" />
+        <!-- Registrazione disabilitata per ora (link nascosto, codice invariato) -->
+        <!-- <Button x:Name="BtnSwitch" Clicked="OnSwitchModeClicked" BackgroundColor="Transparent" TextColor="White" /> -->
         <Button Text="Annulla" Clicked="OnCancelClicked" BackgroundColor="Transparent" TextColor="Gray" />
 
     </VerticalStackLayout>

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ldazrz.skitelemetry" android:versionCode="1" android:versionName="alfa">
-	<application android:allowBackup="true" android:icon="@mipmap/logo_light" android:supportsRtl="true" android:label="SkiTelemetry"></application>
+	<application android:allowBackup="true" android:icon="@mipmap/logo_light" android:supportsRtl="true" 	android:label="SKINETIK"></application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

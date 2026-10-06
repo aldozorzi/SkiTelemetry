@@ -28,7 +28,7 @@
         <!-- Controlli zoom -->
         <HorizontalStackLayout Grid.Row="2" Spacing="8" Margin="0,6,0,0"
                                HorizontalOptions="Center">
-            <Button Text="↺" ToolTipProperties.Text="Reset zoom"
+            <Button Text="↺" ToolTipProperties.Text="Reimposta zoom"
                     Clicked="OnResetZoom"
                     FontSize="13" Padding="10,4"
                     BackgroundColor="#332B0A4E" TextColor="#D8CCE8"

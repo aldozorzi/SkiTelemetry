@@ -181,8 +181,8 @@ public partial class SettingsPage : ContentPage
     private async void OnExportCalibrationClicked(object? sender, EventArgs e)
     {
         string tempStagingFolder = Path.Combine(Path.GetTempPath(), "ExportStaging_" + Guid.NewGuid().ToString());
-        string tempZipPath = Path.Combine(Path.GetTempPath(), $"Export_{DateTime.Now:yyyyMMdd_HHmmss}.zip");
-        string zipFileName = $"Export_Data_{DateTime.Now:HHmmss}.zip";
+        string tempZipPath = Path.Combine(Path.GetTempPath(), $"Esportazione_{DateTime.Now:yyyyMMdd_HHmmss}.zip");
+        string zipFileName = $"Esportazione_Dati_{DateTime.Now:HHmmss}.zip";
 
         string baseDir = FileSystem.Current.AppDataDirectory;
         string sourceFolder = Path.Combine(baseDir, "Calibrations");
