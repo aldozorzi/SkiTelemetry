@@ -99,7 +99,7 @@
                         </HorizontalStackLayout>
                         <HorizontalStackLayout x:Name="EdgeSimilarityDisplay" IsVisible="False" HorizontalOptions="Center" Spacing="40">
                             <VerticalStackLayout>
-                                <Label Text="SIMILITUDINE LAMINE" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                <Label Text="PARALLELISMO LAMINE" FontSize="11" CharacterSpacing="2" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                 <Label x:Name="LblEdgeSimilarity" Text="0%" FontSize="54" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </HorizontalStackLayout>
@@ -162,7 +162,7 @@
                                             <Label x:Name="LblGyrYL" Text="Y: 0.0" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblGyrZL" Text="Z: 0.0" FontSize="12" FontFamily="monospace"/>
 
-                                            <Label Text="ROLLIO" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="INCLINAZIONE" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblRollL" Text="0.0°" FontSize="12" FontAttributes="Bold"/>
                                             <Label Text="FORZA G" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblGForceL" Text="0.0" FontSize="12" FontAttributes="Bold"/>
@@ -184,7 +184,7 @@
                                             <Label x:Name="LblGyrYR" Text="Y: 0.0" FontSize="12" FontFamily="monospace"/>
                                             <Label x:Name="LblGyrZR" Text="Z: 0.0" FontSize="12" FontFamily="monospace"/>
 
-                                            <Label Text="ROLLIO" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
+                                            <Label Text="INCLINAZIONE" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblRollR" Text="0.0°" FontSize="12" FontAttributes="Bold"/>
                                             <Label Text="FORZA G" FontSize="10" FontAttributes="Bold" Margin="0,5,0,2"/>
                                             <Label x:Name="LblGForceR" Text="0.0" FontSize="12" FontAttributes="Bold"/>

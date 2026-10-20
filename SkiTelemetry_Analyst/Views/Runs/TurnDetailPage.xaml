@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:runs="clr-namespace:SkiTelemetry_Analyst.Views.Runs"
+             xmlns:controls="clr-namespace:SkiTelemetry_Analyst.Controls"
+             x:Class="SkiTelemetry_Analyst.Views.Runs.TurnDetailPage"
+             Shell.NavBarIsVisible="False"
+             Title="">
+    <ContentPage.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#2B0A4E" Offset="0.0" />
+            <GradientStop Color="#3D0F55" Offset="0.55" />
+            <GradientStop Color="#5C1C49" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="20,20,20,0">
+
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="4,4,4,12">
+            <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                <Label Text="DETTAGLIO CURVA" FontSize="11" CharacterSpacing="3" TextColor="#B9A3D6" />
+                <Label x:Name="LblTitle" FontSize="22" FontAttributes="Bold" TextColor="White" Text="CURVA" />
+                <Label x:Name="LblFoot" FontSize="13" TextColor="#B9A3D6" Text="-" />
+            </VerticalStackLayout>
+
+            <Border Grid.Column="1" WidthRequest="44" HeightRequest="44"
+                    Stroke="#30FFFFFF" StrokeThickness="1"
+                    BackgroundColor="#1AFFFFFF" VerticalOptions="Center">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="22" />
+                </Border.StrokeShape>
+                <Label Text="✕" FontSize="18" TextColor="White"
+                       HorizontalOptions="Center" VerticalOptions="Center" />
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCloseClicked" />
+                </Border.GestureRecognizers>
+            </Border>
+        </Grid>
+
+        <CarouselView x:Name="TurnsCarousel"
+                      Grid.Row="1"
+                      ItemsSource="{Binding Items}"
+                      PositionChanged="OnPositionChanged"
+                      Loop="False"
+                      HorizontalScrollBarVisibility="Never"
+                      VerticalScrollBarVisibility="Never">
+            <CarouselView.ItemTemplate>
+                <DataTemplate>
+                    <ScrollView VerticalScrollBarVisibility="Never">
+                        <VerticalStackLayout Spacing="14" Padding="0">
+                            <runs:TurnChartView Item="{Binding}" />
+
+                            <Border Padding="14,12" Stroke="#30FFFFFF" StrokeThickness="1"
+                                    BackgroundColor="#1AFFFFFF" StrokeShape="RoundRectangle 16">
+                                <VerticalStackLayout Spacing="14">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                                        <Grid Grid.Column="0" WidthRequest="104" HeightRequest="64" VerticalOptions="Center">
+                                            <controls:PerfRingView Value="{Binding PerformanceValue}"
+                                                                   WidthRequest="104" HeightRequest="64"
+                                                                   HorizontalOptions="Center" VerticalOptions="Center" />
+                                            <Label Text="{Binding PerformanceTextShort}"
+                                                   FontSize="24" FontAttributes="Bold" TextColor="White"
+                                                   HorizontalOptions="Center" VerticalOptions="End" Margin="0,0,0,8" />
+                                        </Grid>
+                                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                            <Label Text="INDICE DI PRESTAZIONE" FontSize="10" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                            <Label Text="Qualità complessiva della curva" FontSize="12" TextColor="#B9A3D6" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="12">
+                                        <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
+                                            <Label Text="INCLINAZIONE MAX" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                            <Label Text="{Binding EdgeAngleText}" FontSize="22" FontAttributes="Bold" TextColor="White" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Row="0" Grid.Column="1" Spacing="2">
+                                            <Label Text="FORZA G" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                            <Label Text="{Binding GForceText}" FontSize="22" FontAttributes="Bold" TextColor="White" />
+                                        </VerticalStackLayout>
+
+                                        <VerticalStackLayout Grid.Row="1" Grid.Column="0" Spacing="2">
+                                            <Label Text="CARICO ANTICIPATO" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                            <Label Text="{Binding EarlyLoadingText}" FontSize="22" FontAttributes="Bold" TextColor="White" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="2">
+                                            <Label Text="PROGRESSIONE LAMINA" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                            <Label Text="{Binding EdgeBuildText}" FontSize="22" FontAttributes="Bold" TextColor="White" />
+                                        </VerticalStackLayout>
+
+                                        <VerticalStackLayout Grid.Row="2" Grid.Column="0" Spacing="2">
+                                            <Label Text="PARALLELISMO" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                            <Label Text="{Binding SimilarityText}" FontSize="22" FontAttributes="Bold" TextColor="White" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Row="2" Grid.Column="1" Spacing="2">
+                                            <Label Text="TEMPO" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                            <Label Text="{Binding DurationText}" FontSize="22" FontAttributes="Bold" TextColor="White" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </VerticalStackLayout>
+                    </ScrollView>
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+            <Border x:Name="BtnPrev" Grid.Column="0" Padding="18,10" Stroke="#30FFFFFF" StrokeThickness="1"
+                    BackgroundColor="#1AFFFFFF" StrokeShape="RoundRectangle 12">
+                <Label Text="‹ PRECEDENTE" FontSize="12" FontAttributes="Bold" TextColor="White" />
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnPrevClicked" />
+                </Border.GestureRecognizers>
+            </Border>
+
+            <Grid x:Name="DotsHost" Grid.Column="1" HeightRequest="20" Margin="12,0"
+                  IsClippedToBounds="True" SizeChanged="OnDotsHostSizeChanged">
+                <HorizontalStackLayout x:Name="DotsRow" Spacing="7"
+                                       HorizontalOptions="Start" VerticalOptions="Center" />
+            </Grid>
+
+            <Border x:Name="BtnNext" Grid.Column="2" Padding="18,10" Stroke="#30FFFFFF" StrokeThickness="1"
+                    BackgroundColor="#1AFFFFFF" StrokeShape="RoundRectangle 12">
+                <Label Text="SUCCESSIVA ›" FontSize="12" FontAttributes="Bold" TextColor="White" />
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnNextClicked" />
+                </Border.GestureRecognizers>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

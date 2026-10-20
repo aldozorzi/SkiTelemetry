@@ -14,8 +14,8 @@ public static class SkiGraphGenerator
         var rightData = allPoints.Where(p => p.Side == SensorSide.Right).ToList();*/
 
         // Estrazione dati con cultura invariante (punto per i decimali)
-        string leftRoll = string.Join(",", allFrames.Select(f => f.Left.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-        string rightRoll = string.Join(",", allFrames.Select(f => f.Right.SmoothRoll.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string leftRoll = string.Join(",", allFrames.Select(f => Math.Abs(f.Left.SmoothRoll).ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+        string rightRoll = string.Join(",", allFrames.Select(f => Math.Abs(f.Right.SmoothRoll).ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
 
         string leftSmoothAccX = string.Join(",", allFrames.Select(f => f.Left.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
         string rightSmoothAccX = string.Join(",", allFrames.Select(f => f.Right.SmoothAccX.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
@@ -63,8 +63,8 @@ public static class SkiGraphGenerator
             var xData = [{timestamps}];
 
             // 1. ROLL (Asse Y principale - Sinistra)
-            var traceRollL = {{ x: xData, y: [{leftRoll}], name: 'Roll L (deg)', line: {{color: 'rgba(255, 0, 0, 0.4)', width: 2}} }};
-            var traceRollR = {{ x: xData, y: [{rightRoll}], name: 'Roll R (deg)', line: {{color: 'rgba(31, 119, 180, 0.4)', width: 2}} }};
+            var traceRollL = {{ x: xData, y: [{leftRoll}], name: 'Inclinazione S (deg)', line: {{color: 'rgba(255, 0, 0, 0.4)', width: 2}} }};
+            var traceRollR = {{ x: xData, y: [{rightRoll}], name: 'Inclinazione D (deg)', line: {{color: 'rgba(31, 119, 180, 0.4)', width: 2}} }};
 
             // 2. G-FORCE (Asse Y2 - Destra interna)
             var traceGL = {{ x: xData, y: [{leftG}], name: 'G-Force L', yaxis: 'y2', line: {{color: 'red', width: 1.5, dash: 'dot'}} }};
@@ -96,9 +96,9 @@ public static class SkiGraphGenerator
             var traceRawGyroZR = {{ x: xData, y: [{rightRawGyroZ}], name: 'GyroZ R (deg/s)', yaxis: 'y3', line: {{color: 'purple', width: 1}} }};
 
             var layout = {{
-                title: 'Analisi Fisica Sci: Roll vs G-Force vs GyroY',
+                title: 'Analisi Fisica Sci: Inclinazione vs G-Force vs GyroY',
                 xaxis: {{ title: 'Timestamp' }},
-                yaxis: {{ title: 'Roll (deg)', range: [-70, 70], zeroline: true }},
+                yaxis: {{ title: 'Inclinazione (deg)', range: [0, 70], zeroline: true }},
                 yaxis2: {{ 
                     title: 'G-Force', 
                     overlaying: 'y', 

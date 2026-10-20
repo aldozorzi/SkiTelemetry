@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+             x:Class="SkiTelemetry_Analyst.Views.Runs.TurnChartView"
+             HeightRequest="300">
+    <Grid RowDefinitions="Auto,*" RowSpacing="6">
+
+        <HorizontalStackLayout Grid.Row="0" Spacing="14" HorizontalOptions="Center">
+            <HorizontalStackLayout Spacing="5">
+                <BoxView WidthRequest="18" HeightRequest="3" Color="#00BFFF" VerticalOptions="Center" />
+                <Label Text="Inclinazione esterna" FontSize="11" TextColor="#B9A3D6" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="5">
+                <BoxView WidthRequest="18" HeightRequest="3" Color="#668FB8D8" VerticalOptions="Center" />
+                <Label Text="Inclinazione interna" FontSize="11" TextColor="#B9A3D6" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="5">
+                <BoxView WidthRequest="18" HeightRequest="3" Color="#FFA500" VerticalOptions="Center" />
+                <Label Text="Forza G" FontSize="11" TextColor="#B9A3D6" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </HorizontalStackLayout>
+
+        <Border Grid.Row="1" Stroke="#30FFFFFF" StrokeThickness="1"
+                BackgroundColor="#332B0A4E" StrokeShape="RoundRectangle 14">
+            <skia:SKCanvasView x:Name="ChartCanvas"
+                               PaintSurface="OnPaintSurface"
+                               BackgroundColor="Transparent" />
+        </Border>
+    </Grid>
+</ContentView>

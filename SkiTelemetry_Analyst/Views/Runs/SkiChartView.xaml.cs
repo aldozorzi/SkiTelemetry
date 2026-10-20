@@ -17,8 +17,8 @@ public partial class SkiChartView : ContentView
 
     private static readonly List<SeriesInfo> AllSeries = new()
     {
-        new("SmoothRoll_L",  "Rollio S",    "#00BFFF", true,  p => p.SmoothRoll),
-        new("SmoothRoll_R",  "Rollio D",    "#FFA500", true,  p => p.SmoothRoll,    false),
+        new("SmoothRoll_L",  "Inclinazione S", "#00BFFF", true,  p => Math.Abs(p.SmoothRoll)),
+        new("SmoothRoll_R",  "Inclinazione D", "#FFA500", true,  p => Math.Abs(p.SmoothRoll), false),
         new("AdjustedG_L",   "G S",       "#1E90FF", true,  p => p.AdjustedG),
         new("AdjustedG_R",   "G D",       "#FF6347", true,  p => p.AdjustedG,     false),
         new("AccX_L",        "AccX S",    "#FF69B4", false, p => p.AccX),

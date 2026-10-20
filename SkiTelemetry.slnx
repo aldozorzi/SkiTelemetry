@@ -3,6 +3,7 @@
     <Deploy />
   </Project>
   <Project Path="SkiTelemetry_Core/SkiTelemetry_Core.csproj" Id="2ad41c65-b265-4a64-a159-8659ac3d025b" />
+  <Project Path="SkiTelemetry_Core.Tests/SkiTelemetry_Core.Tests.csproj" Id="1aedb400-2641-4d99-8631-7537d0a0ec13" />
   <Project Path="SkiTelemetry_LogConverter/SkiTelemetry_LogConverter.csproj" Id="c2eb69d1-1727-44ab-8547-f67d57bafdb8">
     <Build Project="false" />
   </Project>

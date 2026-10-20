@@ -11,7 +11,7 @@ public static class RunParser
         using (var stream = File.OpenRead(filePath))
         using (var reader = new BinaryReader(stream))
         {
-            while (stream.Position + bytesPerRecord < stream.Length)
+            while (stream.Position + bytesPerRecord <= stream.Length)
             {
                 var ts = reader.ReadUInt32();
                 var left = new SkiDataPoint

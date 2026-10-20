@@ -248,8 +248,11 @@ public class CalibrationService
     }
     public void Reset()
     {
+        OffsetL.AccX = OffsetL.AccY = OffsetL.AccZ = 0;
+        OffsetR.AccX = OffsetR.AccY = OffsetR.AccZ = 0;
         OffsetL.GyroX = OffsetL.GyroY = OffsetL.GyroZ = OffsetR.GyroX = OffsetR.GyroY = OffsetR.GyroZ = 0;
         ResetBuffers();
+        _lastCalibTime = DateTime.MinValue;
         Preferences.Default.Remove("CalibL");
         Preferences.Default.Remove("CalibR");
         Preferences.Default.Remove(LastCalibDateKey);

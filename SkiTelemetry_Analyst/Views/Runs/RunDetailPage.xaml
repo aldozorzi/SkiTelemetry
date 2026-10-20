@@ -39,48 +39,61 @@
                    TextColor="#B9A3D6" />
         </VerticalStackLayout>
 
-        <!-- Stat chips -->
-        <Grid Grid.Row="1" ColumnDefinitions="*, *, *, *" ColumnSpacing="10" Margin="0,0,0,16">
-            <Border Grid.Column="0" Padding="8" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF">
+        <!-- Performance hero + secondary stats -->
+        <VerticalStackLayout Grid.Row="1" Spacing="10" Margin="0,0,0,16">
+            <Border Padding="16,12" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#26FFFFFF">
                 <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="14" />
+                    <RoundRectangle CornerRadius="18" />
                 </Border.StrokeShape>
-                <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
-                    <Label Text="INDICE MED" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
-                    <Label x:Name="LblPerformanceIndex" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0%" HorizontalTextAlignment="Center" />
-                </VerticalStackLayout>
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                    <Grid Grid.Column="0" WidthRequest="104" HeightRequest="64" VerticalOptions="Center">
+                        <controls:PerfRingView x:Name="PerfRing"
+                                               Value="0"
+                                               WidthRequest="104" HeightRequest="64"
+                                               HorizontalOptions="Center" VerticalOptions="Center" />
+                        <Label x:Name="LblPerformanceIndex"
+                               FontSize="24" FontAttributes="Bold" TextColor="White" Text="0%"
+                               HorizontalOptions="Center" VerticalOptions="End" Margin="0,0,0,8" />
+                    </Grid>
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                        <Label Text="INDICE DI PRESTAZIONE" FontSize="10" CharacterSpacing="1" TextColor="#B9A3D6" />
+                        <Label Text="Media della manche" FontSize="12" TextColor="#B9A3D6" />
+                    </VerticalStackLayout>
+                </Grid>
             </Border>
 
-            <Border Grid.Column="1" Padding="8" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="14" />
-                </Border.StrokeShape>
-                <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
-                    <Label Text="MAX °" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
-                    <Label x:Name="LblMaxAngle" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0°" HorizontalTextAlignment="Center" />
-                </VerticalStackLayout>
-            </Border>
+            <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10">
+                <Border Grid.Column="0" Padding="8" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="14" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                        <Label Text="INCLINAZIONE MAX" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
+                        <Label x:Name="LblMaxAngle" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0°" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
 
-            <Border Grid.Column="2" Padding="8" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="14" />
-                </Border.StrokeShape>
-                <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
-                    <Label Text="MAX G" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
-                    <Label x:Name="LblMaxG" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0.0" HorizontalTextAlignment="Center" />
-                </VerticalStackLayout>
-            </Border>
+                <Border Grid.Column="1" Padding="8" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="14" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                        <Label Text="MAX G" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
+                        <Label x:Name="LblMaxG" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0.0" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
 
-            <Border Grid.Column="3" Padding="8" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="14" />
-                </Border.StrokeShape>
-                <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
-                    <Label Text="CURVE" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
-                    <Label x:Name="LblTurnCount" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0" HorizontalTextAlignment="Center" />
-                </VerticalStackLayout>
-            </Border>
-        </Grid>
+                <Border Grid.Column="2" Padding="8" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="14" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                        <Label Text="CURVE" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center" />
+                        <Label x:Name="LblTurnCount" FontSize="17" FontAttributes="Bold" TextColor="White" Text="0" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+        </VerticalStackLayout>
 
         <!-- Segmented control -->
         <Border Grid.Row="2" Stroke="#30FFFFFF" StrokeThickness="1" BackgroundColor="#1AFFFFFF"
@@ -116,7 +129,8 @@
         </Border>
 
         <Grid Grid.Row="3">
-            <CollectionView x:Name="TurnsCollection" SelectionMode="None" Margin="0">
+            <CollectionView x:Name="TurnsCollection" SelectionMode="None" Margin="0"
+                            VerticalScrollBarVisibility="Never">
                 <CollectionView.ItemsLayout>
                     <LinearItemsLayout Orientation="Vertical" ItemSpacing="12" />
                 </CollectionView.ItemsLayout>
@@ -124,6 +138,9 @@
                     <DataTemplate>
                         <Border Padding="16" Stroke="#30FFFFFF" StrokeThickness="1"
                                 BackgroundColor="#1AFFFFFF" StrokeShape="RoundRectangle 20">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnTurnTapped" />
+                            </Border.GestureRecognizers>
                             <VerticalStackLayout Spacing="10">
 
                                 <!-- Card header: index + direction / perf ring -->
@@ -153,7 +170,7 @@
                                                    FontSize="16" FontAttributes="Bold" TextColor="White"
                                                    HorizontalOptions="Center" VerticalOptions="End" Margin="0,0,0,16" />
                                         </Grid>
-                                        <Label Text="INDICE PERF" FontSize="8" CharacterSpacing="1"
+                                        <Label Text="INDICE PRESTAZIONE" FontSize="8" CharacterSpacing="1"
                                                TextColor="#B9A3D6" HorizontalOptions="Center" />
                                     </VerticalStackLayout>
                                 </Grid>
@@ -161,7 +178,7 @@
                                 <!-- Roll / G bars -->
                                 <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
                                     <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                        <Label Text="ROLLIO MAX" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
+                                        <Label Text="INCLINAZIONE MAX" FontSize="9" CharacterSpacing="1" TextColor="#B9A3D6" />
                                         <Label Text="{Binding EdgeAngle, StringFormat='{0:F0}°'}"
                                                FontSize="20" FontAttributes="Bold" TextColor="White" />
                                         <ProgressBar Progress="{Binding EdgeAngle, Converter={StaticResource AngleToPercentConverter}}"
@@ -184,7 +201,7 @@
                                     </Border.StrokeShape>
                                     <Grid ColumnDefinitions="*, *, *, *">
                                         <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center" Spacing="2">
-                                            <Label Text="SIMIL" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center"/>
+                                            <Label Text="PARALLEL" FontSize="8" CharacterSpacing="1" TextColor="#B9A3D6" HorizontalOptions="Center"/>
                                             <Label Text="{Binding EdgeSimilarity, StringFormat='{0:F1}%'}" FontSize="13" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" />
                                         </VerticalStackLayout>
                                         <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center" Spacing="2">

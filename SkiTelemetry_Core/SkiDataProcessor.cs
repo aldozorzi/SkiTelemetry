@@ -106,6 +106,12 @@ public class SkiDataProcessor
             }
             f.IsInitialized = true;
             p.SmoothRoll = f.Roll;
+            p.SmoothAccX = f.AccX;
+            p.SmoothAccY = f.AccY;
+            p.SmoothAccZ = f.AccZ;
+            p.SmoothGyroX = f.GyroX;
+            p.SmoothGyroY = f.GyroY;
+            p.SmoothGyroZ = f.GyroZ;
             p.AdjustedG = Math.Sqrt(p.AccX * p.AccX + p.AccY * p.AccY + p.AccZ * p.AccZ);
             return;
         }
@@ -188,6 +194,10 @@ public class SkiDataProcessor
     }
     public void Reset()
     {
+        _detector.Reset();
+        _lastTimestampL = 0;
+        _lastTimestampR = 0;
+        _stableFramesCount = 0;
         _fL.IsInitialized = false;
         _fR.IsInitialized = false;
         _fL.AccXBuf.Clear(); _fL.AccYBuf.Clear(); _fL.AccZBuf.Clear();

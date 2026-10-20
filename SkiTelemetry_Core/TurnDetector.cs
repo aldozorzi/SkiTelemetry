@@ -26,8 +26,6 @@ public class TurnDetector
             if (_currentAccumulator.Count > 0)
             {
                 _lowSignalCounter++;
-                // Aggiungiamo comunque il frame per non avere buchi nel grafico della curva
-                _currentAccumulator.Add(frame);
 
                 if (_lowSignalCounter >= MIN_SILENCE_SAMPLES)
                 {
@@ -40,18 +38,23 @@ public class TurnDetector
         // Segnale forte: resettiamo il counter del silenzio
         _lowSignalCounter = 0;
 
-        if (_currentAccumulator.Count > 0)
+        if (_currentAccumulator.Count > 0 && Math.Sign(val) != _prevTurnSign)
         {
-            
-            if (Math.Sign(val) != _prevTurnSign)
-            {
-                //System.Diagnostics.Debug.WriteLine($"[DETECTOR] {frame.Left.Timestamp} Sign has changed, now {Math.Sign(val)}, before {_prevTurnSign}");
-                FinalizeTurn();
-            }
-
+            //System.Diagnostics.Debug.WriteLine($"[DETECTOR] {frame.Left.Timestamp} Sign has changed, now {Math.Sign(val)}, before {_prevTurnSign}");
+            FinalizeTurn();
         }
+
+        _prevTurnSign = Math.Sign(val);
         //System.Diagnostics.Debug.WriteLine($"[DETECTOR] {frame.Left.Timestamp} Building Turn: {absVal}");
         _currentAccumulator.Add(frame);
+    }
+
+    public void Reset()
+    {
+        _currentAccumulator.Clear();
+        _lowSignalCounter = 0;
+        _prevTurnSign = 0;
+        _turnCounter = 0;
     }
 
     private void FinalizeTurn()
@@ -92,15 +95,8 @@ public class TurnDetector
             EndTimestamp = turnData.Last().Left.Timestamp,
         };
         turn.Index = _turnCounter;
-        turn.EdgeAngle = SkiTurnAnalyzer.CalculateMaxEdgeAngle(turnData);
-        turn.EdgeSimilarity = SkiTurnAnalyzer.CalculateSimilarity(turnData);
-        turn.EarlyLoading = SkiTurnAnalyzer.CalculateEarlyLoading(turnData);
-        turn.GForce = SkiTurnAnalyzer.CalculateMaxGForce(turnData);
-        //turn.Radius = SkiTurnAnalyzer.CalculateRadius(turnData);
         turn.Shape = 0;
-        turn.ProgressiveEdgeBuild = SkiTurnAnalyzer.CalculateEdgeBuild(turnData); ;
-        turn.PerformanceIndex = SkiTurnAnalyzer.CalculatePerformanceIndex(turnData);
-        turn.Foot = SkiTurnAnalyzer.DetermineOuterFoot(turnData);
+        SkiTurnAnalyzer.Populate(turnData, turn, RequestedMetrics);
         // 3. Calcolo basilare del piede (se positivo è un lato, se negativo è l'altro)
         // turn.Foot = turn.MaxGyro > 0 ? Foot.Right : Foot.Left;
         // SkiTurnAnalyzer.DiagnosticTurnAnalysis(turnData);

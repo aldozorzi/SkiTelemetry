@@ -24,22 +24,22 @@ namespace SkiTelemetry_Analyst.Views
         private bool _isCalibrating = false;
         private bool _isScanning = false;
 
+        private static readonly (string Label, MonitorMode Mode)[] MonitorModes =
+        {
+            ("Indice Prestazione", MonitorMode.PerformanceIndex),
+            ("Angolo Lamina", MonitorMode.EdgeAngle),
+            ("Forza G", MonitorMode.GForce),
+            ("Progressione Lamina", MonitorMode.ProgressiveEdgeBuild),
+            ("Parallelismo Lamine", MonitorMode.EdgeSimilarity),
+            ("Carico Anticipato", MonitorMode.EarlyLoading),
+            ("Tempo Curva", MonitorMode.TurnTime),
+            ("Dati Grezzi", MonitorMode.DebugData),
+        };
+
         public MainPage()
         {
             InitializeComponent();
-            // Picker items in code (x:Array does not materialize under XAML source gen).
-            // Order must match MonitorMode enum indexes used by OnModeChanged.
-            ModePicker.ItemsSource = new List<string>
-            {
-                "Indice Prestazione",
-                "Angolo Lamina",
-                "Forza G",
-                "Progressione Lamina",
-                "Carico Anticipato",
-                "Similitudine Lamine",
-                "Tempo Curva",
-                "Dati Grezzi",
-            };
+            ModePicker.ItemsSource = MonitorModes.Select(m => m.Label).ToList();
             CalibrationService.Instance.setProcessor(_dataProcessor);
             var leftOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Left);
             var rightOffsets = CalibrationService.Instance.GetOffsets(SensorSide.Right);
@@ -178,7 +178,7 @@ namespace SkiTelemetry_Analyst.Views
             LblGyrXL.Text = $"X: {rawFrame.Left.GyroX:F1}";
             LblGyrYL.Text = $"Y: {rawFrame.Left.GyroY:F1}";
             LblGyrZL.Text = $"Z: {rawFrame.Left.GyroZ:F1}";
-            LblRollL.Text = $"{rawFrame.Left.Roll:F1}°";
+            LblRollL.Text = $"{Math.Abs(rawFrame.Left.Roll):F1}°";
             LblGForceL.Text = $"{rawFrame.Left.AdjustedG:F1}";
 
             LblAccXR.Text = $"X: {rawFrame.Right.AccX:F2}";
@@ -187,7 +187,7 @@ namespace SkiTelemetry_Analyst.Views
             LblGyrXR.Text = $"X: {rawFrame.Right.GyroX:F1}";
             LblGyrYR.Text = $"Y: {rawFrame.Right.GyroY:F1}";
             LblGyrZR.Text = $"Z: {rawFrame.Right.GyroZ:F1}";
-            LblRollR.Text = $"{rawFrame.Right.Roll:F1}°";
+            LblRollR.Text = $"{Math.Abs(rawFrame.Right.Roll):F1}°";
             LblGForceR.Text = $"{rawFrame.Right.AdjustedG:F1}";
 
 
@@ -372,50 +372,45 @@ namespace SkiTelemetry_Analyst.Views
             EarlyLoadingDisplay.IsVisible = false;
             ProgressiveBuildDisplay.IsVisible = false;
             TurnShapeDisplay.IsVisible = false;
+            TurnTimeDisplay.IsVisible = false;
             PerformanceIndexDisplay.IsVisible =  false;
             DebugDataDisplay.IsVisible = false;
 
-            if (selectedIndex != -1)
+            if (selectedIndex < 0 || selectedIndex >= MonitorModes.Length) return;
+
+            MonitorMode mode = MonitorModes[selectedIndex].Mode;
+            System.Diagnostics.Debug.WriteLine($"[MainPage] Adding Metric: {mode}");
+
+            _metrics.Clear();
+            _metrics.Add(mode);
+            _dataProcessor.setMetrics(_metrics);
+
+            switch (mode)
             {
-                // Aggiorna la modalità nel processore
-                //_dataProcessor.ActiveMode = (MonitorMode)selectedIndex;
-                System.Diagnostics.Debug.WriteLine($"[MainPage] Adding Metric: {(MonitorMode)selectedIndex}");
-
-                _metrics.Clear();
-                _metrics.Add((MonitorMode)selectedIndex);
-                _dataProcessor.setMetrics(_metrics);
-
-                // Feedback visivo opzionale
-                //StatusLabel.Text = $"Monitoring: {picker.Items[selectedIndex]}";
-                switch ((MonitorMode)selectedIndex)
-                {
-                    case MonitorMode.EdgeAngle: 
-                        EdgeAngleDisplay.IsVisible = true;
-                        break;
-                    case MonitorMode.EdgeSimilarity: 
-                        EdgeSimilarityDisplay.IsVisible = true;
-                        break;
-                    case MonitorMode.GForce: 
-                        GForceDisplay.IsVisible = true;
+                case MonitorMode.EdgeAngle:
+                    EdgeAngleDisplay.IsVisible = true;
                     break;
-                   
-                    case MonitorMode.EarlyLoading: 
-                        EarlyLoadingDisplay.IsVisible = true;
-                        break;
-                    case MonitorMode.ProgressiveEdgeBuild:
-                        ProgressiveBuildDisplay.IsVisible = true;
-                        break;
-                    
-                    case MonitorMode.PerformanceIndex:
-                        PerformanceIndexDisplay.IsVisible = true;
-                        break;
-                    case MonitorMode.DebugData:
-                        DebugDataDisplay.IsVisible = true;
-                        break;
-                    /*case MonitorMode.TurnTime:
-                        TurnTimeDisplay.IsVisible = true;
-                        break;*/
-                }
+                case MonitorMode.EdgeSimilarity:
+                    EdgeSimilarityDisplay.IsVisible = true;
+                    break;
+                case MonitorMode.GForce:
+                    GForceDisplay.IsVisible = true;
+                    break;
+                case MonitorMode.EarlyLoading:
+                    EarlyLoadingDisplay.IsVisible = true;
+                    break;
+                case MonitorMode.ProgressiveEdgeBuild:
+                    ProgressiveBuildDisplay.IsVisible = true;
+                    break;
+                case MonitorMode.PerformanceIndex:
+                    PerformanceIndexDisplay.IsVisible = true;
+                    break;
+                case MonitorMode.DebugData:
+                    DebugDataDisplay.IsVisible = true;
+                    break;
+                case MonitorMode.TurnTime:
+                    TurnTimeDisplay.IsVisible = true;
+                    break;
             }
         }
 
