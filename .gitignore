@@ -366,5 +366,11 @@ MigrationBackup/
 FodyWeavers.xsd
 SkiTelemetry_Web/Logic.txt
 SkiTelemetry_Web/Stack.txt
-SkiTelemetry_Web/.env
+SkiTelemetry_Web/DataStorage/
 /SkiTelemetry_Chart
+
+# Environment files / secrets
+.env
+.env.*
+!.env.example
+SkiTelemetry_Web/.env

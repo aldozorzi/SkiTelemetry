@@ -15,14 +15,11 @@ public class SkiDataProcessor
 
     private class FilterState
     {
-        public double AccX, AccY, AccZ, GyroX, GyroY, GyroZ, Roll, AdjustedG, GAdjuster;
+        public double AccX, AccY, AccZ, GyroX, GyroY, GyroZ, Roll;
         public Queue<double> AccXBuf = new(5);
         public Queue<double> AccYBuf = new(5);
         public Queue<double> AccZBuf = new(5);
         public bool IsInitialized = false;
-        public double InitialRollOffset { get; set; } = 0.0; // 🆕 Lo "Zero" del gambetto
-        public bool IsOffsetLocked { get; set; } = false;
-        public MadgwickAHRS? MadgwickFilter { get; set; }
     }
     private readonly FilterState _fL = new();
     private readonly FilterState _fR = new();
@@ -96,7 +93,7 @@ public class SkiDataProcessor
             f.AccX = p.AccX; f.AccY = p.AccY; f.AccZ = p.AccZ;
             f.GyroX = p.GyroX; f.GyroY = p.GyroY; f.GyroZ = p.GyroZ;
 
-            f.Roll = Math.Atan2(p.AccX, p.AccY) * (180.0 / Math.PI);
+            f.Roll = AccelerometerRoll(p.AccX, p.AccY, p.AccZ);
 
             for (int i = 0; i < 5; i++)
             {
@@ -134,27 +131,32 @@ public class SkiDataProcessor
         double rawG = Math.Sqrt(p.SmoothAccX * p.SmoothAccX + p.SmoothAccY * p.SmoothAccY + p.SmoothAccZ * p.SmoothAccZ);
         p.AdjustedG = rawG;
 
-        // 7. ROLL
-        const double accWeight = 0.07;
+        // 7. ROLL (filtro complementare giroscopio/accelerometro)
+        // A riposo ci fidiamo dell'accelerometro per correggere la deriva del giroscopio.
+        // All'aumentare della forza G l'accelerometro e' sempre piu' inquinato dalla
+        // centrifuga, quindi riduciamo il suo peso e ci affidiamo di piu' al giroscopio.
+        const double accWeightBase = 0.07;
+        const double accWeightMin = 0.03;
 
+        double safeAccRoll = AccelerometerRoll(p.SmoothAccX, p.SmoothAccY, p.SmoothAccZ);
+        double dynamicAccWeight = accWeightBase;
+        if (rawG > 1.05)
+            dynamicAccWeight = Math.Max(accWeightMin, accWeightBase - (rawG - 1.05) * 0.04);
 
-        double accRoll = Math.Atan2(p.SmoothAccX, p.SmoothAccY) * (180.0 / Math.PI);
-        double safeAccRoll = Math.Clamp(accRoll, -75.0, 75.0);
-        double dynamicAccWeight = accWeight;
-        bool isInTransition = Math.Abs(p.SmoothGyroZ) < 10.0
-                   && Math.Abs(rawG - 1.0) < 0.15;
-        if (rawG > 1.1)
-        {
-            //dynamicAccWeight = Math.Min(0.999, accWeight + (rawG - 1.1) * 0.1);
-        }
         double gyroWeight = 1.0 - dynamicAccWeight;
 
         f.Roll = gyroWeight * (f.Roll + p.SmoothGyroZ * dt) + dynamicAccWeight * safeAccRoll;
         p.SmoothRoll = f.Roll;
-
-        
-
     }
+
+    // Angolo di rollio stimato dall'accelerometro: usa sqrt(Y^2+Z^2) come componente
+    // "verticale" per non essere sensibile al beccheggio/pendenza dello sci.
+    private static double AccelerometerRoll(double accX, double accY, double accZ)
+        => Math.Clamp(
+            Math.Atan2(accX, Math.Sqrt(accY * accY + accZ * accZ)) * (180.0 / Math.PI),
+            -75.0,
+            75.0);
+
     private void OnTurnCompleted(object? sender, SkiTurn turn)
     {
         OnNewTurn?.Invoke(this, turn);

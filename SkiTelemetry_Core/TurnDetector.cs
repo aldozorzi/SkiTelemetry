@@ -87,7 +87,7 @@ public class TurnDetector
     {
         _turnCounter++;
         //System.Diagnostics.Debug.WriteLine($"[DETECTOR ]CURVA [{_turnCounter}] Frames:[{turnData.Count}]--------------------------------------------------");
-        // 2. Crea il turno usando i timestamp dei DataPoint originali
+        // 2. Crea la curva usando i timestamp dei DataPoint originali
         // (Assumo che SkiFrame abbia i riferimenti Left/Right come mostrato all'inizio)
         var turn = new SkiTurn
         {

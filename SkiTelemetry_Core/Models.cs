@@ -103,10 +103,7 @@ public class SkiDataPoint
     public float GyroY { get; set; }
     public float GyroZ { get; set; }
 
-    // Calcoliamo l'inclinazione (Roll) semplificata per ora
-    // public double rawRoll => Math.Atan2(AccX, AccY) * (180 / Math.PI);
-    public double Roll => Math.Clamp(Math.Atan2(AccX, AccY) * (180 / Math.PI), -75.0, 75.0);
-    public double SmoothRoll { get; set; } // Dato filtrato
+    public double SmoothRoll { get; set; } // Inclinazione filtrata (giroscopio + accelerometro)
     public double SmoothAccX { get; set; } // Dato filtrato
     public double SmoothAccY { get; set; } // Dato filtrato
     public double SmoothAccZ { get; set; } // Dato filtrato
@@ -117,7 +114,7 @@ public class SkiDataPoint
 
     public override string ToString()
     {
-        return $"[DATA] Ts: {Timestamp} - Side: {Side} - Roll: {Roll:0.0} - SmoothRoll: {SmoothRoll} - AccX:{AccX:0.0} - SmoothAccX:{SmoothAccX} - AccY:{AccY:0.0} - SmoothAccY:{SmoothAccY} - AccZ:{AccZ:0.0} - SmoothAccZ:{SmoothAccZ} - GyroX:{GyroX:0.0} - GyroY:{GyroY:0.0} - GyroZ:{GyroZ:0.0}";    
+        return $"[DATA] Ts: {Timestamp} - Side: {Side} - SmoothRoll: {SmoothRoll} - AccX:{AccX:0.0} - SmoothAccX:{SmoothAccX} - AccY:{AccY:0.0} - SmoothAccY:{SmoothAccY} - AccZ:{AccZ:0.0} - SmoothAccZ:{SmoothAccZ} - GyroX:{GyroX:0.0} - GyroY:{GyroY:0.0} - GyroZ:{GyroZ:0.0}";    
     }
 }
 

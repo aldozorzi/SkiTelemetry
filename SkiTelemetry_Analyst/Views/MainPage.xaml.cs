@@ -178,7 +178,7 @@ namespace SkiTelemetry_Analyst.Views
             LblGyrXL.Text = $"X: {rawFrame.Left.GyroX:F1}";
             LblGyrYL.Text = $"Y: {rawFrame.Left.GyroY:F1}";
             LblGyrZL.Text = $"Z: {rawFrame.Left.GyroZ:F1}";
-            LblRollL.Text = $"{Math.Abs(rawFrame.Left.Roll):F1}°";
+            LblRollL.Text = $"{Math.Abs(rawFrame.Left.SmoothRoll):F1}°";
             LblGForceL.Text = $"{rawFrame.Left.AdjustedG:F1}";
 
             LblAccXR.Text = $"X: {rawFrame.Right.AccX:F2}";
@@ -187,7 +187,7 @@ namespace SkiTelemetry_Analyst.Views
             LblGyrXR.Text = $"X: {rawFrame.Right.GyroX:F1}";
             LblGyrYR.Text = $"Y: {rawFrame.Right.GyroY:F1}";
             LblGyrZR.Text = $"Z: {rawFrame.Right.GyroZ:F1}";
-            LblRollR.Text = $"{Math.Abs(rawFrame.Right.Roll):F1}°";
+            LblRollR.Text = $"{Math.Abs(rawFrame.Right.SmoothRoll):F1}°";
             LblGForceR.Text = $"{rawFrame.Right.AdjustedG:F1}";
 
 

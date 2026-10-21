@@ -9,11 +9,11 @@
         <HorizontalStackLayout Grid.Row="0" Spacing="14" HorizontalOptions="Center">
             <HorizontalStackLayout Spacing="5">
                 <BoxView WidthRequest="18" HeightRequest="3" Color="#00BFFF" VerticalOptions="Center" />
-                <Label Text="Inclinazione esterna" FontSize="11" TextColor="#B9A3D6" VerticalOptions="Center" />
+                <Label Text="Incl. est." FontSize="11" TextColor="#B9A3D6" VerticalOptions="Center" />
             </HorizontalStackLayout>
             <HorizontalStackLayout Spacing="5">
                 <BoxView WidthRequest="18" HeightRequest="3" Color="#668FB8D8" VerticalOptions="Center" />
-                <Label Text="Inclinazione interna" FontSize="11" TextColor="#B9A3D6" VerticalOptions="Center" />
+                <Label Text="Incl. int." FontSize="11" TextColor="#B9A3D6" VerticalOptions="Center" />
             </HorizontalStackLayout>
             <HorizontalStackLayout Spacing="5">
                 <BoxView WidthRequest="18" HeightRequest="3" Color="#FFA500" VerticalOptions="Center" />

@@ -40,14 +40,9 @@ public partial class TurnChartView : ContentView
         _frames = frames ?? new();
         _hasData = _frames.Count >= 2;
         _markers = _hasData ? SkiTurnAnalyzer.GetMarkers(_frames) : default;
-        _outerSide = turn.Foot ?? DetermineOuterSide(_frames);
+        _outerSide = turn.Foot ?? SkiTurnAnalyzer.DetermineOuterFoot(_frames);
         ChartCanvas.InvalidateSurface();
     }
-
-    private static SensorSide DetermineOuterSide(List<SkiFrame> frames)
-        => frames.Count > 0 && frames.Average(f => f.CombinedGyro) > 0
-            ? SensorSide.Right
-            : SensorSide.Left;
 
     private void OnPaintSurface(object? sender, SKPaintSurfaceEventArgs? e)
     {
